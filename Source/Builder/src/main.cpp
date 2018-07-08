@@ -83,7 +83,15 @@ int main(int argc, char** argv)
     
     std::ifstream json_file(get_module_dir() + "\\config.json");
     json j;
-    json_file >> j;
+    try
+    {
+        json_file >> j;
+    }
+    catch(std::exception& ex)
+    {
+        std::cout << ex.what();
+        return 0;
+    }
     if(!j.is_object())
     {
         std::cout << "config json is not object";
