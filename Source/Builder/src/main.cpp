@@ -8,6 +8,29 @@
 
 using json = nlohmann::json;
 
+inline bool replace(std::string& str, const std::string& from, const std::string& to) 
+{
+    size_t start_pos = str.find(from);
+    if(start_pos == std::string::npos)
+        return false;
+    str.replace(start_pos, from.length(), to);
+    return true;
+}
+
+inline void replace_all(std::string& str, const std::string& from, const std::string& to)
+{
+    while(replace(str, from, to));
+}
+
+inline std::string get_string(json& j, const std::string& def)
+{
+    if(!j.is_string())
+    {
+        return def;
+    }
+    return j.get<std::string>();
+}
+
 inline std::vector<std::string> get_from_json_array(json j)
 {
     std::vector<std::string> r;
@@ -57,6 +80,51 @@ std::string get_module_dir()
     return filename;
 }
 
+void create_main_cpp(std::string& source, const std::string& state_name)
+{
+    source.clear();
+    
+    source = 
+    #include "core_main.cpp.template"
+    ;
+    
+    replace_all(source, "%%STATE_NAME%%", state_name);
+}
+
+struct project_config
+{
+    std::string build_path;
+    std::string project_name;
+    std::string source_path;
+    std::string default_state;
+};
+
+bool load_project_json(const std::string& path, project_config& conf)
+{
+    std::ifstream json_file(path);
+    json j;
+    try
+    {
+        json_file >> j;
+    }
+    catch(std::exception& ex)
+    {
+        std::cout << ex.what();
+        return false;
+    }
+    if(!j.is_object())
+    {
+        std::cout << "project config json is not object";
+        return false;
+    }
+    
+    conf.build_path = get_string(j["build_path"], "build");
+    conf.project_name = get_string(j["project_name"], "UntitledProject");
+    conf.source_path = get_string(j["source_path"], "");
+    conf.default_state = get_string(j["default_state"], "");
+    return true;
+}
+
 int main(int argc, char** argv)
 {
     if(argc < 2)
@@ -67,17 +135,16 @@ int main(int argc, char** argv)
     
     std::string project_filename = argv[1];
     
+    project_config proj_conf;
+    load_project_json(project_filename, proj_conf);
     
-    CSimpleIniA project_ini;
-    project_ini.SetUnicode();
-    project_ini.LoadFile(project_filename.c_str());
-    std::string project_name = "UntitledProject";
-    std::string build_dir = "build";
-    std::string source_dir = "src";
-    project_name = project_ini.GetValue("", "project_name", "UntitledProject");
-    build_dir = project_ini.GetValue("", "build_path", "build");
-    source_dir = project_ini.GetValue("", "source_path", "");
-    std::cout << "Building " << project_name << std::endl;
+    std::string main_src;
+    create_main_cpp(main_src, proj_conf.default_state);
+    std::ofstream file(get_module_dir() + "\\core_main.cpp");
+    file << main_src;
+    file.close();
+    
+    std::cout << "Building " << proj_conf.project_name << std::endl;
     
     std::cout << get_module_dir() << std::endl;
     
@@ -131,14 +198,16 @@ int main(int argc, char** argv)
     
     std::string source_path = "\"" + get_module_dir() + "\\..\\..\\Source\\Core\\\" ";
     source_path += 
-       "\"" + cut_dirpath(project_filename) + "\\" + source_dir + "\\\"";
+       "\"" + cut_dirpath(project_filename) + "\\" + proj_conf.source_path + "\\\" ";
+    source_path +=
+        "\"" + get_module_dir() + "\\\"";
     std::cout << source_path;
     _putenv_s("INCLUDE_PATHS", include_paths_s.c_str());
     _putenv_s("LIB_PATHS", library_paths_s.c_str());
     _putenv_s("LIBRARIES", libraries_s.c_str());
     
-    _putenv_s("EXENAME", project_name.c_str());
-    _putenv_s("OUTDIR", (cut_dirpath(project_filename) + "\\" + build_dir + "\\").c_str());
+    _putenv_s("EXENAME", proj_conf.project_name.c_str());
+    _putenv_s("OUTDIR", (cut_dirpath(project_filename) + "\\" + proj_conf.build_path + "\\").c_str());
     _putenv_s("SOURCE_DIRS", source_path.c_str());
     
     if(system(("call \"" + get_module_dir() + "\\build\"").c_str()) != 0)
