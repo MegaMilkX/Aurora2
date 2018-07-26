@@ -1,11 +1,37 @@
 #include "../../general/util.h"
 
+#define MINIZ_HEADER_FILE_ONLY
+#include "miniz.c"
+
 #define MKSTR(LINE) \
 static_cast<std::ostringstream&>(std::ostringstream() << LINE).str()
 
 #define LOG(LINE) std::cout << MKSTR(LINE) << std::endl;
 
 using json = nlohmann::json;
+
+std::vector<std::string> find_all_files(const std::string& dir, const std::string& filter)
+{
+    std::string full_filter = dir + "\\" + filter;
+    std::vector<std::string> names;
+    WIN32_FIND_DATAA data;
+    HANDLE hFind = FindFirstFileA(full_filter.c_str(), &data);
+
+    char buf[260];
+    DWORD len = GetFullPathNameA(full_filter.c_str(), 260, buf, 0);
+    std::string dirpath(buf, len);
+
+    if ( hFind != INVALID_HANDLE_VALUE ) 
+    {
+        do 
+        {
+            names.push_back(dir + "\\" + std::string(data.cFileName));
+        } while (FindNextFileA(hFind, &data));
+        FindClose(hFind);
+    }
+
+    return names;
+}
 
 struct project_config
 {
@@ -48,7 +74,9 @@ bool load_resources(const std::string& path, json& j)
     return true;
 }
 
-void process_resource_json_node(json& j, std::vector<resource>& resources, std::vector<std::string>& name_chain)
+mz_zip_archive zarch;
+
+void process_resource_json_node(project_config& conf, json& j, std::vector<resource>& resources, std::vector<std::string>& name_chain)
 {
     json jnode_name = j["name"];
     json jnode_source = j["source"];
@@ -56,11 +84,14 @@ void process_resource_json_node(json& j, std::vector<resource>& resources, std::
     json jnode_properties = j["properties"];
 
     bool has_name = false;
+    bool has_source = false;
+    std::string full_name;
+    std::string source_filename;
     if(jnode_name.is_string())
     {
         name_chain.push_back(jnode_name.get<std::string>());
         
-        std::string full_name;
+        
         for(std::string part : name_chain)
         {
             if(!full_name.empty())
@@ -72,6 +103,8 @@ void process_resource_json_node(json& j, std::vector<resource>& resources, std::
     }
     if(jnode_source.is_string())
     {
+        has_source = true;
+        source_filename = jnode_source.get<std::string>();
         LOG(jnode_source.get<std::string>());
     }
     if(jnode_type.is_string())
@@ -83,6 +116,15 @@ void process_resource_json_node(json& j, std::vector<resource>& resources, std::
         LOG(jnode_properties.dump());
     }
 
+    if(has_name && has_source)
+    {
+        std::string source_path = conf.root_dir + "\\" + source_filename;
+        if(!mz_zip_writer_add_file(&zarch, full_name.c_str(), source_path.c_str(), "", 0, 0))
+        {
+            LOG("Failed to archive target " << source_path);
+        }
+    }
+
     json jnodes = j["nodes"];
     if(jnodes.is_array())
     {
@@ -90,7 +132,7 @@ void process_resource_json_node(json& j, std::vector<resource>& resources, std::
         {
             if(!jnode.is_object())
                 continue;
-            process_resource_json_node(jnode, resources, name_chain);
+            process_resource_json_node(conf, jnode, resources, name_chain);
         }
     }
     
@@ -133,9 +175,28 @@ bool load_project_json(const std::string& path, project_config& conf)
         return false;
     }
 
+    std::vector<std::string> existing_files = find_all_files(conf.root_dir + "\\" + conf.build_path + "\\data\\", "*");
+    for(auto fn : existing_files)
+    {
+        if(!DeleteFileA(fn.c_str()))
+        {
+            LOG("Failed to delete " << fn);
+        }
+    }
+
+    std::string arch_path = conf.root_dir + "\\" + conf.build_path + "\\data\\" + "data_0.bin";
+    memset(&zarch, 0, sizeof(zarch));
+    CreateDirectoryA((conf.root_dir + "\\" + conf.build_path + "\\data\\").c_str(), 0);
+    if(!mz_zip_writer_init_file(&zarch, arch_path.c_str(), 65537))
+    {
+        LOG("Failed to create archive " << arch_path);
+    }
+
     std::vector<resource> resource_list;
     std::vector<std::string> name_chain;
-    process_resource_json_node(resources, resource_list, name_chain);
+    process_resource_json_node(conf, resources, resource_list, name_chain);
+
+    mz_zip_writer_end(&zarch);
 
     return true;
 }
