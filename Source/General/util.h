@@ -8,9 +8,25 @@
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
+#include <iterator>
 
 #include "ext/json.hpp"
 using json = nlohmann::json;
+
+template<typename Out>
+void split(const std::string &s, char delim, Out result) {
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        *(result++) = item;
+    }
+}
+
+std::vector<std::string> split(const std::string &s, char delim) {
+    std::vector<std::string> elems;
+    split(s, delim, std::back_inserter(elems));
+    return elems;
+}
 
 inline bool replace(std::string& str, const std::string& from, const std::string& to) 
 {
@@ -95,6 +111,29 @@ bool copy_file(const std::string& from, const std::string& to)
         return false;
     }
     return true;
+}
+
+std::vector<std::string> find_all_files(const std::string& dir, const std::string& filter)
+{
+    std::string full_filter = dir + "\\" + filter;
+    std::vector<std::string> names;
+    WIN32_FIND_DATAA data;
+    HANDLE hFind = FindFirstFileA(full_filter.c_str(), &data);
+
+    char buf[260];
+    DWORD len = GetFullPathNameA(full_filter.c_str(), 260, buf, 0);
+    std::string dirpath(buf, len);
+
+    if ( hFind != INVALID_HANDLE_VALUE ) 
+    {
+        do 
+        {
+            names.push_back(dir + "\\" + std::string(data.cFileName));
+        } while (FindNextFileA(hFind, &data));
+        FindClose(hFind);
+    }
+
+    return names;
 }
 
 #endif

@@ -10,29 +10,6 @@ static_cast<std::ostringstream&>(std::ostringstream() << LINE).str()
 
 using json = nlohmann::json;
 
-std::vector<std::string> find_all_files(const std::string& dir, const std::string& filter)
-{
-    std::string full_filter = dir + "\\" + filter;
-    std::vector<std::string> names;
-    WIN32_FIND_DATAA data;
-    HANDLE hFind = FindFirstFileA(full_filter.c_str(), &data);
-
-    char buf[260];
-    DWORD len = GetFullPathNameA(full_filter.c_str(), 260, buf, 0);
-    std::string dirpath(buf, len);
-
-    if ( hFind != INVALID_HANDLE_VALUE ) 
-    {
-        do 
-        {
-            names.push_back(dir + "\\" + std::string(data.cFileName));
-        } while (FindNextFileA(hFind, &data));
-        FindClose(hFind);
-    }
-
-    return names;
-}
-
 struct project_config
 {
     std::string build_path;
@@ -196,6 +173,7 @@ bool load_project_json(const std::string& path, project_config& conf)
     std::vector<std::string> name_chain;
     process_resource_json_node(conf, resources, resource_list, name_chain);
 
+    mz_zip_writer_finalize_archive(&zarch);
     mz_zip_writer_end(&zarch);
 
     return true;
