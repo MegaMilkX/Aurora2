@@ -14,7 +14,7 @@
 using json = nlohmann::json;
 
 template<typename Out>
-void split(const std::string &s, char delim, Out result) {
+inline void split(const std::string &s, char delim, Out result) {
     std::stringstream ss(s);
     std::string item;
     while (std::getline(ss, item, delim)) {
@@ -22,7 +22,7 @@ void split(const std::string &s, char delim, Out result) {
     }
 }
 
-std::vector<std::string> split(const std::string &s, char delim) {
+inline std::vector<std::string> split(const std::string &s, char delim) {
     std::vector<std::string> elems;
     split(s, delim, std::back_inserter(elems));
     return elems;
@@ -100,7 +100,7 @@ inline std::string get_module_dir()
     return filename;
 }
 
-bool copy_file(const std::string& from, const std::string& to)
+inline bool copy_file(const std::string& from, const std::string& to)
 {
     if(CopyFileA(
         from.c_str(),
@@ -113,7 +113,7 @@ bool copy_file(const std::string& from, const std::string& to)
     return true;
 }
 
-std::vector<std::string> find_all_files(const std::string& dir, const std::string& filter)
+inline std::vector<std::string> find_all_files(const std::string& dir, const std::string& filter)
 {
     std::string full_filter = dir + "\\" + filter;
     std::vector<std::string> names;
@@ -128,6 +128,11 @@ std::vector<std::string> find_all_files(const std::string& dir, const std::strin
     {
         do 
         {
+            if(std::string(data.cFileName) == "." || 
+                std::string(data.cFileName) == "..")
+            {
+                continue;
+            }
             names.push_back(dir + "\\" + std::string(data.cFileName));
         } while (FindNextFileA(hFind, &data));
         FindClose(hFind);
@@ -135,5 +140,13 @@ std::vector<std::string> find_all_files(const std::string& dir, const std::strin
 
     return names;
 }
+
+#define MKSTR(LINE) \
+static_cast<std::ostringstream&>(std::ostringstream() << LINE).str()
+
+#define LOG(LINE) std::cout << MKSTR(LINE) << std::endl;
+#define LOG_WARN(LINE) LOG("WARNING: " << LINE)
+#define LOG_ERR(LINE) LOG("ERROR: " << LINE)
+#define LOG_DBG(LINE) LOG("DEBUG: " << LINE)
 
 #endif
