@@ -201,108 +201,111 @@ public:
         for(auto& kv : anims)
             kv.second->SetRootMotionSource(name);
     }
+
+    bool Build(Resource* r)
+    {
+        if(!r) return false;
+        Resource* r_fps = r->Get("FrameRate");
+        Resource* r_tpf = r->Get("FrameTime");
+        Resource* r_tracks = r->Get("Track");
+        Resource* r_bind_poses = r->Get("Bind");
+        if(!r_fps || !r_tpf || !r_tracks || !r_bind_poses) return false;
+        FrameRate((float)*(double*)r_fps->Data());
+        double timePerFrame = *(double*)r_tpf->Data();
+        LOG("FPS: " << *(double*)r_fps->Data());
+        LOG("TPF: " << *(double*)r_tpf->Data());
+
+        AnimPose& pose = GetBindPose();
+
+        for(auto kv : r_bind_poses->GetChildren())
+        {
+            std::string name = kv.first;
+            gfxm::mat4 transform = *(gfxm::mat4*)kv.second->Data();
+            pose.poses[name].set_transform(transform);
+        }
+
+        for(auto kv : r_tracks->GetChildren())
+        {
+            std::string animName = kv.first;
+            double length = *(double*)kv.second->Get("Length")->Data();
+            Resource* r_nodes = kv.second->Get("Node");
+
+            AnimTrack* anim = this->operator[](animName);
+            anim->Length((float)length);
+            anim->Name(animName);
+
+            for(auto node_kv : r_nodes->GetChildren())
+            {
+                std::string name = node_kv.first;
+                Resource* r_pos = node_kv.second->Get("Pos");
+                Resource* r_rot = node_kv.second->Get("Rot");
+                Resource* r_scl = node_kv.second->Get("Scl");
+
+                AnimNode& animNode = anim->operator[](name);
+
+                struct keyframe
+                {
+                    float frame;
+                    float value;
+                };
+
+                std::vector<keyframe> frames_pos_x;
+                std::vector<keyframe> frames_pos_y;
+                std::vector<keyframe> frames_pos_z;
+                std::vector<keyframe> frames_rot_x;
+                std::vector<keyframe> frames_rot_y;
+                std::vector<keyframe> frames_rot_z;
+                std::vector<keyframe> frames_rot_w;
+                std::vector<keyframe> frames_scl_x;
+                std::vector<keyframe> frames_scl_y;
+                std::vector<keyframe> frames_scl_z;
+
+#define FILL_FRAMES(VECTOR, RESOURCE, SUBRESOURCE) { \
+if(RESOURCE) { \
+Resource* r_ = RESOURCE->Get(SUBRESOURCE); \
+if(r_) VECTOR = std::vector<keyframe>( (keyframe*)r_->Data(), (keyframe*)(r_->Data() + r_->DataSize()) ); \
+} \
+}
+
+                FILL_FRAMES(frames_pos_x, r_pos, "X");
+                FILL_FRAMES(frames_pos_y, r_pos, "Y");
+                FILL_FRAMES(frames_pos_z, r_pos, "Z");
+                
+                FILL_FRAMES(frames_rot_x, r_rot, "X");
+                FILL_FRAMES(frames_rot_y, r_rot, "Y");
+                FILL_FRAMES(frames_rot_z, r_rot, "Z");
+                FILL_FRAMES(frames_rot_w, r_rot, "W");
+
+                FILL_FRAMES(frames_scl_x, r_scl, "X");
+                FILL_FRAMES(frames_scl_y, r_scl, "Y");
+                FILL_FRAMES(frames_scl_z, r_scl, "Z");
+
+#undef FILL_FRAMES
+#define FILL_ANIM(from, to) for(auto k : from) to[k.frame] = k.value;
+                
+                FILL_ANIM(frames_pos_x, animNode.position.x);
+                FILL_ANIM(frames_pos_y, animNode.position.y);
+                FILL_ANIM(frames_pos_z, animNode.position.z);
+
+                FILL_ANIM(frames_rot_x, animNode.rotation.x);
+                FILL_ANIM(frames_rot_y, animNode.rotation.y);
+                FILL_ANIM(frames_rot_z, animNode.rotation.z);
+                FILL_ANIM(frames_rot_w, animNode.rotation.w);
+
+                FILL_ANIM(frames_scl_x, animNode.scale.x);
+                FILL_ANIM(frames_scl_y, animNode.scale.y);
+                FILL_ANIM(frames_scl_z, animNode.scale.z);
+
+#undef FILL_ANIM
+            }
+        }
+
+        return true;
+    }
 private:
     std::map<std::string, AnimTrack*> anims;
     AnimPose bindPose;
     float fps;
 };
-
-template<>
-inline bool LoadAsset<Animation, FBX>(Animation* animSet, const std::string& filename)
-{
-    ScopedTimer timer("LoadAsset<Animation, FBX> '" + filename + "'");
-
-    bool result = false;
-    std::ifstream file(filename, std::ios::binary | std::ios::ate);
-    if(!file.is_open())
-        return result;
-    std::streamsize size = file.tellg();
-    file.seekg(0, std::ios::beg);
-    std::vector<char> buffer((unsigned int)size);
-    if(file.read(buffer.data(), size))
-    {
-        result = true;
-        Au::Media::FBX::Reader fbxReader;
-        fbxReader.ReadMemory(buffer.data(), buffer.size());
-        //fbxReader.DumpFile(filename);
-        fbxReader.ConvertCoordSys(Au::Media::FBX::OPENGL);
-        
-        std::vector<Au::Media::FBX::AnimationStack>& stacks =
-            fbxReader.GetAnimationStacks();
-        double fps = fbxReader.GetFrameRate();
-        double timePerFrame = Au::Media::FBX::TimeSecond / fps;
-        
-        animSet->FrameRate((float)fps);
-        AnimPose& pose = animSet->GetBindPose();
-        for(unsigned i = 0; i < fbxReader.ModelCount(); ++i)
-        {
-            Au::Media::FBX::Model* fbxModel = 
-                fbxReader.GetModel(i);
-            pose.poses[fbxModel->name].set_transform(*(gfxm::mat4*)&fbxModel->transform);
-        }
-
-        for(unsigned i = 0; i < stacks.size(); ++i)
-        {
-            double length = stacks[i].GetLength() / timePerFrame;
-            std::string animName = stacks[i].GetName();
-            {
-                // TODO: Check if fbx is made in blender, only then cut by first pipe symbol
-                size_t pipe_pos = animName.find_first_of("|");
-                if(pipe_pos != std::string::npos)
-                {
-                    animName = animName.substr(pipe_pos + 1);
-                }
-            }
-            
-            AnimTrack* anim = animSet->operator[](animName);
-            anim->Length((float)length);
-            anim->Name(animName);
-
-            //std::cout << "AnimStack " << animName << " len: " << length << std::endl;
-            
-            std::vector<Au::Media::FBX::SceneNode> nodes = stacks[i].GetAnimatedNodes();
-            for(unsigned j = 0; j < nodes.size(); ++j)
-            {
-                if(!stacks[i].HasPositionCurve(nodes[i]) &&
-                    !stacks[i].HasRotationCurve(nodes[i]) &&
-                    !stacks[i].HasScaleCurve(nodes[i]))
-                {
-                    continue;
-                }
-                std::string nodeName = nodes[j].Name();
-                AnimNode& animNode = anim->operator[](nodeName);
-                float frame = 0.0f;
-                //std::cout << "  CurveNode " << nodeName << std::endl;
-                for(double t = 0.0f; t < length * timePerFrame; t += timePerFrame)
-                {
-                    gfxm::vec3 pos = 
-                        *(gfxm::vec3*)&stacks[i].EvaluatePosition(nodes[j], (int64_t)t);
-                    animNode.position.x[frame] = pos.x;
-                    animNode.position.y[frame] = pos.y;
-                    animNode.position.z[frame] = pos.z;
-
-                    gfxm::quat rot = 
-                        *(gfxm::quat*)&stacks[i].EvaluateRotation(nodes[j], (int64_t)t);
-                    animNode.rotation.x[frame] = rot.x;
-                    animNode.rotation.y[frame] = rot.y;
-                    animNode.rotation.z[frame] = rot.z;
-                    animNode.rotation.w[frame] = rot.w;
-                    
-                    gfxm::vec3 scale = 
-                        *(gfxm::vec3*)&stacks[i].EvaluateScale(nodes[j], (int64_t)t);
-                    animNode.scale.x[frame] = scale.x;
-                    animNode.scale.y[frame] = scale.y;
-                    animNode.scale.z[frame] = scale.z;
-                    
-                    frame += 1.0f;
-                }
-            }
-        }
-    }
-    
-    file.close();
-    
-    return result;
-}
 
 #endif

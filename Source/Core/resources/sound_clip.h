@@ -24,24 +24,26 @@ public:
         buffer = GameState::GetAudioMixer()->CreateBuffer();
         return buffer->Upload(data, len, srcSampleRate, srcBitPerSample, srcNChannels);
     }
+
+    bool Build(Resource* r)
+    {
+        r = r->Get("OGG");
+        if(!r) return false;
+        
+        int channels = 2;
+        int sampleRate = 48000;
+        short* decoded;
+        int len;
+        len = stb_vorbis_decode_memory(r->Data(), r->DataSize(), &channels, &sampleRate, &decoded);
+        if(len == 0) return false;
+        Upload((void*)decoded, len * sizeof(short) * channels, sampleRate, 16, channels);
+
+        return true;
+    }
     
     AudioBuffer* GetBuffer() { return buffer; }
 private:
     AudioBuffer* buffer;
 };
-
-template<>
-inline bool LoadAsset<SoundClip, OGG>(SoundClip* clip, const std::string& filename)
-{
-    int channels = 2;
-    int sampleRate = 48000;
-    short* decoded;
-    int len;
-    len = stb_vorbis_decode_filename(filename.c_str(), &channels, &sampleRate, &decoded);
-    if(len == 0)
-        return false;
-    clip->Upload((void*)decoded, len * sizeof(short) * channels, sampleRate, 16, channels);
-    return true;
-}
 
 #endif

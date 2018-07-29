@@ -44,6 +44,18 @@ public:
             _reloadGlBuffer();
         return glTexName; 
     }
+
+    bool Build(Resource* r)
+    {
+        stbi_set_flip_vertically_on_load(1);
+        int w, h, bpp;
+        unsigned char* data =
+            stbi_load_from_memory(r->Data(), r->DataSize(), &w, &h, &bpp, 4);
+        if(!data)
+            return false;
+        Data(data, w, h, 4);
+        return true;
+    }
 private:
     bool dirty;
     std::vector<unsigned char> _data;
@@ -77,32 +89,6 @@ private:
         dirty = false;
     }
 };
-
-template<>
-inline bool LoadAsset<Texture2D, JPG>(Texture2D* tex, const std::string& filename)
-{
-    stbi_set_flip_vertically_on_load(1);
-    int w, h, bpp;
-    unsigned char* data =
-        stbi_load(filename.c_str(), &w, &h, &bpp, 4);
-    if(!data)
-        return false;
-    tex->Data(data, w, h, 4);
-    return true;
-}
-
-template<>
-inline bool LoadAsset<Texture2D, PNG>(Texture2D* tex, const std::string& filename)
-{
-    stbi_set_flip_vertically_on_load(1);
-    int w, h, bpp;
-    unsigned char* data =
-        stbi_load(filename.c_str(), &w, &h, &bpp, 4);
-    if(!data)
-        return false;
-    tex->Data(data, w, h, 4);
-    return true;
-}
 
 class Texture2DReader : public asset<Texture2D>::reader
 {

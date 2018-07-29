@@ -19,6 +19,8 @@
 
 #include "../external/json.hpp"
 
+#include <asset.h>
+
 class Material
 {
 public:    
@@ -33,6 +35,31 @@ public:
     }
 
     std::string GetString(const std::string& key) { return strstr[key]; }
+
+    bool Build(Resource* r)
+    {
+        using json = nlohmann::json;
+        json j;
+        try
+        {
+            j = json::parse((char*)r->Data());
+        }
+        catch(std::exception& e)
+        {
+            std::cout << "Material json parse error: " << e.what() << std::endl;
+            return false;
+        }
+
+        for(json::iterator it = j.begin(); it != j.end(); ++it)
+        {
+            if(it.value().is_string())
+            {
+                Set(it.key(), it.value().get<std::string>());
+            }
+        }
+
+        return true;
+    }
 private:
     std::map<std::string, std::string> strstr;
 };

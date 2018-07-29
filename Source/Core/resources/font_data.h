@@ -144,17 +144,22 @@ public:
         }
         return &atlas->glyphs[charCode];
     }
+
+    bool Build(Resource* r)
+    {
+        if(!r) return false;
+        r = r->Get("Font");
+        if(!r) return false;
+        if(r->DataSize() == 0) return false;
+
+        LoadMemory((void*)r->Data(), r->DataSize());
+
+        return true;
+    }
 private:
     std::map<unsigned, GlyphAtlas> atlases;
     Texture2D texture;
     FontRasterizer rasterizer;
 };
-
-template<>
-inline bool LoadAsset<FontData, TTF>(FontData* fontData, const std::string& filename)
-{
-    fontData->Load(filename);
-    return true;
-}
 
 #endif

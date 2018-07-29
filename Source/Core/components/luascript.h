@@ -31,24 +31,18 @@ public:
     : source(source)
     {}
     std::string& Get() { return source; }
+
+    bool Build(Resource* r)
+    {
+        if(!r) return false;
+
+        *this = ScriptData(std::string((char*)r->Data(), (char*)r->Data() + r->DataSize()));
+
+        return true;
+    }
 private:
     std::string source;
 };
-
-template<>
-inline bool LoadAsset<ScriptData, LUA>(ScriptData* script, const std::string& filename)
-{
-    std::ifstream file(filename);
-    if(!file.is_open())
-        return false;
-    std::string source((std::istreambuf_iterator<char>(file)),
-                std::istreambuf_iterator<char>());
-
-    *script = ScriptData(source);
-    
-    file.close();
-    return true;
-}
 
 inline void LuaPrint(const std::string& msg)
 {

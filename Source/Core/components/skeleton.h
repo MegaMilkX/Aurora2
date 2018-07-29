@@ -71,62 +71,34 @@ struct SkeletonData
         }
         return 0;
     }
+
+    bool Build(Resource* r)
+    {
+        if(!r) return false;
+
+        for(auto kv : r->GetChildren())
+        {
+            Resource* res_name = kv.second->Get("Name");
+            Resource* res_transform = kv.second->Get("Transform");
+            Resource* res_parent = kv.second->Get("Parent");
+            Resource* res_is_bone = kv.second->Get("IsBone");
+            if(!res_name || !res_transform) return false;
+            std::string name((char*)res_name->Data(), (char*)res_name->Data() + res_name->DataSize());
+            std::string parent((char*)res_parent->Data(), (char*)res_parent->Data() + res_parent->DataSize());
+            gfxm::mat4 transform = *(gfxm::mat4*)res_transform->Data();
+            bool is_bone = *(bool*)res_is_bone->Data();
+            if(res_parent) parent = std::string((char*)res_parent->Data(), (char*)res_parent->Data() + res_parent->DataSize());
+            AddNode(name, transform, parent, is_bone);
+        }
+
+        Finalize();
+
+        return true;
+    }
+
     std::vector<BoneData*> rootBones;
     int boneCount;
 };
-
-template<>
-inline bool LoadAsset<SkeletonData, FBX>(SkeletonData* skel, const std::string& filename)
-{
-    ScopedTimer timer("SkeletonDataReaderFBX '" + filename + "'");
-
-    bool result = false; 
-    std::ifstream file(filename, std::ios::binary | std::ios::ate);
-    if(!file.is_open())
-        return result;
-    std::streamsize size = file.tellg();
-    file.seekg(0, std::ios::beg);
-    std::vector<char> buffer((unsigned int)size);
-    if(file.read(buffer.data(), size))
-    {
-        result = true;
-        
-        Au::Media::FBX::Reader fbxReader;
-        fbxReader.ReadMemory(buffer.data(), buffer.size());
-        fbxReader.ConvertCoordSys(Au::Media::FBX::OPENGL);
-        
-        for(unsigned i = 0; i < fbxReader.ModelCount(); ++i)
-        {
-            Au::Media::FBX::Model* fbxModel = 
-                fbxReader.GetModel(i);
-            Au::Media::FBX::Model* fbxParentModel = 
-                fbxReader.GetModelByUID(fbxModel->parentUID);
-            std::string parentName = fbxParentModel ? fbxParentModel->name : "";
-            skel->AddNode(fbxModel->name, *(gfxm::mat4*)&fbxModel->transform, parentName, fbxModel->IsBone());
-        }
-        
-        skel->Finalize();
-        
-        /*
-        std::vector<Au::Media::FBX::Bone> bones = 
-            fbxReader.GetBones();
-        
-        for(unsigned i = 0; i < bones.size(); ++i)
-        {
-            Au::Media::FBX::Bone* pb = GetBoneByUID(bones, bones[i].puid);
-            std::string parentName = pb ? pb->name : "";
-            skel->AddBone(bones[i].name, bones[i].transform, parentName);
-        }
-        skel->Finalize();
-        */
-        //fbxReader.GetHelpers();
-        //fbxReader.Print();
-    }
-    
-    file.close();
-    
-    return result;
-}
 
 class Skeleton;
 struct RenderUnitSkin
