@@ -39,11 +39,11 @@ bool MakeAnimation(ResourceCompiler* compiler, const char* name, Au::Media::FBX:
     }
 
     compiler->SubmitMem(
-        MKSTR(name << "." << ".FrameRate").c_str(),
+        MKSTR(name << ".FrameRate").c_str(),
         (void*)&fps, sizeof(double)
     );
     compiler->SubmitMem(
-        MKSTR(name << "." << ".FrameTime").c_str(),
+        MKSTR(name << ".FrameTime").c_str(),
         (void*)&timePerFrame, sizeof(double)
     );
 
@@ -60,6 +60,11 @@ bool MakeAnimation(ResourceCompiler* compiler, const char* name, Au::Media::FBX:
             }
         }
         std::replace( animName.begin(), animName.end(), '.', ' ');
+
+        compiler->SubmitMem(
+            MKSTR(name << ".Track" << "." << animName << ".Length").c_str(),
+            (void*)&length, sizeof(length)
+        );
 
         auto nodes = stacks[i].GetAnimatedNodes();
         for(unsigned j = 0; j < nodes.size(); ++j)
@@ -109,45 +114,45 @@ bool MakeAnimation(ResourceCompiler* compiler, const char* name, Au::Media::FBX:
             }
 
             compiler->SubmitMem(
-                MKSTR(name << ".Track" << "." << animName << "." << nodeName << ".Pos.X").c_str(),
+                MKSTR(name << ".Track" << "." << animName << ".Node." << nodeName << ".Pos.X").c_str(),
                 (void*)frames_pos_x.data(), sizeof(keyframe) * frames_pos_x.size()
             );
             compiler->SubmitMem(
-                MKSTR(name << ".Track" << "." << animName << "."  << nodeName << ".Pos.Y").c_str(),
+                MKSTR(name << ".Track" << "." << animName << ".Node."  << nodeName << ".Pos.Y").c_str(),
                 (void*)frames_pos_y.data(), sizeof(keyframe) * frames_pos_y.size()
             );
             compiler->SubmitMem(
-                MKSTR(name << ".Track" << "." << animName << "."  << nodeName << ".Pos.Z").c_str(),
+                MKSTR(name << ".Track" << "." << animName << ".Node."  << nodeName << ".Pos.Z").c_str(),
                 (void*)frames_pos_z.data(), sizeof(keyframe) * frames_pos_z.size()
             );
 
             compiler->SubmitMem(
-                MKSTR(name << ".Track" << "." << animName << "." << nodeName << ".Rot.X").c_str(),
+                MKSTR(name << ".Track" << "." << animName << ".Node." << nodeName << ".Rot.X").c_str(),
                 (void*)frames_rot_x.data(), sizeof(keyframe) * frames_rot_x.size()
             );
             compiler->SubmitMem(
-                MKSTR(name << ".Track" << "." << animName << "."  << nodeName << ".Rot.Y").c_str(),
+                MKSTR(name << ".Track" << "." << animName << ".Node."  << nodeName << ".Rot.Y").c_str(),
                 (void*)frames_rot_y.data(), sizeof(keyframe) * frames_rot_y.size()
             );
             compiler->SubmitMem(
-                MKSTR(name << ".Track" << "." << animName << "."  << nodeName << ".Rot.Z").c_str(),
+                MKSTR(name << ".Track" << "." << animName << ".Node."  << nodeName << ".Rot.Z").c_str(),
                 (void*)frames_rot_z.data(), sizeof(keyframe) * frames_rot_z.size()
             );
             compiler->SubmitMem(
-                MKSTR(name << ".Track" << "." << animName << "."  << nodeName << ".Rot.W").c_str(),
+                MKSTR(name << ".Track" << "." << animName << ".Node."  << nodeName << ".Rot.W").c_str(),
                 (void*)frames_rot_w.data(), sizeof(keyframe) * frames_rot_w.size()
             );
 
             compiler->SubmitMem(
-                MKSTR(name << ".Track" << "." << animName << "." << nodeName << ".Scl.X").c_str(),
+                MKSTR(name << ".Track" << "." << animName << ".Node." << nodeName << ".Scl.X").c_str(),
                 (void*)frames_scl_x.data(), sizeof(keyframe) * frames_scl_x.size()
             );
             compiler->SubmitMem(
-                MKSTR(name << ".Track" << "." << animName << "."  << nodeName << ".Scl.Y").c_str(),
+                MKSTR(name << ".Track" << "." << animName << ".Node."  << nodeName << ".Scl.Y").c_str(),
                 (void*)frames_scl_y.data(), sizeof(keyframe) * frames_scl_y.size()
             );
             compiler->SubmitMem(
-                MKSTR(name << ".Track" << "." << animName << "."  << nodeName << ".Scl.Z").c_str(),
+                MKSTR(name << ".Track" << "." << animName << ".Node."  << nodeName << ".Scl.Z").c_str(),
                 (void*)frames_scl_z.data(), sizeof(keyframe) * frames_scl_z.size()
             );
         }
@@ -168,10 +173,14 @@ bool MakeSkeleton(ResourceCompiler* compiler, const char* name, Au::Media::FBX::
         std::string boneName = fbxModel->name;
         std::string boneNameOrig = boneName;
         std::replace( boneName.begin(), boneName.end(), '.', ' ');
+        std::replace( boneNameOrig.begin(), boneNameOrig.end(), '.', ' ');
+        std::replace( parentName.begin(), parentName.end(), '.', ' ');
+        bool is_bone = fbxModel->IsBone();
 
         compiler->SubmitMem(MKSTR(name << "." << boneName << ".Name").c_str(), (void*)boneNameOrig.data(), boneNameOrig.size());
         compiler->SubmitMem(MKSTR(name << "." << boneName << ".Transform").c_str(), (void*)&fbxModel->transform, sizeof(float) * 4 * 4);
         compiler->SubmitMem(MKSTR(name << "." << boneName << ".Parent").c_str(), (void*)parentName.data(), parentName.size());
+        compiler->SubmitMem(MKSTR(name << "." << boneName << ".IsBone").c_str(), (void*)&is_bone, sizeof(is_bone));
     }
     return true;
 }
