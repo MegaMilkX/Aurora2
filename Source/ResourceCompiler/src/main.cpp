@@ -89,6 +89,5 @@ int main(int argc, char** argv)
         LOG_ERR("Failed to make resource archives");
     }
     
-    std::getchar();
     return 0;
 }
