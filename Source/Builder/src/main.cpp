@@ -141,9 +141,10 @@ bool build(const project_config& proj_conf, const config& conf)
     _putenv_s("OUTDIR", (proj_conf.root_dir + "\\" "intermediate" "\\").c_str());
     _putenv_s("SOURCE_DIRS", source_path.c_str());
     
-    if(system(("call \"" + get_module_dir() + "\\build\"").c_str()) != 0)
+    if(system(("cd \"" + proj_conf.root_dir + "\" && call \"" + get_module_dir() + "\\build\"").c_str()) != 0)
     {
-        std::cout << "Failed to execute vcvarsall script" << std::endl;
+        std::cout << "Failed to build source" << std::endl;
+        return false;
     }
 
     copy_file(
@@ -177,10 +178,24 @@ int main(int argc, char** argv)
     file.close();
     */
     std::cout << "Building " << proj_conf.project_name << std::endl;
-    std::cout << get_module_dir() << std::endl;    
-
-    build(proj_conf, conf);
+    std::cout << get_module_dir() << std::endl;   
     
-    std::getchar();
+    if(!build(proj_conf, conf))
+    {
+        return 1;
+    }
+
+    if(system(("cd \"" + proj_conf.root_dir + "\" && call \"" + cut_dirpath(get_module_dir()) + "\\ResourceCompiler\\resource_compiler\" \"" + project_filename + "\"").c_str()) != 0)
+    {
+        std::cout << "Failed to build resources" << std::endl;
+        return 1;
+    }
+
+    if(system(("cd \"" + proj_conf.root_dir + "\\" + proj_conf.build_path + "\" && call \"" + proj_conf.root_dir + "\\" + proj_conf.build_path + "\\" + proj_conf.project_name + "\"").c_str()) != 0)
+    {
+        std::cout << "Failed to launch built exe" << std::endl;
+        return 1;
+    }
+
     return 0;
 }
