@@ -5,6 +5,8 @@
 #include <util/load_asset.h>
 #include "resources/resource.h"
 
+#include "resource_registry.h"
+
 template<typename T>
 class asset
 {
@@ -27,15 +29,7 @@ public:
     {}
     static void add_search_path(const std::string& path)
     { searchPaths.push_back(path); }
-    /*
-    template<typename READER>
-    static void add_reader(const std::string& extension)
-    {
-        READER* rdr = new READER();
-        rdr->extension = extension;
-        readers.push_back(rdr);
-    }
-    */
+
     static void add_reader(const std::string& extension, std::function<bool(T*, const std::string&)> func)
     {
         extensions.push_back(extension);
