@@ -220,19 +220,6 @@ private:
         static std::map<std::string, FuncGetComponent_t> compAllocFuncs;
         static std::map<typeindex, std::string> compTypeIndexToName;
     };
-    Component* GetComponentByName(const std::string& name)
-    {
-        std::map<std::string, FuncGetComponent_t>::iterator it =
-            headerStaticWrap<SceneObject>::compAllocFuncs.find(name);
-        if(it == headerStaticWrap<SceneObject>::compAllocFuncs.end())
-        {
-            return 0;
-        }
-        
-        FuncGetComponent_t get_component = 
-            it->second;
-        return (this->*get_component)();
-    }
     
     std::string name;
     SceneObject* parentObject;
