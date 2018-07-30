@@ -212,8 +212,6 @@ public:
         if(!r_fps || !r_tpf || !r_tracks || !r_bind_poses) return false;
         FrameRate((float)*(double*)r_fps->Data());
         double timePerFrame = *(double*)r_tpf->Data();
-        LOG("FPS: " << *(double*)r_fps->Data());
-        LOG("TPF: " << *(double*)r_tpf->Data());
 
         AnimPose& pose = GetBindPose();
 
