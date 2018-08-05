@@ -29,6 +29,8 @@ public:
         T* Get() { return GetObject()->GetComponent<T>(); }
         template<typename T>
         T* RootGet() { return Object()->Root()->GetComponent<T>(); }
+
+        SceneObject* CreateObject() { return GetObject()->CreateObject(); }
         
         virtual void OnInit() {}
         virtual std::string Serialize() { return "{}"; }
@@ -96,9 +98,7 @@ public:
         if (!c)
         {
             c = new T();
-            c->object = this;
-            components.insert(std::make_pair(TypeInfo<T>::Index(), c));
-            c->OnInit();
+            AddComponent(c, TypeInfo<T>::Index());
             return c;
         }
         else
@@ -112,9 +112,7 @@ public:
         if(!c)
         {
             c = (Component*)meta.Create();
-            c->object = this;
-            components.insert(std::make_pair(type, c));
-            c->OnInit();
+            AddComponent(c, type);
             return c;
         }
         else
@@ -212,6 +210,13 @@ public:
         
     }
 private:
+    void AddComponent(Component* c, typeindex t)
+    {
+        c->object = this;
+        components.insert(std::make_pair(t, c));
+        c->OnInit();
+    }
+
     template<typename T>
     Component* GetComponentBase() { return GetComponent<T>(); }
     typedef Component*(SceneObject::*FuncGetComponent_t)();
