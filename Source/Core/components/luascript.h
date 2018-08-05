@@ -152,8 +152,6 @@ public:
         
         _state.Bind<Renderer, void, Camera*>(&Renderer::CurrentCamera, "SetCurrentCamera");
         _state.Bind<Renderer, Camera*>(&Renderer::CurrentCamera, "GetCurrentCamera");
-        _state.Bind(&Renderer::AmbientColor, "AmbientColor");
-        _state.Bind(&Renderer::RimColor, "RimColor");
         _state.Bind<Renderer, SceneObject*>(&Renderer::GetObject, "GetObject");
         
         _state.Bind(&Model::mesh, "mesh");

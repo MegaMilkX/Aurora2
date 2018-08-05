@@ -32,6 +32,7 @@ struct project_config
     std::string project_name;
     std::string source_path;
     std::string default_state;
+    json bindings;
 
     std::string root_dir;
 };
@@ -61,8 +62,31 @@ bool load_config(config& conf)
     return true;
 }
 
+bool load_bindings(const std::string& path, json& j)
+{
+    std::ifstream json_file(path);
+    try
+    {
+        json_file >> j;
+    }
+    catch(std::exception& ex)
+    {
+        std::cout << (ex.what()) << std::endl;
+        return false;
+    }
+    if(!j.is_object())
+    {
+        std::cout << ("Bindings json is not an object") << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
 bool load_project_json(const std::string& path, project_config& conf)
 {
+    conf.root_dir = cut_dirpath(path);
+
     std::ifstream json_file(path);
     json j;
     try
@@ -79,13 +103,18 @@ bool load_project_json(const std::string& path, project_config& conf)
         std::cout << "project config json is not object";
         return false;
     }
+
+    json bindings = j["bindings"];
+    if(bindings.is_string())
+        load_bindings(conf.root_dir + "\\" + bindings.get<std::string>(), bindings);
+    if(bindings.is_object())
+        conf.bindings = bindings;
     
     conf.build_path = get_string(j["build_path"], "build");
     conf.project_name = get_string(j["project_name"], "UntitledProject");
     conf.source_path = get_string(j["source_path"], "");
     conf.default_state = get_string(j["default_state"], "");
 
-    conf.root_dir = cut_dirpath(path);
     return true;
 }
 
@@ -191,6 +220,22 @@ int main(int argc, char** argv)
         return 1;
     }
 
+    if(proj_conf.bindings.is_object())
+    {
+        std::ofstream f(proj_conf.root_dir + "\\" + proj_conf.build_path + "\\bindings.json");
+        std::cout << (proj_conf.root_dir + "\\" + proj_conf.build_path + "\\bindings.json") << std::endl;
+        if(f.is_open())
+        {
+            f << proj_conf.bindings.dump(4);
+        }
+        else
+        {
+            std::cout << "Failed to open bindings.json" << std::endl;
+        }
+        f.close();
+    }
+
+    // Launch game
     if(system(("cd \"" + proj_conf.root_dir + "\\" + proj_conf.build_path + "\" && call \"" + proj_conf.root_dir + "\\" + proj_conf.build_path + "\\" + proj_conf.project_name + "\"").c_str()) != 0)
     {
         std::cout << "Failed to launch built exe" << std::endl;

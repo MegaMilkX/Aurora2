@@ -15,6 +15,8 @@
 
 #include <animation.h>
 
+#include <updatable.h>
+
 class AnimJoint : public SceneObject::Component
 {
 public:
@@ -32,7 +34,7 @@ private:
     std::map<std::string, AnimNode> anims;
 };
 
-class Animator : public SceneObject::Component
+class Animator : public Updatable
 {
 public:
     Animator()
@@ -266,13 +268,19 @@ public:
         Object()->Root()->GetComponent<Animator>()->_removeChild(this);
     }
     
-    virtual void OnInit()
+    virtual void OnStart()
     {
         if(Object()->IsRoot())
         {
             return;
         }
         Object()->Root()->GetComponent<Animator>()->_addChild(this);
+    }
+
+    virtual void OnUpdate()
+    {
+        Tick(GameState::DeltaTime());
+        Finalize();
     }
 private:
     void _addChild(Animator* anim)

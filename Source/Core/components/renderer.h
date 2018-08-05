@@ -11,6 +11,8 @@
 
 #include "../lib/task_graph.h"
 
+#include <environment.h>
+
 #undef GetObject
 
 struct FrameCommon
@@ -36,14 +38,6 @@ public:
     
     void CurrentCamera(Camera* cam) { _currentCamera = cam; }
     Camera* CurrentCamera() { return _currentCamera; }
-    
-    void AmbientColor(float r, float g, float b)
-    { 
-        ambientColor = gfxm::vec3(r, g, b);
-        glClearColor (r, g, b, 1.0f);        
-    }
-    void RimColor(float r, float g, float b)
-    { rimColor = gfxm::vec3(r, g, b); }
         
     virtual void OnInit();
 private:
@@ -51,8 +45,7 @@ private:
     
     Camera* _currentCamera;
     
-    gfxm::vec3 ambientColor;
-    gfxm::vec3 rimColor;
+    Environment* env;
 };
 COMPONENT(Renderer)
 
