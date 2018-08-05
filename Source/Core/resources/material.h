@@ -42,7 +42,7 @@ public:
         json j;
         try
         {
-            j = json::parse((char*)r->Data());
+            j = json::parse((char*)r->Data(), (char*)r->Data() + r->DataSize());
         }
         catch(std::exception& e)
         {
