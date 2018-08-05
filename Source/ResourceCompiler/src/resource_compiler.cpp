@@ -9,6 +9,8 @@ bool ResourceCompilerImpl::Init()
 
 bool ResourceCompilerImpl::Make(const project_config& conf)
 {
+    project = conf;
+
     if(!DeleteExistingArchives(conf))
     {
         LOG_ERR("Failed to delete existing resource archives");
@@ -52,6 +54,20 @@ bool ResourceCompilerImpl::SubmitFile(const char* name, const char* filename)
         LOG_ERR("Failed to SubmitFile() " << name << ", filename: " << filename);
         return false;
     }
+    return true;
+}
+
+bool ResourceCompilerImpl::SubmitCopy(const char* filename, const char* filename_relative)
+{
+    std::string src = filename;
+    src = src.substr(src.find_last_of("\\/"));
+
+    std::string to = project.root_dir + "\\" + project.build_path + "\\" + filename_relative;
+    if(CopyFileA(filename, to.c_str(), FALSE) != TRUE)
+    {
+        return false;
+    }
+
     return true;
 }
 

@@ -6,6 +6,7 @@ class ResourceCompiler
 public:
     virtual bool SubmitMem(const char* name, void* data, size_t len) = 0;
     virtual bool SubmitFile(const char* name, const char* filename) = 0;
+    virtual bool SubmitCopy(const char* filename, const char* filename_relative) = 0;
 };
 
 extern "C"{

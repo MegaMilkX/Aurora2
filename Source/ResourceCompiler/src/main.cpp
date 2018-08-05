@@ -72,16 +72,17 @@ int main(int argc, char** argv)
         LOG("Usage: resource_compiler [project config path]");
         return 0;
     }
-    if(!resource_compiler.Init())
-    {
-        LOG("Failed to init");
-        return 1;
-    }
-
+    
     project_config pconf;
     if(!load_project_json(argv[1], pconf))
     {
         LOG_ERR("Failed to load project config");
+    }
+
+    if(!resource_compiler.Init())
+    {
+        LOG("Failed to init");
+        return 1;
     }
 
     if(!resource_compiler.Make(pconf))

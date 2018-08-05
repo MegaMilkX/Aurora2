@@ -70,6 +70,7 @@ public:
 private:
     virtual bool SubmitMem(const char* name, void* data, size_t len);
     virtual bool SubmitFile(const char* name, const char* filename);
+    virtual bool SubmitCopy(const char* filename, const char* dir_rel);
 
     void LoadPlugins();
     bool DeleteExistingArchives(const project_config& conf);
@@ -77,6 +78,7 @@ private:
 
     mz_zip_archive zarch;
     std::vector<Plugin*> plugins;
+    project_config project;
 };
 
 #endif
