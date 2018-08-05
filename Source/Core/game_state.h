@@ -9,6 +9,8 @@
 #include <aurora/window.h>
 #include <aurora/gfx.h>
 #include <aurora/input.h>
+#include "input.h"
+#include "input_keyboard_mouse_win32.h"
 
 #include <aurora/timer.h>
 
@@ -28,6 +30,11 @@
 #include <common.h>
 
 #include <util/frame_graph.h>
+
+#include <renderer.h>
+#include <updatable.h>
+
+#include "debug_draw.h"
 
 struct eKeyDown{
     Au::Input::KEYCODE key;
@@ -61,90 +68,7 @@ inline void FramebufferResizeCallback(GLFWwindow* win, int width, int height)
 
 class GameState
 {
-public:
-    class MouseHandler : public Au::Input::MouseHandler
-    {
-    public:
-        void KeyUp(Au::Input::KEYCODE key) { 
-            ImGuiIO& io = ImGui::GetIO();            
-            if(key == Au::Input::KEY_LBUTTON)
-            {
-                io.MouseDown[0] = false;
-            }
-            if(key == Au::Input::KEY_RBUTTON)
-            {
-                io.MouseDown[1] = false;
-            }
-
-            event_post(eMouseUp{key});
-            PostMouseKeyUp(key); 
-        }
-        void KeyDown(Au::Input::KEYCODE key) { 
-            ImGuiIO& io = ImGui::GetIO();            
-            if(key == Au::Input::KEY_LBUTTON)
-            {
-                io.MouseDown[0] = true;
-            }
-            if(key == Au::Input::KEY_RBUTTON)
-            {
-                io.MouseDown[1] = true;
-            }
-
-            POINT pt;
-            GetCursorPos(&pt);
-            ScreenToClient(hWnd, &pt);
-            event_post(eMouseDown{key, pt.x, pt.y});
-            PostMouseKeyDown(key); 
-        }
-        void Move(int x, int y) { 
-            POINT pt;
-            GetCursorPos(&pt);
-            ScreenToClient(hWnd, &pt);
-
-            ImGuiIO& io = ImGui::GetIO();
-            io.MousePos = ImVec2((float)pt.x, (float)pt.y);
-
-            event_post(eMouseMove{x, y, pt.x, pt.y});
-            PostMouseMove(x, y); 
-        }
-        void Wheel(short value) { 
-            event_post(eMouseWheel{value});
-            PostMouseWheel(value); 
-        }
-    };
-
-    class KeyboardHandler : public Au::Input::KeyboardHandler
-    {
-    public:
-        void KeyUp(Au::Input::KEYCODE key) { 
-            ImGuiIO& io = ImGui::GetIO();
-            if(key < 512) io.KeysDown[key] = false;
-            if(io.WantCaptureKeyboard)
-                return;
-
-            event_post(eKeyUp{key});
-            PostKeyUp(key); 
-        }
-        void KeyDown(Au::Input::KEYCODE key) { 
-            ImGuiIO& io = ImGui::GetIO();
-            if(key < 512) io.KeysDown[key] = true;
-            if(io.WantCaptureKeyboard)
-                return;
-
-            event_post(eKeyDown{key});
-            PostKeyDown(key); 
-        }
-        void OnChar(int charCode) {
-            ImGuiIO& io = ImGui::GetIO();
-            io.AddInputCharacter(charCode);
-            if(io.WantCaptureKeyboard)
-                return;
-             
-            event_post(eChar{charCode});
-            PostOnChar(charCode);
-        }
-    };
-    
+public:    
     virtual ~GameState(){}
 
     virtual void OnInit() {};
@@ -152,30 +76,9 @@ public:
     virtual void OnCleanup() {};
     virtual void OnUpdate() {};
     virtual void OnRender() {};
-    
-    virtual void MouseKeyUp(Au::Input::KEYCODE key) {}
-    virtual void MouseKeyDown(Au::Input::KEYCODE key) {}
-    virtual void MouseMove(int x, int y) {}
-    virtual void MouseWheel(short value) {}
-    virtual void KeyUp(Au::Input::KEYCODE key) {}
-    virtual void KeyDown(Au::Input::KEYCODE key) {}
-    virtual void OnChar(int charCode) {}
-    
-    template<typename T>
-    static void Push()
-    {
-        GameState* state = new T();
-        state->OnInit();
-        stateStack.push(state);
-    }
-    
-    static void Pop()
-    {
-        if(stateStack.empty())
-            return;
-        delete stateStack.top();
-        stateStack.pop();
-    }
+
+    static void SetScene(SceneObject* s) { scene = s; }
+    static SceneObject* GetScene() { return scene; }
 
     static void Init()
     {
@@ -189,6 +92,7 @@ public:
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+        
         window = glfwCreateWindow(1280, 720, "qwe", NULL, NULL);
         if(!window)
         {
@@ -200,10 +104,16 @@ public:
         Common.frameSize.x = 1280;
         Common.frameSize.y = 720;
         glfwMakeContextCurrent(window);
-        glfwSwapInterval(0);
+        glfwSwapInterval(1);
 
         WGLEXTLoadFunctions();
         GLEXTLoadFunctions();
+
+        LOG("GL_VENDOR    : " << glGetString(GL_VENDOR));
+        LOG("GL_RENDERER  : " << glGetString(GL_RENDERER));
+        LOG("GL_VERSION   : " << glGetString(GL_VERSION));
+        LOG("GLSL_VERSION : " << glGetString(GL_SHADING_LANGUAGE_VERSION));
+
         glDisable(GL_CULL_FACE);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_BLEND);
@@ -211,10 +121,15 @@ public:
         
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        audioMixer.Init(48000, 16);      
+        DebugDraw::Init();
 
-        mouseHandler.Init(glfwGetWin32Window(window));
-        keyboardHandler.Init(glfwGetWin32Window(window));
+        audioMixer.Init(48000, 16);
+
+        keyboardWin32 = new InputKeyboardMouseWin32(window);
+        //mouseWin32 = new InputMouseWin32(window);
+        input.AddDevice(keyboardWin32);
+        input.Init();
+
         deltaTime = 0.0f;
 
         ImGuiInit();
@@ -229,6 +144,9 @@ public:
         timer.Start();
 
         result = glfwWindowShouldClose(window) == 0;
+        glfwPollEvents();
+
+        input.Update();
 
         if(result)
         {
@@ -243,7 +161,7 @@ public:
             );
             Job* job_renderState = frameGraph.Add(
                 &RenderState, 
-                0, 
+                0,
                 job_updateState, 
                 AFFINITY_MAIN_THREAD
             );
@@ -261,6 +179,9 @@ public:
         ImGuiCleanup();
 
         audioMixer.Cleanup();
+
+        DebugDraw::Cleanup();
+
         glfwDestroyWindow(window);
         glfwTerminate();
     }
@@ -270,15 +191,8 @@ public:
     
     static FrameGraph* GetFrameGraph() { return &frameGraph; }
     static AudioMixer3D* GetAudioMixer() { return &audioMixer; }
-    static MouseHandler* GetMouseHandler() { return &mouseHandler; }
+    static Input* GetInput() { return &input; }
     
-    static void PostMouseKeyUp(Au::Input::KEYCODE key) { if(!stateStack.empty()) stateStack.top()->MouseKeyUp(key); }
-    static void PostMouseKeyDown(Au::Input::KEYCODE key) { if(!stateStack.empty()) stateStack.top()->MouseKeyDown(key); }
-    static void PostMouseMove(int x, int y) { if(!stateStack.empty()) stateStack.top()->MouseMove(x, y); }
-    static void PostMouseWheel(short value) { if(!stateStack.empty()) stateStack.top()->MouseWheel(value); }
-    static void PostKeyUp(Au::Input::KEYCODE key) { if(!stateStack.empty()) stateStack.top()->KeyUp(key); }
-    static void PostKeyDown(Au::Input::KEYCODE key) { if(!stateStack.empty()) stateStack.top()->KeyDown(key); }
-    static void PostOnChar(int charCode) { if(!stateStack.empty()) stateStack.top()->OnChar(charCode); }
 private:
     static void FrameStart(Job&)
     {
@@ -294,19 +208,20 @@ private:
 
     static void UpdateState(Job&)
     {
-        if(!stateStack.empty())
-        {
-            stateStack.top()->OnUpdate();
-        }
+        if(scene) scene->Get<UpdatableController>()->Update();
     }
 
     static void RenderState(Job&)
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        if(!stateStack.empty())
-        {
-            stateStack.top()->OnRender();
-        }
+        
+        if(scene) scene->Get<Renderer>()->Render();
+
+        glDisable(GL_CULL_FACE);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_BLEND);
+        glDisable(GL_DEPTH_TEST);
+
         bool consoleOpen = false;
         bool profOverlay = true;
         //dbgConsole.Draw("Dev console", &consoleOpen);
@@ -314,8 +229,9 @@ private:
         //ShowFpsPlot((int)(1.0f / deltaTime));
         ImGuiDraw();
         glfwSwapBuffers(window);
-        glfwPollEvents();
     }
+
+    static SceneObject* scene;
 
     static FrameGraph frameGraph;
 
@@ -323,13 +239,12 @@ private:
     static float deltaTime;
     static Au::Timer timer;
 
-    static std::stack<GameState*> stateStack;
-
     static GLFWwindow* window;
     //static Au::Window* window;
     static AudioMixer3D audioMixer;
-    static MouseHandler mouseHandler;
-    static KeyboardHandler keyboardHandler;
+
+    static InputKeyboardMouseWin32* keyboardWin32;
+    static Input input;
 };
 
 #endif
