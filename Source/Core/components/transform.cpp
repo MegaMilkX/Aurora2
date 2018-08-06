@@ -323,8 +323,3 @@ gfxm::mat4 Transform::GetTransform()
     }
     return _transform;
 }
-
-void Transform::OnInit()
-{
-    //GetObject()->GetComponent<DebugTransformIcon>();
-}

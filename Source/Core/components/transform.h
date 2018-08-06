@@ -6,6 +6,8 @@
 #include "../scene_object.h"
 #include <component.h>
 
+#undef GetObject
+
 class Transform : public SceneObject::Component
 {
 public:
@@ -121,7 +123,6 @@ public:
     }
     Transform* ParentTransform() { return _parent; }
 
-    virtual void OnInit();
     virtual std::string Serialize() 
     {
         using json = nlohmann::json;
