@@ -53,6 +53,8 @@ class ConvexGhostCollider;
 class KinematicObject;
 class Collision : public SceneObject::Component
 {
+    CLONEABLE(Collision)
+    RTTR_ENABLE(SceneObject::Component)
 public:
     struct RayHit
     {

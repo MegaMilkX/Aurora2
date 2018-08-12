@@ -10,6 +10,8 @@
 
 class RigidBody : public SceneObject::Component
 {
+    CLONEABLE(RigidBody)
+    RTTR_ENABLE(SceneObject::Component)
 friend Dynamics;
 public:
     RigidBody(){}

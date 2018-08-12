@@ -13,6 +13,8 @@
 
 class SkinMesh : public SceneObject::Component
 {
+    CLONEABLE(SkinMesh)
+    RTTR_ENABLE(SceneObject::Component)
 public:
     SkinMesh()
     : meshData(0), material(0)
@@ -39,6 +41,5 @@ private:
     asset<Mesh> meshData;
     asset<Material> material;
 };
-COMPONENT(SkinMesh)
 
 #endif

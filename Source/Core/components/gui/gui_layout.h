@@ -8,6 +8,7 @@
 
 class GuiLayout : public SceneObject::Component
 {
+    RTTR_ENABLE(SceneObject::Component)
 public:
     enum DOCKING
     {

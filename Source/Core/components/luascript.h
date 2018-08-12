@@ -55,6 +55,8 @@ inline gfxm::vec3 Vec3MultScalar(const gfxm::vec3& v, float s) { return v * s; }
 
 class LuaScript : public SceneObject::Component
 {
+    CLONEABLE(LuaScript)
+    RTTR_ENABLE(SceneObject::Component)
 public:
     LuaScript()
     : _next(0) {}
@@ -172,24 +174,6 @@ public:
         _state.Bind(&RigidBody::SetAngularFactor, "SetAngularFactor");
         _state.Bind(&RigidBody::LookAt, "LookAt");
     }
-    virtual std::string Serialize() 
-    {
-        using json = nlohmann::json;
-        json j = json::object();
-        j["Script"] = scriptName;
-        return j.dump(); 
-    }
-    virtual void Deserialize(const std::string& data)
-    {
-        using json = nlohmann::json;
-        json j = json::parse(data);
-        if(j.is_null())
-            return;
-        if(j["Script"].is_string())
-        {
-            SetScript(j["Script"].get<std::string>());
-        }
-    }
     
     template<typename... Args>
     void Relay(const std::string& func, Args... args)
@@ -224,6 +208,5 @@ private:
     Au::Lua _state;
     LuaScript* _next;
 };
-COMPONENT(LuaScript)
 
 #endif

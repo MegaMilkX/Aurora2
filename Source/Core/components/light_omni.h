@@ -9,6 +9,8 @@
 
 class LightDirect : public SceneObject::Component
 {
+    CLONEABLE(LightDirect)
+    RTTR_ENABLE(SceneObject::Component)
 public:
     ~LightDirect()
     {
@@ -16,57 +18,45 @@ public:
     
     void Color(float r, float g, float b)
     { color = gfxm::vec3(r, g, b); }
-    
+    void Color(gfxm::vec3 col)
+    { color = col; }
     gfxm::vec3 Color()
     { return color; }
     
     void Direction(float x, float y, float z)
     { direction = gfxm::vec3(x, y, z); }
+    void Direction(gfxm::vec3 dir)
+    { direction = dir; }
     gfxm::vec3 Direction()
     { return direction; }
     
     void OnInit()
     {
     }
-    virtual std::string Serialize() 
-    { 
-        using json = nlohmann::json;
-        json j = json::object();
-        j["Color"] = {color.x, color.y, color.z};
-        j["Direction"] = {direction.x, direction.y, direction.z};
-        return j.dump(); 
-    }
-    virtual void Deserialize(const std::string& data)
-    {
-        using json = nlohmann::json;
-        json j = json::parse(data);
-        if(j.is_null())
-            return;
-        if(j["Color"].is_array() && j["Color"].size() == 3)
-        {
-            Color(
-                j["Color"][0].get<float>(),
-                j["Color"][1].get<float>(),
-                j["Color"][2].get<float>()
-            );
-        }
-        if(j["Direction"].is_array() && j["Direction"].size() == 3)
-        {
-            Direction(
-                j["Direction"][0].get<float>(),
-                j["Direction"][1].get<float>(),
-                j["Direction"][2].get<float>()
-            );
-        }
-    }
 private:
     gfxm::vec3 color;
     gfxm::vec3 direction;
 };
-COMPONENT(LightDirect)
+STATIC_RUN(LightDirect)
+{
+    rttr::registration::class_<LightDirect>("LightDirect")
+        .constructor<>()(rttr::policy::ctor::as_raw_ptr)
+        .property(
+            "color",
+            rttr::select_overload<gfxm::vec3(void)>(&LightDirect::Color),
+            rttr::select_overload<void(gfxm::vec3)>(&LightDirect::Color)
+        )
+        .property(
+            "direction",
+            rttr::select_overload<gfxm::vec3(void)>(&LightDirect::Direction),
+            rttr::select_overload<void(gfxm::vec3)>(&LightDirect::Direction)
+        );
+}
 
 class LightOmni : public SceneObject::Component
 {
+    CLONEABLE(LightOmni)
+    RTTR_ENABLE(SceneObject::Component)
 public:
     ~LightOmni()
     {
@@ -76,9 +66,17 @@ public:
     {
         color = gfxm::vec3(r, g, b);
     }
+    void Color(gfxm::vec3 col)
+    {
+        color = col;
+    }
     void Intensity(float i)
     {
         intensity = i;
+    }
+    float Intensity()
+    {
+        return intensity;
     }
     
     gfxm::vec3 Color()
@@ -87,38 +85,24 @@ public:
     void OnInit()
     {
     }
-    
-    virtual std::string Serialize() 
-    { 
-        using json = nlohmann::json;
-        json j = json::object();
-        j["Color"] = {color.x, color.y, color.z};
-        j["Intensity"] = intensity;
-        return j.dump(); 
-    }
-    virtual void Deserialize(const std::string& data)
-    {
-        using json = nlohmann::json;
-        json j = json::parse(data);
-        if(j.is_null())
-            return;
-        if(j["Color"].is_array() && j["Color"].size() == 3)
-        {
-            Color(
-                j["Color"][0].get<float>(),
-                j["Color"][1].get<float>(),
-                j["Color"][2].get<float>()
-            );
-        }
-        if(j["Intensity"].is_number())
-        {
-            Intensity(j["Intensity"].get<float>());
-        }
-    }
 private:
     gfxm::vec3 color;
     float intensity;
 };
-COMPONENT(LightOmni)
+STATIC_RUN(LightOmni)
+{
+    rttr::registration::class_<LightOmni>("LightOmni")
+        .constructor<>()(rttr::policy::ctor::as_raw_ptr)
+        .property(
+            "color", 
+            rttr::select_overload<gfxm::vec3(void)>(&LightOmni::Color),
+            rttr::select_overload<void(gfxm::vec3)>(&LightOmni::Color)
+        )
+        .property(
+            "intensity", 
+            rttr::select_overload<float(void)>(&LightOmni::Intensity),
+            rttr::select_overload<void(float)>(&LightOmni::Intensity)
+        );
+}
 
 #endif

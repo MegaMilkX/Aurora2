@@ -11,6 +11,7 @@
 
 class GuiListenerBase : public SceneObject::Component
 {
+    RTTR_ENABLE(SceneObject::Component)
 public:
     GuiListenerBase()
     : bbox(0, 0, 100, 100), 

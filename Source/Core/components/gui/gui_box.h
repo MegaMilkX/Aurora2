@@ -7,6 +7,7 @@
 
 class GuiBox : public SceneObject::Component
 {
+    RTTR_ENABLE(SceneObject::Component)
 public:
     void OnResize(const GuiLayout* layout)
     {

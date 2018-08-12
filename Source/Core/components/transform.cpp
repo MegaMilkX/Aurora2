@@ -282,7 +282,7 @@ gfxm::quat Transform::GetParentRotation()
         return gfxm::quat(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
-void Transform::SetTransform(gfxm::mat4& t)
+void Transform::SetTransform(gfxm::mat4 t)
 {
     _position = gfxm::vec3(t[3].x, t[3].y, t[3].z);
     gfxm::mat3 rotMat = gfxm::to_orient_mat3(t);
@@ -294,7 +294,7 @@ void Transform::SetTransform(gfxm::mat4& t)
     Dirty();
 }
 
-gfxm::mat4 Transform::GetLocalTransform()
+gfxm::mat4 Transform::GetLocalTransform() const
 {
     return 
         gfxm::translate(gfxm::mat4(1.0f), _position) * 

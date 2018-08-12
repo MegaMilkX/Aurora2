@@ -13,6 +13,8 @@ typedef gfxm::mat4 mat4;
 
 class KinematicObject : public SceneObject::Component
 {
+    CLONEABLE(KinematicObject)
+    RTTR_ENABLE(SceneObject::Component)
 public:
     ~KinematicObject()
     {
@@ -77,6 +79,5 @@ protected:
     Transform* trans;
     Collision* collision;
 };
-COMPONENT(KinematicObject)
 
 #endif

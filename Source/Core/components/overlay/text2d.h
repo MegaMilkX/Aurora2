@@ -15,6 +15,8 @@
 class OverlayRoot;
 class Text2d : public SceneObject::Component
 {
+    CLONEABLE(Text2d)
+    RTTR_ENABLE(SceneObject::Component)
 public:
     Text2d()
     {

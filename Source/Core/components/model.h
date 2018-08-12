@@ -126,6 +126,8 @@ inline void fg_SolidDraw(
 
 class Model : public SceneObject::Component
 {
+    CLONEABLE(Model)
+    RTTR_ENABLE(SceneObject::Component)
 friend Renderer;
 public:
     Model();    
@@ -134,10 +136,15 @@ public:
     asset<Mesh> mesh;
     asset<Material> material;
     resource<gl::ShaderProgram> program;
+
+    void SetMesh(std::string res)
+    { mesh.set(res); meshName = res; }
+    std::string GetMesh() const { return meshName; }
+    void SetMaterial(std::string res)
+    { material.set(res); materialName = res; }
+    std::string GetMaterial() const { return materialName; }
     
     virtual void OnInit();
-    virtual std::string Serialize() ;
-    virtual void Deserialize(const std::string& data) ;
 protected:    
     bool dirty;
 
@@ -148,7 +155,21 @@ protected:
     std::string meshName;    
     std::string subMeshName;
 };
-COMPONENT(Model)
+STATIC_RUN(Model)
+{
+    rttr::registration::class_<Model>("Model")
+        .constructor<>()(rttr::policy::ctor::as_raw_ptr)
+        .property(
+            "mesh",
+            &Model::GetMesh,
+            &Model::SetMesh
+        )
+        .property(
+            "material",
+            &Model::GetMaterial,
+            &Model::SetMaterial
+        );
+}
 
 void fg_SolidRebuild(const FrameCommon& frame, SolidDrawData& out)
 {

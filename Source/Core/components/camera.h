@@ -12,6 +12,8 @@
 
 class Camera : public SceneObject::Component
 {
+    CLONEABLE(Camera)
+    RTTR_ENABLE(SceneObject::Component)
 public:
     Camera()
     : fov(1.6f), aspect(16.0f/9.0f), zNear(0.1f), zFar(100.0f)
@@ -58,32 +60,6 @@ public:
         
         renderer->CurrentCamera(this);
     }
-    virtual std::string Serialize() 
-    {
-        using json = nlohmann::json;
-        json j = json::object();
-        j["fov"] = fov;
-        j["aspect"] = aspect;
-        j["znear"] = zNear;
-        j["zfar"] = zFar;
-        return j.dump(); 
-    }
-    virtual void Deserialize(const std::string& data)
-    {
-        using json = nlohmann::json;
-        json j = json::parse(data);
-        if(j.is_null())
-            return;
-        if(j["fov"].is_number())
-            fov = j["fov"].get<float>();
-        if(j["aspect"].is_number())
-            aspect = j["aspect"].get<float>();
-        if(j["znear"].is_number())
-            zNear = j["znear"].get<float>();
-        if(j["zfar"].is_number())
-            zFar = j["zfar"].get<float>();
-        Perspective(fov, aspect, zNear, zFar);
-    }
 private:
     float fov;
     float aspect;
@@ -94,6 +70,10 @@ private:
     Transform* transform;
     Renderer* renderer;
 };
-COMPONENT(Camera)
+STATIC_RUN(Camera)
+{
+    rttr::registration::class_<Camera>("Camera")
+        .constructor<>()(rttr::policy::ctor::as_raw_ptr);
+}
 
 #endif

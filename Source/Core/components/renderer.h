@@ -27,6 +27,8 @@ struct FrameCommon
 class Camera;
 class Renderer : public SceneObject::Component
 {
+    CLONEABLE(Renderer)
+    RTTR_ENABLE(SceneObject::Component)
 public:
     Renderer();
     
@@ -47,6 +49,5 @@ private:
     
     Environment* env;
 };
-COMPONENT(Renderer)
 
 #endif

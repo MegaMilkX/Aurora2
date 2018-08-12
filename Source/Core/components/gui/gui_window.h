@@ -9,6 +9,7 @@
 
 class GuiWindow : public SceneObject::Component
 {
+    RTTR_ENABLE(SceneObject::Component)
 public:
     void OnMouseEnter()
     {

@@ -9,6 +9,8 @@
 
 class Collider : public SceneObject::Component
 {
+    CLONEABLE(Collider)
+    RTTR_ENABLE(SceneObject::Component)
 friend Collision;
 public:
     Collider()
@@ -61,6 +63,8 @@ protected:
 
 class ConvexCollider : public Collider
 {
+    CLONEABLE(ConvexCollider)
+    RTTR_ENABLE(Collider)
 friend Collision;
 public:
     virtual void OnInit()
@@ -72,7 +76,9 @@ protected:
 };
 
 class PlaneCollider : public Collider
-{
+{    
+    CLONEABLE(PlaneCollider)
+    RTTR_ENABLE(Collider)
 public:
 	virtual void OnInit()
 	{
@@ -85,6 +91,8 @@ public:
 
 class SphereCollider : public Collider
 {
+    CLONEABLE(SphereCollider)
+    RTTR_ENABLE(Collider)
 public:
 	virtual void OnInit()
 	{
@@ -97,6 +105,8 @@ public:
 
 class CapsuleCollider : public ConvexCollider
 {
+    CLONEABLE(CapsuleCollider)
+    RTTR_ENABLE(ConvexCollider)
 public:
     virtual void OnInit()
     {
@@ -110,6 +120,8 @@ public:
 
 class MeshCollider : public Collider
 {
+    CLONEABLE(MeshCollider)
+    RTTR_ENABLE(Collider)
 public:
     virtual void OnInit()
     {

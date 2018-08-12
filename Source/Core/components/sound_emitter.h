@@ -10,6 +10,8 @@
 
 class SoundEmitter : public SceneObject::Component
 {
+    CLONEABLE(SoundEmitter)
+    RTTR_ENABLE(SceneObject::Component)
 public:
     SoundEmitter()
     : clip(0)
@@ -34,10 +36,11 @@ protected:
     asset<SoundClip> clip;
     AudioEmitter* emitter;
 };
-COMPONENT(SoundEmitter)
 
 class SoundListener : public SceneObject::Component
 {
+    CLONEABLE(SoundListener)
+    RTTR_ENABLE(SceneObject::Component)
 public:
     void OnInit()
     {
@@ -47,6 +50,5 @@ public:
 protected:
     SoundRoot* soundRoot;
 };
-COMPONENT(SoundListener)
 
 #endif

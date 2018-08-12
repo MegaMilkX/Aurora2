@@ -9,6 +9,8 @@
 class OverlayRoot;
 class Quad : public SceneObject::Component
 {
+    CLONEABLE(Quad)
+    RTTR_ENABLE(SceneObject::Component)
 public:
     GfxQuad quad;
 

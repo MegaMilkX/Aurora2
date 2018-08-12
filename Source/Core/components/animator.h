@@ -1,8 +1,6 @@
 #ifndef ANIMATOR_H
 #define ANIMATOR_H
 
-
-
 #include <fstream>
 
 #include <aurora/media/fbx.h>
@@ -36,6 +34,8 @@ private:
 
 class Animator : public Updatable
 {
+    CLONEABLE(Animator)
+    RTTR_ENABLE(Updatable)
 public:
     Animator()
     {}
@@ -298,6 +298,10 @@ private:
     //-- Root anim only
     std::set<Animator*> children;
 };
-COMPONENT(Animator)
+STATIC_RUN(Animator)
+{
+    rttr::registration::class_<Animator>("Animator")
+        .constructor<>()(rttr::policy::ctor::as_raw_ptr);
+}
 
 #endif

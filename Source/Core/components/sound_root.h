@@ -8,6 +8,8 @@ class SoundEmitter;
 class SoundListener;
 class SoundRoot : public SceneObject::Component
 {
+    CLONEABLE(SoundRoot)
+    RTTR_ENABLE(SceneObject::Component)
 public:
     void Update();
     void OnInit();
@@ -17,6 +19,5 @@ public:
 private:
     SoundListener* listener;
 };
-COMPONENT(SoundRoot)
 
 #endif

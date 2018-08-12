@@ -6,6 +6,7 @@
 
 class GuiElement : public SceneObject::Component
 {
+    RTTR_ENABLE(SceneObject::Component)
 public:
     gfxm::vec2 dimensions;
     gfxm::vec2 center;

@@ -6,6 +6,8 @@
 
 class Environment : public SceneObject::Component
 {
+    CLONEABLE(Environment)
+    RTTR_ENABLE(SceneObject::Component)
 public:
     gfxm::vec3 ambientColor;
     gfxm::vec3 rimLightColor;
@@ -20,5 +22,10 @@ public:
         rimLightColor = gfxm::vec3(r, g, b); 
     }
 };
+STATIC_RUN(Environment)
+{
+    rttr::registration::class_<Environment>("Environment")
+        .constructor<>()(rttr::policy::ctor::as_raw_ptr);
+}
 
 #endif

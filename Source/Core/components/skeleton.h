@@ -129,6 +129,8 @@ inline void fg_SkinDraw(const FrameCommon& frame, const SkinDrawData& out);
 
 class Skeleton : public SceneObject::Component
 {
+    CLONEABLE(Skeleton)
+    RTTR_ENABLE(SceneObject::Component)
 public:
     Skeleton()
     {
@@ -292,24 +294,6 @@ public:
         fg.reset_once_flag(fg_SkinRebuild);
         fg += fg_SkinDraw;
     }
-    virtual std::string Serialize() 
-    { 
-        using json = nlohmann::json;
-        json j = json::object();
-        j["Data"] = resourceName;
-        return j.dump(); 
-    }
-    virtual void Deserialize(const std::string& data)
-    {
-        using json = nlohmann::json;
-        json j = json::parse(data);
-        if(j.is_null())
-            return;
-        if(j["Data"].is_string())
-        {
-            SetData(j["Data"].get<std::string>());
-        }
-    }
 private:
     void CreateBone(BoneData* bone, SceneObject* parentObject)
     {
@@ -373,7 +357,11 @@ private:
     
     std::string skinShaderSource;
 };
-COMPONENT(Skeleton)
+STATIC_RUN(Skeleton)
+{
+    rttr::registration::class_<Skeleton>("Skeleton")
+        .constructor<>()(rttr::policy::ctor::as_raw_ptr);
+}
 
 inline void fg_SkinRebuild(const FrameCommon& frame, SkinDrawData& out)
 {

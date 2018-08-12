@@ -6,6 +6,7 @@
 class Updatable;
 class UpdatableController : public SceneObject::Component
 {
+    RTTR_ENABLE(SceneObject::Component)
 public:
     UpdatableController(){}
 
@@ -18,6 +19,7 @@ private:
 
 class Updatable : public SceneObject::Component
 {
+    RTTR_ENABLE(SceneObject::Component)
 friend UpdatableController;
 public:
     ~Updatable()

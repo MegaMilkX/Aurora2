@@ -15,6 +15,8 @@ inline void PrintTest(const std::string& v)
 
 class MotionScript : public SceneObject::Component
 {
+    CLONEABLE(MotionScript)
+    RTTR_ENABLE(SceneObject::Component)
 public:
     MotionScript()
     {
@@ -84,6 +86,5 @@ private:
     std::string currentState;
     Au::Lua lua;
 };
-COMPONENT(MotionScript)
 
 #endif

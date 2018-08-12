@@ -10,6 +10,8 @@
 
 class Transform : public SceneObject::Component
 {
+    CLONEABLE(Transform)
+    RTTR_ENABLE(SceneObject::Component)
 public:
     Transform()
     : Transform(0) {}
@@ -72,8 +74,8 @@ public:
     
     gfxm::quat GetParentRotation();
 
-    void SetTransform(gfxm::mat4& t);
-    gfxm::mat4 GetLocalTransform();
+    void SetTransform(gfxm::mat4 t);
+    gfxm::mat4 GetLocalTransform() const;
     gfxm::mat4 GetParentTransform();
     gfxm::mat4 GetTransform();
 
@@ -122,65 +124,6 @@ public:
             }
     }
     Transform* ParentTransform() { return _parent; }
-
-    virtual std::string Serialize() 
-    {
-        using json = nlohmann::json;
-        json j = json::object();
-        j["Translation"] = { _position.x, _position.y, _position.z };
-        j["Rotation"] = { _rotation.x, _rotation.y, _rotation.z, _rotation.w };
-        j["Scale"] = { _scale.x, _scale.y, _scale.z };
-        return j.dump();
-    }
-    virtual void Deserialize(const std::string& data) 
-    {
-        using json = nlohmann::json;
-        json j = json::parse(data);
-        if(j.is_null())
-            return;
-        
-        json jt = j["Translation"];
-        if(jt.is_array() && jt.size() == 3)
-        {
-            Position(
-                jt[0].get<float>(),
-                jt[1].get<float>(),
-                jt[2].get<float>()
-            );
-        }
-        
-        json jr = j["Rotation"];
-        if(jr.is_array())
-        {
-            if(jr.size() == 3)
-                Rotation(
-                    jr[0].get<float>(),
-                    jr[1].get<float>(),
-                    jr[2].get<float>()
-                );
-            if(jr.size() == 4)
-                Rotation(
-                    jr[0].get<float>(),
-                    jr[1].get<float>(),
-                    jr[2].get<float>(),
-                    jr[3].get<float>()
-                );
-        }           
-        
-        json js = j["Scale"];
-        if(js.is_array() && js.size() == 3)
-        {
-            Scale(
-                js[0].get<float>(),
-                js[1].get<float>(),
-                js[2].get<float>()
-            );
-        }
-        else if(js.is_number())
-        {
-            Scale(js.get<float>());
-        }
-    }
 private:
     bool dirty;
     gfxm::vec3 _position;
@@ -191,6 +134,16 @@ private:
     Transform* _parent;
     std::vector<Transform*> _children;
 };
-COMPONENT(Transform)
+STATIC_RUN(Transform)
+{
+    rttr::registration::class_<Transform>("Transform")
+        .constructor<>()(
+            rttr::policy::ctor::as_raw_ptr
+        )
+        .property(
+            "matrix", 
+            &Transform::GetLocalTransform, 
+            &Transform::SetTransform);
+}
 
 #endif

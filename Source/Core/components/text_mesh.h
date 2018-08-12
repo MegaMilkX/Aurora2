@@ -20,6 +20,8 @@ struct TextVertex
 
 class TextMesh : public SceneObject::Component
 {
+    CLONEABLE(TextMesh)
+    RTTR_ENABLE(SceneObject::Component)
 public:
     TextMesh()
     {
@@ -156,6 +158,5 @@ protected:
     std::string text;
     FontData* fontData;
 };
-COMPONENT(TextMesh)
 
 #endif

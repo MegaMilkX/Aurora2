@@ -6,6 +6,7 @@
 
 class GuiListener : public SceneObject::Component
 {
+    RTTR_ENABLE(SceneObject::Component)
 public:
     void OnInit()
     {
