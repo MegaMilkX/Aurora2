@@ -25,8 +25,8 @@ bool Resource::Load()
 
     if(source.archive != 0)
     {
-        buffer.resize(source.size);
-        mz_zip_reader_extract_to_mem(source.archive, source.index, (void*)buffer.data(), source.size, 0);
+        buffer.resize((size_t)source.size);
+        mz_zip_reader_extract_to_mem(source.archive, source.index, (void*)buffer.data(), (size_t)source.size, 0);
     }
 
     loaded = true;
