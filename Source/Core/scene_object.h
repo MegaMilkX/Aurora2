@@ -8,18 +8,39 @@
 
 #include "external/json.hpp"
 
+#include "../general/util.h"
+
+#include <rttr/registration>
+#include <rttr/type>
+#include <util/static_run.h>
+
+// TODO: Remove this
 #include <blueprint.h>
 
 #undef GetObject
+
+class UnserializableComponentToken {};
+
+#define CLONEABLE(TYPE) \
+    SceneObject::Component* clone() { \
+        return new TYPE(*this); \
+    }
 
 class SceneObject
 {
 public:
     class Component
     {
+        RTTR_ENABLE()
     friend SceneObject;
     public:
+        Component()
+        : type(rttr::type::get(UnserializableComponentToken()))
+        {}
         virtual ~Component() {}
+
+        virtual Component* clone() { return 0; }
+
         SceneObject* Object() { return object; }
         SceneObject* GetObject() { return object; }
         template<typename T>
@@ -32,15 +53,21 @@ public:
 
         SceneObject* CreateObject() { return GetObject()->CreateObject(); }
         
+        rttr::type GetType() const { return type; }
+
         virtual void OnInit() {}
-        virtual std::string Serialize() { return "{}"; }
-        virtual void Deserialize(const std::string& data) {}
+    protected:
+        rttr::type type;
     private:
         SceneObject* object;
     };
     
-    SceneObject() : parentObject(0) {}
-    SceneObject(SceneObject* parent) : parentObject(parent) {}
+    SceneObject() 
+    : parentObject(0),
+    name(MKSTR(this)) {}
+    SceneObject(SceneObject* parent) 
+    : parentObject(parent),
+    name(MKSTR(this)) {}
     ~SceneObject()
     {
         for(unsigned i = 0; i < objects.size(); ++i)
@@ -68,18 +95,6 @@ public:
     {
         return this == Root();
     }
-
-    SceneObject* Instantiate(Blueprint& blueprint)
-    {
-        std::cout << "Instantiating blueprint..." << std::endl;
-        SceneObject* o = CreateObject();
-        o->Name(blueprint.Name());
-        for(auto& kv : blueprint.GetComponents())
-        {
-            Component* c = o->Get(kv.second.meta.Name());
-        }
-        return o;
-    }
     
     SceneObject* CreateObject()
     {
@@ -98,7 +113,8 @@ public:
         if (!c)
         {
             c = new T();
-            AddComponent(c, TypeInfo<T>::Index());
+            c->type = rttr::type::get<T>();
+            AddComponent(c, rttr::type::get<T>());
             return c;
         }
         else
@@ -106,12 +122,24 @@ public:
     }
     Component* Get(const std::string& component)
     {
-        Meta meta = Meta::Get(component);
-        typeindex type = meta.TypeIndex();
+        rttr::type type = rttr::type::get_by_name(component);
+        if(!type.is_valid())
+        {
+            std::cout << component << " is not a valid type" << std::endl;
+            return 0;
+        }
         Component* c = FindComponent(type);
         if(!c)
         {
-            c = (Component*)meta.Create();
+            rttr::variant v = type.create();
+            if(!v.get_type().is_pointer())
+            {
+                std::cout << component << " - invalid component type" << std::endl;
+                return 0;
+            }
+            c = v.get_value<Component*>();
+            if(!c) return 0;
+            c->type = type;
             AddComponent(c, type);
             return c;
         }
@@ -122,12 +150,12 @@ public:
     template<typename T>
     T* FindComponent()
     {
-        return (T*)FindComponent(TypeInfo<T>::Index());
+        return (T*)FindComponent(rttr::type::get<T>());
     }
 
-    Component* FindComponent(typeindex t)
+    Component* FindComponent(rttr::type t)
     {
-        std::map<typeindex, Component*>::iterator it;
+        std::map<rttr::type, Component*>::iterator it;
         it = components.find(t);
         if(it == components.end())
             return 0;
@@ -149,7 +177,11 @@ public:
         return result;
     }
     
-    void Name(const std::string& name) { this->name = name; }
+    void Name(const std::string& name) 
+    { 
+        this->name = name;
+        if(this->name.empty()) this->name = MKSTR(this);
+    }
     std::string Name() const { return name; }
     
     SceneObject* FindObject(const std::string& name)
@@ -169,48 +201,56 @@ public:
         }
         return o;
     }
-    
-    // Serialization
-    template<typename T>
-    static void RegisterComponent(const std::string& name)
+
+    SceneObject* FindChild(const std::string& name)
     {
-        headerStaticWrap<SceneObject>::compAllocFuncs[name] = &GetComponentBase<T>;
-        headerStaticWrap<SceneObject>::compTypeIndexToName[TypeInfo<T>::Index()] = name;
-    }
-    std::string Serialize()
-    {
-        using json = nlohmann::json;
-        json j = json::object();
-        
-        j["Name"] = name;
-        
-        for(auto& kv : components)
+        for(auto so : objects)
         {
-            std::string comp_data = 
-                kv.second->Serialize();
-            json j2 = json::parse(comp_data);
-            auto& it = headerStaticWrap<SceneObject>::compTypeIndexToName.find(kv.first);
-            if(it == headerStaticWrap<SceneObject>::compTypeIndexToName.end())
-                continue;
-            j[it->second] = j2;
+            if(so->Name() == name)
+            {
+                return so;
+            }
         }
-        
-        j["Objects"] = json::array();
-        for(auto& object : objects)
-        {
-            std::string obj_data = 
-                object->Serialize();
-            j["Objects"].push_back(json::parse(obj_data));
-        }
-        
-        return j.dump();
+        return 0;
     }
-    void Deserialize(const std::string& data)
+
+    SceneObject* CreateFrom(SceneObject* from)
     {
-        
+        if(!from) return 0;
+        SceneObject* new_object = CreateObject();
+        new_object->Name(from->Name());
+        for(auto so : from->objects)
+        {
+            new_object->CreateFrom(so);
+        }
+        for(auto kv : from->components)
+        {
+            Component* c = kv.second->clone();
+            if(!c) continue;
+            components.insert(
+                std::make_pair(
+                    kv.first, 
+                    c
+                )
+            );
+        }
+    }
+
+    unsigned int ChildCount() const { return objects.size(); }
+    SceneObject* GetChild(unsigned int i) const { return objects[i]; }
+    unsigned int ComponentCount() const { return components.size(); }
+    Component* GetComponent(unsigned int id) const 
+    {
+        Component* c = 0;
+        auto it = components.begin();
+        for(unsigned i = 0; i < id; ++i)
+        {
+            it++;
+        }
+        return it->second;
     }
 private:
-    void AddComponent(Component* c, typeindex t)
+    void AddComponent(Component* c, rttr::type t)
     {
         c->object = this;
         components.insert(std::make_pair(t, c));
@@ -229,7 +269,7 @@ private:
     std::string name;
     SceneObject* parentObject;
     std::vector<SceneObject*> objects;
-    std::map<typeindex, Component*> components;
+    std::map<rttr::type, Component*> components;
 };
 
 template<typename T>
