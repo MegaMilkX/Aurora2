@@ -2,7 +2,6 @@
 #define SOUND_ROOT_H
 
 #include "../scene_object.h"
-#include <component.h>
 
 class SoundEmitter;
 class SoundListener;

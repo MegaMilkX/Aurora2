@@ -4,7 +4,6 @@
 #include <util/gfxm.h>
 
 #include "../scene_object.h"
-#include <component.h>
 
 #undef GetObject
 

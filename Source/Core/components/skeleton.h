@@ -3,7 +3,6 @@
 
 #include "renderer.h"
 #include "model.h"
-#include <component.h>
 
 #include <algorithm>
 #include <mutex>

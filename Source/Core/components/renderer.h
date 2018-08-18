@@ -7,7 +7,6 @@
 #include <util/gfxm.h>
 #include <aurora/transform.h>
 #include "../scene_object.h"
-#include <component.h>
 
 #include "../lib/task_graph.h"
 

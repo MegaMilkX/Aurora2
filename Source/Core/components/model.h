@@ -17,8 +17,6 @@
 
 #include "../asset.h"
 
-#include <component.h>
-
 #undef GetObject
 
 struct RenderUnitSolid

@@ -2,7 +2,6 @@
 #define SOUND_EMITTER_H
 
 #include "../scene_object.h"
-#include <component.h>
 #include "sound_root.h"
 #include <sound_clip.h>
 

@@ -2,7 +2,6 @@
 #define TEXT_MESH_H
 
 #include "../scene_object.h"
-#include <component.h>
 
 #include "renderer.h"
 

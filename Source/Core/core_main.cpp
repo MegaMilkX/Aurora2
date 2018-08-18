@@ -20,8 +20,6 @@ int main()
 {
     init_resources();
 
-    Meta::Print();
-
     GameState::Init();
     Aurora2Init();
     while(GameState::Update())

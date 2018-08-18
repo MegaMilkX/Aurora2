@@ -7,7 +7,6 @@
 #include <aurora/curve.h>
 
 #include "../scene_object.h"
-#include <component.h>
 #include "transform.h"
 #include <game_state.h>
 

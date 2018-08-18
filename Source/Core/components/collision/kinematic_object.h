@@ -4,7 +4,6 @@
 #include "../transform.h"
 #include "collision.h"
 #include "collider.h"
-#include <component.h>
 
 #undef GetObject
 

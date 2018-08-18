@@ -5,7 +5,6 @@
 
 #include "transform.h"
 #include "../scene_object.h"
-#include <component.h>
 #include "renderer.h"
 
 #undef GetObject

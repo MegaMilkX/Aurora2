@@ -2,7 +2,6 @@
 #define COMPONENT_SKIN_MESH_H
 
 #include "../scene_object.h"
-#include <component.h>
 #include "transform.h"
 #include "renderer.h"
 #include <material.h>

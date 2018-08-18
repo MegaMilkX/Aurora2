@@ -2,7 +2,6 @@
 #define COMPONENT_LUA_SCRIPT_H
 
 #include "../scene_object.h"
-#include <component.h>
 #include <resource.h>
 
 #include "transform.h"

@@ -14,9 +14,6 @@
 #include <rttr/type>
 #include <util/static_run.h>
 
-// TODO: Remove this
-#include <blueprint.h>
-
 #undef GetObject
 
 class UnserializableComponentToken {};
