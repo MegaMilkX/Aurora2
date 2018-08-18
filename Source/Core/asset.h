@@ -16,16 +16,6 @@ template<typename T>
 class asset
 {
 public:
-    class reader
-    {
-    friend asset;
-    public:
-        virtual ~reader() {}
-        virtual bool operator()(const std::string& filename, T*) = 0;
-    private:
-        std::string extension;
-    };
-
     asset()
     : data(0) 
     {}

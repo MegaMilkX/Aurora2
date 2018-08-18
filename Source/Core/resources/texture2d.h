@@ -90,34 +90,4 @@ private:
     }
 };
 
-class Texture2DReader : public asset<Texture2D>::reader
-{
-public:
-    bool operator()(const std::string& filename, Texture2D* texture)
-    {
-        
-        
-        
-        std::vector<unsigned char> data;
-        data.resize(256 * 256 * 3);
-        
-        for(unsigned y = 0; y < 256; ++y)
-        {
-            for(unsigned x = 0; x < 256; ++x)
-            {
-                float value = (sinf(x / 8.0f) + 1.0f) / 2.0f;
-                unsigned index = x + y * 256;
-                
-                data[index * 3] = (unsigned char)(value * 256.0f);
-                data[index * 3 + 1] = (unsigned char)(value * 256.0f);
-                data[index * 3 + 2] = (unsigned char)(value * 256.0f);
-            }
-        }
-        
-        texture->Data(data.data(), 256, 256, 3);
-        
-        return true;
-    }
-};
-
 #endif
