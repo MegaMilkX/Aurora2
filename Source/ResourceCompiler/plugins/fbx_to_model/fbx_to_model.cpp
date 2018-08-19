@@ -9,6 +9,7 @@
 #include <fstream>
 
 #include "../../../general/util.h"
+#include "../../../lib/miniz.c"
 
 #include <algorithm>
 
@@ -187,6 +188,10 @@ bool MakeSkeleton(ResourceCompiler* compiler, const char* name, Au::Media::FBX::
 
 bool MakeModel(ResourceCompiler* compiler, const char* name, Au::Media::FBX::Reader& fbxReader)
 {
+    mz_zip_archive zip;
+    memset(&zip, 0, sizeof(zip));
+    mz_zip_writer_init_heap(&zip, 0, 0);
+
     for(int i = 0; i < fbxReader.MeshCount(); ++i)
     {
         Au::Media::FBX::Mesh& mesh = fbxReader.GetMesh(i);
@@ -195,26 +200,32 @@ bool MakeModel(ResourceCompiler* compiler, const char* name, Au::Media::FBX::Rea
         std::replace( mname.begin(), mname.end(), '.', ' ');
 
         int vertexCount = mesh.VertexCount();
-        compiler->SubmitMem(MKSTR(name << "." << mname << "." << "VertexCount").c_str(), (void*)&vertexCount, sizeof(int));
+        mz_zip_writer_add_mem(&zip, "VertexCount", (void*)&vertexCount, sizeof(int), 0);
+        //compiler->SubmitMem(MKSTR(name << "." << mname << "." << "VertexCount").c_str(), (void*)&vertexCount, sizeof(int));
         
         auto indices = mesh.GetIndices<uint32_t>();
         int indexCount = indices.size();
-        compiler->SubmitMem(MKSTR(name << "." << mname << "." << "IndexCount").c_str(), (void*)&indexCount, sizeof(indexCount));
-        compiler->SubmitMem(MKSTR(name << "." << mname << "." << "Indices").c_str(), (void*)indices.data(), sizeof(uint32_t) * indices.size());
+        mz_zip_writer_add_mem(&zip, "IndexCount", (void*)&indexCount, sizeof(indexCount), 0);
+        //compiler->SubmitMem(MKSTR(name << "." << mname << "." << "IndexCount").c_str(), (void*)&indexCount, sizeof(indexCount));
+        mz_zip_writer_add_mem(&zip, "Indices", (void*)indices.data(), sizeof(uint32_t) * indices.size(), 0);
+        //compiler->SubmitMem(MKSTR(name << "." << mname << "." << "Indices").c_str(), (void*)indices.data(), sizeof(uint32_t) * indices.size());
 
         auto vertices = mesh.GetVertices();
-        compiler->SubmitMem(MKSTR(name << "." << mname << "." << "Vertices").c_str(), (void*)vertices.data(), sizeof(float) * vertices.size());
+        mz_zip_writer_add_mem(&zip, "Vertices", (void*)vertices.data(), sizeof(float) * vertices.size(), 0);
+        //compiler->SubmitMem(MKSTR(name << "." << mname << "." << "Vertices").c_str(), (void*)vertices.data(), sizeof(float) * vertices.size());
 
         for(unsigned l = 0; l < mesh.normalLayers.size(); ++l)
         {
             auto normals = mesh.GetNormals(l);
-            compiler->SubmitMem(MKSTR(name << "." << mname << "." << "Normals." << l).c_str(), (void*)normals.data(), sizeof(float) * normals.size());
+            mz_zip_writer_add_mem(&zip, MKSTR("Normals." << l).c_str(), (void*)normals.data(), sizeof(float) * normals.size(), 0);
+            //compiler->SubmitMem(MKSTR(name << "." << mname << "." << "Normals." << l).c_str(), (void*)normals.data(), sizeof(float) * normals.size());
         }
 
         for(unsigned l = 0; l < mesh.uvLayers.size(); ++l)
         {
             auto uvs = mesh.GetUV(l);
-            compiler->SubmitMem(MKSTR(name << "." << mname << "." << "UV." << l).c_str(), (void*)uvs.data(), sizeof(float) * uvs.size());
+            mz_zip_writer_add_mem(&zip, MKSTR("UV." << l).c_str(), (void*)uvs.data(), sizeof(float) * uvs.size(), 0);
+            //compiler->SubmitMem(MKSTR(name << "." << mname << "." << "UV." << l).c_str(), (void*)uvs.data(), sizeof(float) * uvs.size());
         }
 
         Au::Media::FBX::Skin& skin = mesh.GetSkin();
@@ -248,11 +259,20 @@ bool MakeModel(ResourceCompiler* compiler, const char* name, Au::Media::FBX::Rea
                     dataCount++;
                 }
             }
-            compiler->SubmitMem(MKSTR(name << "." << mname << "." << "BoneIndices").c_str(), (void*)BoneIndices.data(), sizeof(gfxm::vec4) * BoneIndices.size());
-            compiler->SubmitMem(MKSTR(name << "." << mname << "." << "BoneWeights").c_str(), (void*)BoneWeights.data(), sizeof(gfxm::vec4) * BoneWeights.size());
+            mz_zip_writer_add_mem(&zip, "BoneIndices", (void*)BoneIndices.data(), sizeof(gfxm::vec4) * BoneIndices.size(), 0);
+            //compiler->SubmitMem(MKSTR(name << "." << mname << "." << "BoneIndices").c_str(), (void*)BoneIndices.data(), sizeof(gfxm::vec4) * BoneIndices.size());
+            mz_zip_writer_add_mem(&zip, "BoneWeights", (void*)BoneWeights.data(), sizeof(gfxm::vec4) * BoneWeights.size(), 0);
+            //compiler->SubmitMem(MKSTR(name << "." << mname << "." << "BoneWeights").c_str(), (void*)BoneWeights.data(), sizeof(gfxm::vec4) * BoneWeights.size());
         }
     }
 
+    void* bufptr;
+    size_t sz;
+    mz_zip_writer_finalize_heap_archive(&zip, &bufptr, &sz);
+    
+    compiler->SubmitMem(MKSTR(name << ".geo").c_str(), bufptr, sz);
+
+    mz_zip_writer_end(&zip);
     return true;
 }
 
