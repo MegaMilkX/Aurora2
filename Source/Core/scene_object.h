@@ -23,6 +23,8 @@ class UnserializableComponentToken {};
         return new TYPE(*this); \
     }
 
+class SceneController;
+
 class SceneObject
 {
 public:
@@ -61,19 +63,15 @@ public:
     
     SceneObject() 
     : parentObject(0),
-    name(MKSTR(this)) {}
+    name(MKSTR(this)),
+    controller(0) {}
+
     SceneObject(SceneObject* parent) 
     : parentObject(parent),
-    name(MKSTR(this)) {}
-    ~SceneObject()
-    {
-        for(unsigned i = 0; i < objects.size(); ++i)
-            delete objects[i];
-        for(auto& kv : components)
-        {
-            delete kv.second;
-        }
-    }
+    name(MKSTR(this)),
+    controller(0) {}
+
+    ~SceneObject();
     
     SceneObject* Root()
     {
@@ -246,13 +244,17 @@ public:
         }
         return it->second;
     }
-private:
-    void AddComponent(Component* c, rttr::type t)
+
+    void SetController(SceneController* con)
     {
-        c->object = this;
-        components.insert(std::make_pair(t, c));
-        c->OnInit();
+        controller = con;
+        for(auto& o : objects)
+        {
+            o->SetController(con);
+        }
     }
+private:
+    void AddComponent(Component* c, rttr::type t);
 
     template<typename T>
     Component* GetComponentBase() { return GetComponent<T>(); }
@@ -267,6 +269,7 @@ private:
     SceneObject* parentObject;
     std::vector<SceneObject*> objects;
     std::map<rttr::type, Component*> components;
+    SceneController* controller;
 };
 
 template<typename T>
