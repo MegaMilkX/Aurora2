@@ -13,6 +13,8 @@
 
 #include "../util/gfxm.h"
 
+#include <resource_object.h>
+
 struct GLAttribDesc
 {
     std::string name;
@@ -21,7 +23,7 @@ struct GLAttribDesc
     GLboolean normalized;
 };
 
-class Mesh
+class Mesh : public ResourceObject
 {
 public:
     struct SubData
@@ -77,10 +79,22 @@ public:
     }
 
 public:
-    bool Build(Resource* r)
+    bool Build(ResourceRaw* r)
     {
-        if(!r) return false;
+        if(r->Size() == 0) return false;
+        std::vector<char> buffer;
+        buffer.resize((size_t)r->Size());
+        r->ReadAll((char*)buffer.data());
 
+        mz_zip_archive zip;
+        memset(&zip, 0, sizeof(zip));
+        if(!mz_zip_reader_init_mem(&zip, buffer.data(), buffer.size(), 0))
+        {
+            //LOG_ERR("Failed to build mesh");
+            return false;
+        }
+
+        int vertexCount = 0;
         std::vector<float> vertices;
         std::vector<float> normals;
         std::vector<float> uv;
@@ -89,6 +103,36 @@ public:
         std::vector<gfxm::vec4> boneWeights;
         unsigned int indexOffset = 0;
 
+        int index = 0;
+        mz_zip_archive_file_stat file_stat;
+
+        mz_zip_reader_extract_file_to_mem(&zip, "VertexCount", (void*)&vertexCount, (size_t)sizeof(vertexCount), 0);
+
+        index = mz_zip_reader_locate_file(&zip, "Vertices", "", 0);
+        mz_zip_reader_file_stat(&zip, index, &file_stat);
+        vertices.resize((size_t)file_stat.m_uncomp_size / sizeof(float));
+        mz_zip_reader_extract_file_to_mem(&zip, "Vertices", (void*)vertices.data(), (size_t)file_stat.m_uncomp_size, 0);
+
+        index = mz_zip_reader_locate_file(&zip, "Indices", "", 0);
+        mz_zip_reader_file_stat(&zip, index, &file_stat);
+        indices.resize((size_t)file_stat.m_uncomp_size / sizeof(uint32_t));
+        mz_zip_reader_extract_file_to_mem(&zip, "Indices", (void*)indices.data(), (size_t)file_stat.m_uncomp_size, 0);
+
+        index = mz_zip_reader_locate_file(&zip, "Normals.0", "", 0);
+        mz_zip_reader_file_stat(&zip, index, &file_stat);
+        normals.resize((size_t)file_stat.m_uncomp_size / sizeof(float));
+        mz_zip_reader_extract_file_to_mem(&zip, "Normals.0", (void*)normals.data(), (size_t)file_stat.m_uncomp_size, 0);
+        
+        index = mz_zip_reader_locate_file(&zip, "UV.0", "", 0);
+        mz_zip_reader_file_stat(&zip, index, &file_stat);
+        uv.resize((size_t)file_stat.m_uncomp_size / sizeof(float));
+        mz_zip_reader_extract_file_to_mem(&zip, "UV.0", (void*)uv.data(), (size_t)file_stat.m_uncomp_size, 0);
+
+        SetAttribArray<Au::Position>(vertices);
+        SetAttribArray<Au::Normal>(normals);
+        SetAttribArray<Au::UV>(uv);
+        SetIndices(indices);
+/*
         for(auto kv : r->GetChildren())
         {
             std::string meshName = kv.first;
@@ -161,6 +205,8 @@ public:
             SetAttribArray<Au::BoneIndex4>(boneIndices);
             SetAttribArray<Au::BoneWeight4>(boneWeights);
         }
+*/
+        mz_zip_reader_end(&zip);
         return true;
     }
 };

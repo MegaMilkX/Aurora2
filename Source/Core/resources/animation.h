@@ -201,7 +201,7 @@ public:
         for(auto& kv : anims)
             kv.second->SetRootMotionSource(name);
     }
-
+/*
     bool Build(Resource* r)
     {
         if(!r) return false;
@@ -300,6 +300,7 @@ if(r_) VECTOR = std::vector<keyframe>( (keyframe*)r_->Data(), (keyframe*)(r_->Da
 
         return true;
     }
+    */
 private:
     std::map<std::string, AnimTrack*> anims;
     AnimPose bindPose;

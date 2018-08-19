@@ -20,8 +20,9 @@
 #include "../external/json.hpp"
 
 #include <asset.h>
+#include <resource_object.h>
 
-class Material
+class Material : public ResourceObject
 {
 public:    
     Material()
@@ -35,14 +36,19 @@ public:
     }
 
     std::string GetString(const std::string& key) { return strstr[key]; }
-
-    bool Build(Resource* r)
+    
+    bool Build(ResourceRaw* r)
     {
+        std::vector<char> data;
+        if(r->Size() == 0) return false;
+        data.resize((size_t)r->Size());
+        r->ReadAll((char*)data.data());
+
         using json = nlohmann::json;
         json j;
         try
         {
-            j = json::parse((char*)r->Data(), (char*)r->Data() + r->DataSize());
+            j = json::parse((char*)data.data(), (char*)data.data() + data.size());
         }
         catch(std::exception& e)
         {
@@ -60,43 +66,9 @@ public:
 
         return true;
     }
+    
 private:
     std::map<std::string, std::string> strstr;
 };
-
-template<>
-inline bool LoadAsset<Material, JSON>(Material* material, const std::string& filename)
-{
-    using json = nlohmann::json;
-
-    std::ifstream file(filename, std::ios::in);
-    if(!file.is_open())
-        return false;
-
-    json j;
-    try
-    {
-        j = json::parse(file);
-    }
-    catch(std::exception& e)
-    {
-        std::cout << "Material json parse error: " << e.what() << std::endl;
-        file.close();
-        return false;
-    }
-
-    for(json::iterator it = j.begin(); it != j.end(); ++it)
-    {
-        if(it.value().is_string())
-        {
-            material->Set(it.key(), it.value().get<std::string>());
-        }
-    }
-
-    
-    file.close();
-    
-    return true;
-}
 
 #endif

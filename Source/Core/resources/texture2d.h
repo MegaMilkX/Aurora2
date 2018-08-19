@@ -9,7 +9,9 @@ extern "C"{
 #include "../lib/stb_image.h"
 }
 
-class Texture2D
+#include <resource_object.h>
+
+class Texture2D : public ResourceObject
 {
 public:
     Texture2D()
@@ -45,12 +47,17 @@ public:
         return glTexName; 
     }
 
-    bool Build(Resource* r)
+    bool Build(ResourceRaw* r)
     {
+        std::vector<char> bytes;
+        if(r->Size() == 0) return false;
+        bytes.resize((size_t)r->Size());
+        r->ReadAll((char*)bytes.data());
+
         stbi_set_flip_vertically_on_load(1);
         int w, h, bpp;
         unsigned char* data =
-            stbi_load_from_memory(r->Data(), r->DataSize(), &w, &h, &bpp, 4);
+            stbi_load_from_memory((unsigned char*)bytes.data(), bytes.size(), &w, &h, &bpp, 4);
         if(!data)
             return false;
         Data(data, w, h, 4);

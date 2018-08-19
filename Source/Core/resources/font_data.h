@@ -144,7 +144,7 @@ public:
         }
         return &atlas->glyphs[charCode];
     }
-
+/*
     bool Build(Resource* r)
     {
         if(!r) return false;
@@ -155,7 +155,7 @@ public:
         LoadMemory((void*)r->Data(), r->DataSize());
 
         return true;
-    }
+    }*/
 private:
     std::map<unsigned, GlyphAtlas> atlases;
     Texture2D texture;

@@ -24,7 +24,7 @@ public:
         buffer = GameState::GetAudioMixer()->CreateBuffer();
         return buffer->Upload(data, len, srcSampleRate, srcBitPerSample, srcNChannels);
     }
-
+/*
     bool Build(Resource* r)
     {
         r = r->Get("OGG");
@@ -40,7 +40,7 @@ public:
 
         return true;
     }
-    
+  */  
     AudioBuffer* GetBuffer() { return buffer; }
 private:
     AudioBuffer* buffer;
