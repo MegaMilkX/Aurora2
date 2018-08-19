@@ -30,7 +30,7 @@ public:
     : source(source)
     {}
     std::string& Get() { return source; }
-
+/*
     bool Build(Resource* r)
     {
         if(!r) return false;
@@ -39,6 +39,7 @@ public:
 
         return true;
     }
+    */
 private:
     std::string source;
 };

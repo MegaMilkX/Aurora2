@@ -21,7 +21,7 @@ public:
     }
     ~Camera()
     {
-        renderer->CurrentCamera(renderer->GetObject()->GetComponent<Camera>());
+
     }
     
     void Ortho(){}
@@ -44,20 +44,9 @@ public:
     gfxm::mat4 Projection() { return projection; }
     gfxm::mat4 InverseTransform() { return gfxm::inverse(transform->GetTransform()); }
 
-    void Render()
-    {
-        renderer->Render(
-            projection,
-            transform->GetTransform()
-        );
-    }
-
     virtual void OnInit()
     {
         transform = GetObject()->GetComponent<Transform>();
-        renderer = GetObject()->Root()->GetComponent<Renderer>();
-        
-        renderer->CurrentCamera(this);
     }
 private:
     float fov;

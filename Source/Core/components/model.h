@@ -15,10 +15,10 @@
 
 #include <mutex>
 
-#include "../asset.h"
+#include <resource_ref.h>
 
 #undef GetObject
-
+/*
 struct RenderUnitSolid
 {    
     GLuint vao;
@@ -121,7 +121,7 @@ inline void fg_SolidDraw(
         glDrawElements(GL_TRIANGLES, unit.indexCount, GL_UNSIGNED_INT, (void*)0);
     }
 }
-
+*/
 class Model : public SceneObject::Component
 {
     CLONEABLE(Model)
@@ -131,15 +131,16 @@ public:
     Model();    
     ~Model();
 
-    asset<Mesh> mesh;
-    asset<Material> material;
+    ResourceRef mesh;
+    ResourceRef material;
+
     resource<gl::ShaderProgram> program;
 
     void SetMesh(std::string res)
-    { mesh.set(res); meshName = res; }
+    { mesh.Set(res); meshName = res; }
     std::string GetMesh() const { return meshName; }
     void SetMaterial(std::string res)
-    { material.set(res); materialName = res; }
+    { material.Set(res); materialName = res; }
     std::string GetMaterial() const { return materialName; }
     
     virtual void OnInit();
@@ -168,7 +169,7 @@ STATIC_RUN(Model)
             &Model::SetMaterial
         );
 }
-
+/*
 void fg_SolidRebuild(const FrameCommon& frame, SolidDrawData& out)
 {
     out.units.clear();
@@ -201,104 +202,5 @@ void fg_SolidRebuild(const FrameCommon& frame, SolidDrawData& out)
     
     std::cout << "Created " << out.units.size() << " render units" << std::endl;
 }
-
-/*
-class DebugTransformIcon : public Mesh
-{
-public:
-
-    virtual void Build()
-    {
-        static Au::GFX::Mesh* m = 
-            CreateCrossMesh();
-        static Au::GFX::RenderState* rs = 
-            CreateCrossRS();
-            
-        mesh = m;
-        subMesh = m->GetSubMesh(0);
-        renderState = rs;
-    }
-
-    virtual void OnInit()
-    {
-        Mesh::OnInit();
-    }
-protected:
-    Au::GFX::Mesh* CreateCrossMesh()
-    {
-        Au::GFX::Device& gfxDevice = *GetObject()->Root()->GetComponent<Renderer>()->GetDevice();
-        std::vector<float> vertices =
-        { 
-            -0.00f, 0.0f, 0.0f, 
-            1.0f, 0.0f, 0.0f, 
-            0.0f, -0.0f, 0.0f, 
-            0.0f, 1.0f, 0.0f, 
-            0.0f, 0.0f, -0.0f, 
-            0.0f, 0.0f, 1.0f
-        };
-          
-        std::vector<float> colors =
-        {
-            0.8f, 0.2f, 0.2f,
-            0.8f, 0.2f, 0.2f,
-            0.2f, 0.8f, 0.2f,
-            0.2f, 0.8f, 0.2f,
-            0.2f, 0.2f, 0.8f,
-            0.2f, 0.2f, 0.8f
-        };
-
-        std::vector<unsigned short> indices =
-        { 0, 1, 2, 3, 4, 5 };
-
-        Au::GFX::Mesh* mesh = gfxDevice.CreateMesh();
-        mesh->PrimitiveType(Au::GFX::Mesh::LINE);
-        mesh->Format(Au::Position() << Au::ColorRGB());
-        mesh->VertexAttribByInfo(Au::Position(), (unsigned char*)vertices.data(), vertices.size() * sizeof(float));
-        mesh->VertexAttribByInfo(Au::ColorRGB(), (unsigned char*)colors.data(), vertices.size() * sizeof(float));
-        mesh->IndexData(indices);
-        
-        return mesh;
-    }
-    
-    Au::GFX::RenderState* CreateCrossRS()
-    {
-        Au::GFX::Device& gfxDevice = *GetObject()->Root()->GetComponent<Renderer>()->GetDevice();
-        Au::GFX::Shader* shaderVertex = gfxDevice.CreateShader(Au::GFX::Shader::VERTEX);
-        shaderVertex->Source(R"(#version 140
-            uniform mat4 MatrixModel;
-            uniform mat4 MatrixView;
-            uniform mat4 MatrixProjection;
-            in vec3 Position;
-            in vec3 ColorRGB;
-            out vec3 color;
-            void main()
-            {
-                color = ColorRGB;
-                gl_Position = MatrixProjection * MatrixView * MatrixModel * vec4(Position, 1.0);
-            })");
-        std::cout << shaderVertex->StatusString() << std::endl;
-        
-        Au::GFX::Shader* shaderPixel = gfxDevice.CreateShader(Au::GFX::Shader::PIXEL);
-        shaderPixel->Source(R"(#version 140
-            in vec3 color;
-            out vec4 fragOut;
-            void main()
-            {            
-                fragOut = vec4(color, 1.0);
-            })");
-        std::cout << shaderPixel->StatusString() << std::endl;
-        
-        Au::GFX::RenderState* renderState = gfxDevice.CreateRenderState();
-        renderState->AttribFormat(Au::Position() << Au::ColorRGB());
-        renderState->SetShader(shaderVertex);
-        renderState->SetShader(shaderPixel);
-        renderState->AddUniform<gfxm::mat4>("MatrixModel");
-        renderState->AddUniform<gfxm::mat4>("MatrixView");
-        renderState->AddUniform<gfxm::mat4>("MatrixProjection");
-        //renderState->DepthTest(false);
-        
-        return renderState;
-    }
-};
 */
 #endif

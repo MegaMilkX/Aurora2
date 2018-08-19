@@ -13,7 +13,7 @@ Model::~Model()
 }
 
 void Model::OnInit()
-{
+{/*
     static std::once_flag once_flag;
     std::call_once(
         once_flag,
@@ -65,4 +65,5 @@ void Model::OnInit()
     fg += fg_SolidDraw;
     fg += task_graph::once(fg_SolidRebuild);
     fg.reset_once_flag(fg_SolidRebuild);
+    */
 }

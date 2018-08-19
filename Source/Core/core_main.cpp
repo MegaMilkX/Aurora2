@@ -14,17 +14,50 @@
 #include <text_mesh.h>
 #include <asset.h>
 
+
+#define MINIZ_HEADER_FILE_ONLY
+#include "../lib/miniz.c"
+void InitArchiveResources()
+{
+    std::vector<std::string> files = 
+        find_all_files(get_module_dir() + "\\data", "*.bin");
+    for(auto f : files){
+        LOG(f);
+    }
+
+    for(auto f : files){
+        std::shared_ptr<mz_zip_archive> zip(new mz_zip_archive);
+        memset(zip.get(), 0, sizeof(mz_zip_archive));
+        if(!mz_zip_reader_init_file(zip.get(), f.c_str(), 0)) {
+            LOG_ERR("Failed to open " << f);
+            continue;
+        }
+
+        mz_uint n_files = mz_zip_reader_get_num_files(zip.get());
+        LOG(f << " has " << n_files << " entries");
+
+        for(unsigned i = 0; i < n_files; ++i) {
+            mz_zip_archive_file_stat f_stat;
+            if(!mz_zip_reader_file_stat(zip.get(), i, &f_stat)) {
+                LOG_ERR("Failed to get file stat for file at index " << i << " in " << f);
+                continue;
+            }
+
+            g_resourceRegistry.Add(f_stat.m_filename, new ResourceRawArchive(f_stat.m_file_index, zip));
+        }
+    }
+}
+
 void Aurora2Init();
 
 int main()
 {
-    init_resources();
-
+    InitArchiveResources();
+    
     GameState::Init();
     Aurora2Init();
     while(GameState::Update())
     {}
     GameState::Cleanup();
-    
     return 0;
 }

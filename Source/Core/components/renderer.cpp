@@ -13,14 +13,12 @@ Renderer::Renderer()
 
 void Renderer::OnInit()
 {
-    GetObject()->GetComponent<Camera>();
-    env = Get<Environment>();
 }
 
 #include <iostream>
 void Renderer::Render()
 {
-    _currentCamera->Render();
+    
 }
 
 void Renderer::Render(const gfxm::mat4& projection,
@@ -35,12 +33,6 @@ void Renderer::Render(const gfxm::mat4& projection,
             GetObject() 
         }
     );
-    glEnable(GL_DEPTH_TEST);
-    glViewport(0, 0, Common.frameSize.x, Common.frameSize.y);
+    
     frameGraph.run();
-
-    float color[3] = { 0.3f, 0.3f, 0.3f };
-    dd::xzSquareGrid(-10.0f, 10.0f, 0.0f, 0.5f, color);
-
-    DebugDraw::Draw(projection * gfxm::inverse(transform));
 }

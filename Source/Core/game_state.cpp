@@ -1,6 +1,6 @@
 #include "game_state.h"
 
-SceneObject* GameState::scene = 0;
+SceneController GameState::sceneController;
 
 FrameGraph GameState::frameGraph;
 

@@ -70,7 +70,7 @@ struct SkeletonData
         }
         return 0;
     }
-
+/*
     bool Build(Resource* r)
     {
         if(!r) return false;
@@ -94,7 +94,7 @@ struct SkeletonData
 
         return true;
     }
-
+*/
     std::vector<BoneData*> rootBones;
     int boneCount;
 };
@@ -232,7 +232,7 @@ public:
     }
 
     virtual void OnInit()
-    {
+    {/*
         transform = Get<Transform>();
         renderer = GetObject()->Root()->GetComponent<Renderer>();
         
@@ -291,7 +291,7 @@ public:
         task_graph::graph& fg = renderer->GetFrameGraph();
         fg += task_graph::once(fg_SkinRebuild);
         fg.reset_once_flag(fg_SkinRebuild);
-        fg += fg_SkinDraw;
+        fg += fg_SkinDraw;*/
     }
 private:
     void CreateBone(BoneData* bone, SceneObject* parentObject)
@@ -361,7 +361,7 @@ STATIC_RUN(Skeleton)
     rttr::registration::class_<Skeleton>("Skeleton")
         .constructor<>()(rttr::policy::ctor::as_raw_ptr);
 }
-
+/*
 inline void fg_SkinRebuild(const FrameCommon& frame, SkinDrawData& out)
 {
     Renderer* renderer = frame.scene->GetComponent<Renderer>();
@@ -469,5 +469,5 @@ inline void fg_SkinDraw(const FrameCommon& frame, const SkinDrawData& in)
         );
     }
 }
-
+*/
 #endif

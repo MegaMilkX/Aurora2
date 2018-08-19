@@ -7,11 +7,6 @@
 
 #include "resource_registry.h"
 
-inline void init_resources()
-{
-    g_resourceRegistry.Init();
-}
-
 template<typename T>
 class asset
 {
@@ -45,7 +40,7 @@ public:
         else
         {
             resource<T> r = resource<T>::get(name);
-
+            /*
             Resource* raw_r = g_resourceRegistry.Get(name);
             if(raw_r == 0)
             {
@@ -62,6 +57,7 @@ public:
                 std::cout << "Failed to build asset: " << name << std::endl;
                 return asset<T>(r);
             }
+            */
             return asset<T>(r);
         }
         

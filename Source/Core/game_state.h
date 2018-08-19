@@ -31,34 +31,9 @@
 
 #include <util/frame_graph.h>
 
-#include <renderer.h>
-#include <updatable.h>
+#include "scene_controller.h"
 
 #include "debug_draw.h"
-
-struct eKeyDown{
-    Au::Input::KEYCODE key;
-};
-struct eKeyUp{
-    Au::Input::KEYCODE key;
-};
-struct eChar{
-    int code;
-};
-struct eMouseMove{
-    int dx, dy;
-    int x, y;
-};
-struct eMouseWheel{
-    short value;
-};
-struct eMouseDown{
-    Au::Input::KEYCODE key;
-    int x, y;
-};
-struct eMouseUp{
-    Au::Input::KEYCODE key;
-};
 
 inline void FramebufferResizeCallback(GLFWwindow* win, int width, int height)
 {
@@ -71,14 +46,7 @@ class GameState
 public:    
     virtual ~GameState(){}
 
-    virtual void OnInit() {};
-    virtual void OnSwitch() {};
-    virtual void OnCleanup() {};
-    virtual void OnUpdate() {};
-    virtual void OnRender() {};
-
-    static void SetScene(SceneObject* s) { scene = s; }
-    static SceneObject* GetScene() { return scene; }
+    static SceneController& GetSceneController() { return sceneController; }
 
     static void Init()
     {
@@ -130,6 +98,8 @@ public:
         input.AddDevice(keyboardWin32);
         input.Init();
 
+        sceneController.Init();
+
         deltaTime = 0.0f;
 
         ImGuiInit();
@@ -148,6 +118,23 @@ public:
 
         input.Update();
 
+        FrameStart(Job());
+        AudioMix(Job());
+        sceneController.Update();
+
+        glDisable(GL_CULL_FACE);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_BLEND);
+        glDisable(GL_DEPTH_TEST);
+
+        bool consoleOpen = false;
+        bool profOverlay = true;
+        //dbgConsole.Draw("Dev console", &consoleOpen);
+        ShowProfOverlay(&profOverlay, (int)(1.0f / deltaTime), 1);
+        //ShowFpsPlot((int)(1.0f / deltaTime));
+        ImGuiDraw();
+        glfwSwapBuffers(window);
+/*
         if(result)
         {
             Job* job_frameStart = frameGraph.Add(
@@ -168,6 +155,7 @@ public:
             
             frameGraph.Run();
         }
+        */
         deltaTime = timer.End() / 1000000.0f;
         frameCount++;
 
@@ -206,32 +194,7 @@ private:
         mixer->Update();
     }
 
-    static void UpdateState(Job&)
-    {
-        if(scene) scene->Get<UpdatableController>()->Update();
-    }
-
-    static void RenderState(Job&)
-    {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
-        if(scene) scene->Get<Renderer>()->Render();
-
-        glDisable(GL_CULL_FACE);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glEnable(GL_BLEND);
-        glDisable(GL_DEPTH_TEST);
-
-        bool consoleOpen = false;
-        bool profOverlay = true;
-        //dbgConsole.Draw("Dev console", &consoleOpen);
-        ShowProfOverlay(&profOverlay, (int)(1.0f / deltaTime), 1);
-        //ShowFpsPlot((int)(1.0f / deltaTime));
-        ImGuiDraw();
-        glfwSwapBuffers(window);
-    }
-
-    static SceneObject* scene;
+    static SceneController sceneController;
 
     static FrameGraph frameGraph;
 
