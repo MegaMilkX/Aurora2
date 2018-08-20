@@ -277,6 +277,7 @@ public:
                 lightPassProg->GetUniform(MKSTR("LightOmniRGB[" << lightId << "]")),
                 col.x, col.y, col.z
             );
+            ++lightId;
         }
 
         DrawQuad();
