@@ -72,6 +72,7 @@ inline void ImGuiInit()
     imGuiProgram->BindFragData(0, "Out_Color");
 
     imGuiProgram->Link();
+    glUniform1i(imGuiProgram->GetUniform("Texture"), 0);
 }
 inline void ImGuiCleanup()
 {
@@ -88,6 +89,7 @@ inline void ImGuiUpdate(float dt)
 }
 inline void ImGuiDraw()
 {
+    glActiveTexture(GL_TEXTURE0);
     //ImGui::ShowDemoWindow();
     ImGui::Render();
 
