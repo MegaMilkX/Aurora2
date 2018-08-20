@@ -158,6 +158,7 @@ inline gl::ShaderProgram* CreateScreenQuadShader()
     return screenQuadShader;
 }
 
+void DrawQuad();
 inline void DrawTexture2DToScreen(GLuint texture)
 {
     static gl::ShaderProgram* screenQuadShader = CreateScreenQuadShader();
@@ -169,6 +170,11 @@ inline void DrawTexture2DToScreen(GLuint texture)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
 
+    DrawQuad();
+}
+
+inline void DrawQuad()
+{
     std::vector<float> vertices = {
         -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
         1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
@@ -210,6 +216,7 @@ public:
     bool Init()
     {
         _initStaticProgram();
+        _initLightPassProg();
         gBuffer.Init(1280, 720);
         return true;
     }
@@ -218,59 +225,63 @@ public:
     Camera* GetCamera() { return camera; }
 
     void Render() {
-        gBuffer.Bind();
-        glEnable(GL_DEPTH_TEST);
-        glViewport(0, 0, Common.frameSize.x, Common.frameSize.y);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
         if(!camera) return;
         gfxm::mat4 projection = camera->Projection();
         gfxm::mat4 view = camera->InverseTransform();
         gfxm::vec3 viewPos = camera->Get<Transform>()->Position();
 
-        // TODO: Render objects?
+        _drawGBuffer(projection, view, viewPos);
         
-        auto& in = staticDrawData;
-        in.program->Use();
-        glUniformMatrix4fv(in.uProjection, 1, GL_FALSE, (float*)&projection);
-        glUniformMatrix4fv(in.uView, 1, GL_FALSE, (float*)&view);
-        glUniform3f(in.program->GetUniform("ViewPos"), viewPos.x, viewPos.y, viewPos.z);
-        glUniform3f(in.uAmbientColor, 0.1f, 0.15f, 0.25f);
+        lightPassProg->Use();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, gBuffer.albedo);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, gBuffer.position);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, gBuffer.normal);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, gBuffer.specular);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glUniform3f(lightPassProg->GetUniform("ViewPos"), viewPos.x, viewPos.y, viewPos.z);
 
         int lightId = 0;
         for(auto& l : lightsDirect)
         {
             auto dir = l->Direction();
             glUniform3f(
-                in.program->GetUniform("LightDirect[" + std::to_string(lightId) + "]"), 
+                lightPassProg->GetUniform("LightDirect[" + std::to_string(lightId) + "]"), 
                 dir.x, dir.y, dir.z
             );
             auto col = l->Color();
             glUniform3f(
-                in.program->GetUniform("LightDirectRGB[" + std::to_string(lightId) + "]"), 
+                lightPassProg->GetUniform("LightDirectRGB[" + std::to_string(lightId) + "]"), 
                 col.x, col.y, col.z
             );
             ++lightId;
-        }        
-
-        for(auto& kv : renderables)
-        {
-            Renderable& unit = kv.second;
-            glUniformMatrix4fv(
-                in.uModel, 1, GL_FALSE,
-                (float*)&unit.transform->GetTransform()
-            );
-            
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, unit.texDiffuse->GetGlName());
-
-            glBindVertexArray(unit.vao);
-            glDrawElements(GL_TRIANGLES, unit.indexCount, GL_UNSIGNED_INT, (void*)0);
         }
-        // ==========
-        
-        DrawTexture2DToScreen(gBuffer.albedo);
 
+        lightId = 0;
+        for(auto l : lightsOmni)
+        {
+            auto pos = l->Get<Transform>()->Position();
+            auto col = l->Color();
+            auto intensity = l->Intensity();
+            glUniform3f(
+                lightPassProg->GetUniform(MKSTR("LightOmniPos[" << lightId << "]")),
+                pos.x, pos.y, pos.z
+            );
+            col = col * intensity;
+            glUniform3f(
+                lightPassProg->GetUniform(MKSTR("LightOmniRGB[" << lightId << "]")),
+                col.x, col.y, col.z
+            );
+        }
+
+        DrawQuad();
+
+        //DrawTexture2DToScreen(gBuffer.albedo);
         _drawDebugElements(projection, view);
     }
 
@@ -300,6 +311,9 @@ public:
         else if(type == rttr::type::get<LightDirect>()) {
             lightsDirect.insert((LightDirect*)c);
         }
+        else if(type == rttr::type::get<LightOmni>()) {
+            lightsOmni.insert((LightOmni*)c);
+        }
         else if(type == rttr::type::get<Transform>()) {
             transforms.insert((Transform*)c);
         }
@@ -316,11 +330,54 @@ public:
         else if(type == rttr::type::get<LightDirect>()) {
             lightsDirect.erase((LightDirect*)c);
         }
+        else if(type == rttr::type::get<LightOmni>()) {
+            lightsOmni.erase((LightOmni*)c);
+        }
         else if(type == rttr::type::get<Transform>()) {
             transforms.erase((Transform*)c);
         }
     }
 private:
+    void _drawGBuffer(gfxm::mat4& projection, gfxm::mat4& view, gfxm::vec3& viewPos)
+    {
+        gBuffer.Bind();
+        glEnable(GL_DEPTH_TEST);
+        glViewport(0, 0, Common.frameSize.x, Common.frameSize.y);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        
+
+        // TODO: Render objects?
+        
+        auto& in = staticDrawData;
+        in.program->Use();
+        glUniformMatrix4fv(in.uProjection, 1, GL_FALSE, (float*)&projection);
+        glUniformMatrix4fv(in.uView, 1, GL_FALSE, (float*)&view);
+        glUniform3f(in.program->GetUniform("ViewPos"), viewPos.x, viewPos.y, viewPos.z);
+        glUniform3f(in.uAmbientColor, 0.1f, 0.15f, 0.25f);   
+
+        for(auto& kv : renderables)
+        {
+            Renderable& unit = kv.second;
+            glUniformMatrix4fv(
+                in.uModel, 1, GL_FALSE,
+                (float*)&unit.transform->GetTransform()
+            );
+            
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, unit.texDiffuse->GetGlName());
+
+            glBindVertexArray(unit.vao);
+            glDrawElements(GL_TRIANGLES, unit.indexCount, GL_UNSIGNED_INT, (void*)0);
+        }
+        // ==========
+    }
+
+    void _lightPass()
+    {
+
+    }
+
     void _initStaticProgram()
     {
         LOG("Initializing static shader program...");
@@ -363,6 +420,37 @@ private:
         LOG("Done");
     }
 
+    void _initLightPassProg()
+    {
+        lightPassProg = new gl::ShaderProgram();
+        gl::Shader vs;
+        gl::Shader fs;
+        vs.Init(GL_VERTEX_SHADER);
+        vs.Source(
+            #include "shaders/textured_fullscreen_quad.glsl"
+        );
+        vs.Compile();
+
+        fs.Init(GL_FRAGMENT_SHADER);
+        fs.Source(
+            #include "shaders/light_pass.glsl"
+        );
+        fs.Compile();
+
+        lightPassProg->AttachShader(&vs);
+        lightPassProg->AttachShader(&fs);
+        lightPassProg->BindAttrib(0, "Vertex");
+        lightPassProg->BindAttrib(1, "UV");
+        lightPassProg->BindFragData(0, "fragOut");
+        lightPassProg->Link();
+
+        lightPassProg->Use();
+        glUniform1i(lightPassProg->GetUniform("inAlbedo"), 0);
+        glUniform1i(lightPassProg->GetUniform("inPosition"), 1);
+        glUniform1i(lightPassProg->GetUniform("inNormal"), 2);
+        glUniform1i(lightPassProg->GetUniform("inSpecular"), 3);
+    }
+
     void _drawDebugElements(const gfxm::mat4& p, const gfxm::mat4& v)
     {
         float color[3] = { 0.3f, 0.3f, 0.3f };
@@ -383,9 +471,11 @@ private:
     Camera* camera;
     std::map<SceneObject*, Renderable> renderables;
     std::set<LightDirect*> lightsDirect;
+    std::set<LightOmni*> lightsOmni;
     std::set<Transform*> transforms;
 
     StaticDrawData staticDrawData;
+    gl::ShaderProgram* lightPassProg;
 
     GBuffer gBuffer;
 };
