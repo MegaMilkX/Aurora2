@@ -265,7 +265,7 @@ public:
         lightId = 0;
         for(auto l : lightsOmni)
         {
-            auto pos = l->Get<Transform>()->Position();
+            auto pos = l->Get<Transform>()->WorldPosition();
             auto col = l->Color();
             auto intensity = l->Intensity();
             glUniform3f(
