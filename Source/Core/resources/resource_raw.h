@@ -37,6 +37,31 @@ private:
     std::shared_ptr<mz_zip_archive> archive;
 };
 
+class ResourceRawMemory : public ResourceRaw
+{
+public:
+    ResourceRawMemory() {}
+    ResourceRawMemory(const char* src, size_t size) {
+        Fill(src, size);
+    }
+    ~ResourceRawMemory() {}
+
+    void Fill(const char* src, size_t size) {
+        data.resize(size);
+        memcpy((void*)data.data(), src, size);
+    }
+
+    virtual bool ReadAll(char* dest) {
+        memcpy(dest, data.data(), data.size());
+        return true;
+    }
+    virtual uint64_t Size() const {
+        return data.size();
+    }
+private:
+    std::vector<char> data;
+};
+
 class ResourceRawFilesystem : public ResourceRaw
 {
 public:
