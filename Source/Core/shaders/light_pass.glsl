@@ -55,7 +55,10 @@ void main()
         }
     } 
 
-    vec4 Light = LightDirectLambert + LightOmniLambert;
+    vec4 Light = LightDirectLambert 
+        + LightOmniLambert
+        + SpecDirect
+        + SpecOmni;
 
     fragOut = texture(inAlbedo, UVFrag) * Light;
 }
