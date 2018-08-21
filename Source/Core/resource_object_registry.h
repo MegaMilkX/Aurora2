@@ -14,7 +14,9 @@ public:
     template<typename T>
     std::shared_ptr<ResourceObject> Create(const std::string& name)
     {
+        LOG("Creating resource object " << name << "...");
         ResourceRaw* raw = g_resourceRegistry.Get(name);
+        LOG("Got raw resource: " << raw);
         if(!raw)
         {
             return 0;
@@ -23,6 +25,7 @@ public:
         ro->Build(raw);
         auto key_pair = std::make_pair(rttr::type::get<T>(), name);
         resources[key_pair].reset(ro);
+        LOG("Built resource object " << name << ": " << ro);
         return resources[key_pair];
     }
     template<typename T>
