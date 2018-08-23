@@ -101,6 +101,11 @@ std::map<rttr::type, json_prop_parser_t> InitPropertyParsers()
         m[3][3] = j[15].get<float>();
         v = m;
     };
+    parsers[rttr::type::get<ResourceRef>()] = [](rttr::variant& v, nlohmann::json& j){
+        if(!j.is_string()) return;
+        ResourceRef ref(j.get<std::string>());
+        v = ref;
+    };
 
     return parsers;
 }
