@@ -127,6 +127,34 @@ public:
         glEnable(GL_BLEND);
         glDisable(GL_DEPTH_TEST);
 
+        if(ImGui::BeginMainMenuBar())
+        {
+            if(ImGui::BeginMenu("File"))
+            {
+                if(ImGui::MenuItem("New")) {}
+                if(ImGui::MenuItem("Open")) {}
+                if(ImGui::MenuItem("Exit")) {}
+                ImGui::EndMenu();
+            }
+
+            ImGui::EndMainMenuBar();
+        }
+
+        bool t = true;
+        ImGui::ShowDemoWindow(&t);
+
+        double xcpos, ycpos;
+        glfwGetCursorPos(window, &xcpos, &ycpos);
+        ImGuiIO& io = ImGui::GetIO();
+        io.MousePos = ImVec2((float)xcpos, (float)ycpos);
+        int mlstate, mrstate;
+        mlstate = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+        mrstate = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
+        if (mlstate == GLFW_PRESS) io.MouseDown[0] = true;
+        else io.MouseDown[0] = false;
+        if (mrstate == GLFW_PRESS) io.MouseDown[1] = true;
+        else io.MouseDown[1] = false;
+
         bool consoleOpen = false;
         bool profOverlay = true;
         //dbgConsole.Draw("Dev console", &consoleOpen);
