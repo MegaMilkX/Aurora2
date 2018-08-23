@@ -10,6 +10,8 @@
 #include "debug_draw.h"
 #include "common.h"
 
+#include "data_headers/test_texture.png.h"
+
 struct Renderable
 {
     Transform* transform;
@@ -218,6 +220,11 @@ public:
         _initStaticProgram();
         _initLightPassProg();
         gBuffer.Init(1280, 720);
+
+        test_texture.reset(new Texture2D());
+        ResourceRawMemory raw((char*)test_texture_png, sizeof(test_texture_png));
+        test_texture->Build(&raw);
+
         return true;
     }
 
@@ -231,56 +238,7 @@ public:
         gfxm::vec3 viewPos = camera->Get<Transform>()->Position();
 
         _drawGBuffer(projection, view, viewPos);
-        
-        lightPassProg->Use();
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, gBuffer.albedo);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, gBuffer.position);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, gBuffer.normal);
-        glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, gBuffer.specular);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        glUniform3f(lightPassProg->GetUniform("ViewPos"), viewPos.x, viewPos.y, viewPos.z);
-
-        int lightId = 0;
-        for(auto& l : lightsDirect)
-        {
-            auto dir = l->Direction();
-            glUniform3f(
-                lightPassProg->GetUniform("LightDirect[" + std::to_string(lightId) + "]"), 
-                dir.x, dir.y, dir.z
-            );
-            auto col = l->Color();
-            glUniform3f(
-                lightPassProg->GetUniform("LightDirectRGB[" + std::to_string(lightId) + "]"), 
-                col.x, col.y, col.z
-            );
-            ++lightId;
-        }
-
-        lightId = 0;
-        for(auto l : lightsOmni)
-        {
-            auto pos = l->Get<Transform>()->WorldPosition();
-            auto col = l->Color();
-            auto intensity = l->Intensity();
-            glUniform3f(
-                lightPassProg->GetUniform(MKSTR("LightOmniPos[" << lightId << "]")),
-                pos.x, pos.y, pos.z
-            );
-            col = col * intensity;
-            glUniform3f(
-                lightPassProg->GetUniform(MKSTR("LightOmniRGB[" << lightId << "]")),
-                col.x, col.y, col.z
-            );
-            ++lightId;
-        }
-
-        DrawQuad();
+        _lightPass(viewPos);
 
         //DrawTexture2DToScreen(gBuffer.albedo);
         _drawDebugElements(projection, view);
@@ -295,6 +253,11 @@ public:
                 LOG("No mesh specified");
                 return;
             }
+            Material* mat = m->material.Get<Material>();
+            Texture2D* tex = 0;
+            if(mat) tex = ResourceRef(mat->GetString("Diffuse")).Get<Texture2D>();
+            if(!tex) tex = test_texture.get();
+
             renderables[so] = Renderable{
                 so->Get<Transform>(),
                 m->mesh.Get<Mesh>()->GetVao({
@@ -303,7 +266,7 @@ public:
                     { "Normal", 3, GL_FLOAT, GL_FALSE }
                 }),
                 (int)m->mesh.Get<Mesh>()->GetIndexCount(),
-                ResourceRef(m->material.Get<Material>()->GetString("Diffuse")).Get<Texture2D>()
+                tex
             };
         }
         else if(type == rttr::type::get<Camera>()) {
@@ -374,9 +337,57 @@ private:
         // ==========
     }
 
-    void _lightPass()
+    void _lightPass(gfxm::vec3& viewPos)
     {
+        lightPassProg->Use();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, gBuffer.albedo);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, gBuffer.position);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, gBuffer.normal);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, gBuffer.specular);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        glUniform3f(lightPassProg->GetUniform("ViewPos"), viewPos.x, viewPos.y, viewPos.z);
+
+        int lightId = 0;
+        for(auto& l : lightsDirect)
+        {
+            auto dir = l->Direction();
+            glUniform3f(
+                lightPassProg->GetUniform("LightDirect[" + std::to_string(lightId) + "]"), 
+                dir.x, dir.y, dir.z
+            );
+            auto col = l->Color();
+            glUniform3f(
+                lightPassProg->GetUniform("LightDirectRGB[" + std::to_string(lightId) + "]"), 
+                col.x, col.y, col.z
+            );
+            ++lightId;
+        }
+
+        lightId = 0;
+        for(auto l : lightsOmni)
+        {
+            auto pos = l->Get<Transform>()->WorldPosition();
+            auto col = l->Color();
+            auto intensity = l->Intensity();
+            glUniform3f(
+                lightPassProg->GetUniform(MKSTR("LightOmniPos[" << lightId << "]")),
+                pos.x, pos.y, pos.z
+            );
+            col = col * intensity;
+            glUniform3f(
+                lightPassProg->GetUniform(MKSTR("LightOmniRGB[" << lightId << "]")),
+                col.x, col.y, col.z
+            );
+            ++lightId;
+        }
+
+        DrawQuad();
     }
 
     void _initStaticProgram()
@@ -479,6 +490,9 @@ private:
     gl::ShaderProgram* lightPassProg;
 
     GBuffer gBuffer;
+
+    //
+    std::shared_ptr<Texture2D> test_texture;
 };
 
 #endif
