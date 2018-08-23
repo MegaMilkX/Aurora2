@@ -13,10 +13,12 @@ public:
         return g_resourceRegistry.Exists(name);
     }
     void Set(const std::string& name) { this->name = name; }
+    const std::string& GetTargetName() const { return name; }
     template<typename T>
     T* Get() {
         return g_resourceObjectRegistry.Get<T>(name);
     }
+    ResourceRaw* GetRaw() { return g_resourceRegistry.Get(name); }
 private:
     std::string name;
 };
