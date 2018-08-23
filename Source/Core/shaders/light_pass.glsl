@@ -1,6 +1,6 @@
 R"(#version 450
 #define LIGHT_DIRECT_COUNT 2
-#define LIGHT_OMNI_COUNT 16
+#define LIGHT_OMNI_COUNT 20
 
 in vec2 UVFrag;
 out vec4 fragOut;
@@ -59,6 +59,13 @@ void main()
         + LightOmniLambert
         + SpecDirect
         + SpecOmni;
+
+    Light = vec4(
+        Light.x / (Light.x + 1.0),
+        Light.y / (Light.y + 1.0),
+        Light.z / (Light.z + 1.0),
+        1.0
+    );
 
     fragOut = texture(inAlbedo, UVFrag) * Light;
 }
