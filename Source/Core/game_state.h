@@ -203,7 +203,6 @@ private:
     static Au::Timer timer;
 
     static GLFWwindow* window;
-    //static Au::Window* window;
     static AudioMixer3D audioMixer;
 
     static InputKeyboardMouseWin32* keyboardWin32;
