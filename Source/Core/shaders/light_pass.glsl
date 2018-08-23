@@ -1,6 +1,6 @@
 R"(#version 450
 #define LIGHT_DIRECT_COUNT 2
-#define LIGHT_OMNI_COUNT 20
+#define LIGHT_OMNI_COUNT 32
 
 in vec2 UVFrag;
 out vec4 fragOut;
