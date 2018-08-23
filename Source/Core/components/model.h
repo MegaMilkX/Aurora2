@@ -159,14 +159,10 @@ STATIC_RUN(Model)
     rttr::registration::class_<Model>("Model")
         .constructor<>()(rttr::policy::ctor::as_raw_ptr)
         .property(
-            "mesh",
-            &Model::GetMesh,
-            &Model::SetMesh
+            "mesh", &Model::mesh
         )
         .property(
-            "material",
-            &Model::GetMaterial,
-            &Model::SetMaterial
+            "material", &Model::material
         );
 }
 /*
