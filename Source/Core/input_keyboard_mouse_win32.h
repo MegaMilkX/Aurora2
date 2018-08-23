@@ -44,7 +44,7 @@ public:
         glfwSetMouseButtonCallback(window, &InputKeyboardMouseWin32::_onMouseKey);
         //glfwSetCursorPosCallback(window, &InputKeyboardMouseWin32::_onMouseMove);
 
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
         double xpos, ypos;
         glfwGetCursorPos(window, &xpos, &ypos);
