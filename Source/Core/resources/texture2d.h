@@ -24,11 +24,6 @@ public:
         glDeleteTextures(1, &glTexName);
     }
     
-    void Fill(Au::GFX::Texture2D* texture)
-    {
-        texture->Data(_data.data(), bpp, width, height);
-    }
-    
     void Data(unsigned char* data, int width, int height, int bpp)
     {
         _data = std::vector<unsigned char>(data, data + bpp * width * height);
