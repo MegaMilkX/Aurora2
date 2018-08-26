@@ -6,7 +6,7 @@
 #include <util/static_run.h>
 
 typedef std::function<void(rttr::variant&, nlohmann::json&)> json_prop_parser_t;
-std::map<rttr::type, json_prop_parser_t> InitPropertyParsers()
+inline std::map<rttr::type, json_prop_parser_t> InitPropertyParsers()
 {
     std::map<rttr::type, json_prop_parser_t> parsers;
 
@@ -110,7 +110,7 @@ std::map<rttr::type, json_prop_parser_t> InitPropertyParsers()
     return parsers;
 }
 
-rttr::variant JsonPropertyToVariant(nlohmann::json& j)
+inline rttr::variant JsonPropertyToVariant(nlohmann::json& j)
 {
     static auto parsers = InitPropertyParsers();
     using json = nlohmann::json;
