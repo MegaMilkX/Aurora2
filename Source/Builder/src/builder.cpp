@@ -121,12 +121,25 @@ bool load_project_json(const std::string& path, project_config& conf)
 #define MKSTR(LINE) \
 static_cast<std::ostringstream&>(std::ostringstream() << LINE).str()
 
-bool build(const project_config& proj_conf, const config& conf)
+bool build(const project_config& proj_conf, const config& conf, bool build_editor = false)
 {
-    CreateDirectoryA(
-        MKSTR(proj_conf.root_dir << "\\" << proj_conf.build_path).c_str(),
-        0
-    );
+    _putenv_s("ADDITIONAL_COMPILE_ARGS", "");
+    std::string build_path;
+    std::string target_name;
+
+    if(build_editor)
+    {
+        _putenv_s("ADDITIONAL_COMPILE_ARGS", "/D AURORA2_BUILD_EDITOR");
+        build_path = MKSTR(proj_conf.root_dir << "\\" << "editor");
+        target_name = "scene_editor";
+        CreateDirectoryA(build_path.c_str(), 0);
+    }
+    else
+    {
+        build_path = MKSTR(proj_conf.root_dir << "\\" << proj_conf.build_path);
+        target_name = proj_conf.project_name;
+        CreateDirectoryA(build_path.c_str(), 0);
+    }
 
     std::string include_paths_s;
     std::string library_paths_s;
@@ -166,7 +179,7 @@ bool build(const project_config& proj_conf, const config& conf)
     _putenv_s("LIB_PATHS", library_paths_s.c_str());
     _putenv_s("LIBRARIES", libraries_s.c_str());
     
-    _putenv_s("EXENAME", proj_conf.project_name.c_str());
+    _putenv_s("EXENAME", target_name.c_str());
     _putenv_s("OUTDIR", (proj_conf.root_dir + "\\" "intermediate" "\\").c_str());
     _putenv_s("SOURCE_DIRS", source_path.c_str());
     
@@ -177,8 +190,8 @@ bool build(const project_config& proj_conf, const config& conf)
     }
 
     copy_file(
-        MKSTR(proj_conf.root_dir << "\\intermediate\\" << proj_conf.project_name << ".exe"),
-        MKSTR(proj_conf.root_dir << "\\" << proj_conf.build_path << "\\" << proj_conf.project_name << ".exe")
+        MKSTR(proj_conf.root_dir << "\\intermediate\\" << target_name << ".exe"),
+        MKSTR(build_path << "\\" << target_name << ".exe")
     );
 
     return true;
@@ -188,11 +201,30 @@ int main(int argc, char** argv)
 {
     if(argc < 2)
     {
-        std::cout << "no project path specified" << std::endl;
+        std::cout << "Not enough parameters. At least specify your project config" << std::endl;
         return 0;
     }
+
+    std::string project_filename;
+    bool build_editor = false;
+    for(int i = 1; i < argc; ++i)
+    {
+        std::string param(argv[i]);
+        if(param.compare(0, 1, "-") == 0)
+        {
+            if(param == "-editor") build_editor = true;
+        }
+        else
+        {
+            project_filename = argv[i];
+        }
+    }
     
-    std::string project_filename = argv[1];
+    if(project_filename.empty())
+    {
+        std::cout << "No project config specified. Abort." << std::endl;
+        return 0;
+    }
 
     config conf;
     load_config(conf);
@@ -206,18 +238,28 @@ int main(int argc, char** argv)
     file << main_src;
     file.close();
     */
-    std::cout << "Building " << proj_conf.project_name << std::endl;
+    if(build_editor)
+    {
+        std::cout << "Building " << proj_conf.project_name << " editor" << std::endl;
+    }
+    else
+    {
+        std::cout << "Building " << proj_conf.project_name << std::endl;
+    }
     std::cout << get_module_dir() << std::endl;   
-    
-    if(!build(proj_conf, conf))
+
+    if(!build(proj_conf, conf, build_editor))
     {
         return 1;
     }
 
-    if(system(("cd \"" + proj_conf.root_dir + "\" && call \"" + cut_dirpath(get_module_dir()) + "\\ResourceCompiler\\resource_compiler\" \"" + project_filename + "\"").c_str()) != 0)
+    if(!build_editor)
     {
-        std::cout << "Failed to build resources" << std::endl;
-        return 1;
+        if(system(("cd \"" + proj_conf.root_dir + "\" && call \"" + cut_dirpath(get_module_dir()) + "\\ResourceCompiler\\resource_compiler\" \"" + project_filename + "\"").c_str()) != 0)
+        {
+            std::cout << "Failed to build resources" << std::endl;
+            return 1;
+        }
     }
 
     if(proj_conf.bindings.is_object())
@@ -236,10 +278,13 @@ int main(int argc, char** argv)
     }
 
     // Launch game
-    if(system(("cd \"" + proj_conf.root_dir + "\\" + proj_conf.build_path + "\" && call \"" + proj_conf.root_dir + "\\" + proj_conf.build_path + "\\" + proj_conf.project_name + "\"").c_str()) != 0)
+    if(!build_editor)
     {
-        std::cout << "Failed to launch built exe" << std::endl;
-        return 1;
+        if(system(("cd \"" + proj_conf.root_dir + "\\" + proj_conf.build_path + "\" && call \"" + proj_conf.root_dir + "\\" + proj_conf.build_path + "\\" + proj_conf.project_name + "\"").c_str()) != 0)
+        {
+            std::cout << "Failed to launch built exe" << std::endl;
+            return 1;
+        }
     }
 
     return 0;
