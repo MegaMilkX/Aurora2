@@ -278,4 +278,6 @@ private:
     }
 };
 
+extern Input gInput;
+
 #endif
