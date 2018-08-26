@@ -42,6 +42,9 @@ public:
         return glTexName; 
     }
 
+    int Width() { return width; }
+    int Height() { return height; }
+
     bool Build(ResourceRaw* r)
     {
         std::vector<char> bytes;
