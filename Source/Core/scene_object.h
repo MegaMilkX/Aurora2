@@ -11,6 +11,7 @@
 #include "../general/util.h"
 
 #include <rttr/registration>
+#include <rttr/registration_friend>
 #include <rttr/type>
 #include <util/static_run.h>
 
@@ -94,8 +95,21 @@ public:
     SceneObject* CreateObject()
     {
         SceneObject* o = new SceneObject(this);
+        o->SetController(controller);
         objects.push_back(o);
         return o;
+    }
+    void Erase(SceneObject* child)
+    {
+        for(unsigned i = 0; i < objects.size(); ++i)
+        {
+            if(objects[i] == child)
+            {
+                delete child;
+                objects.erase(objects.begin() + i);
+                break;
+            }
+        }
     }
     template<typename T>
     T* RootGet() { return Root()->GetComponent<T>(); }
@@ -213,6 +227,7 @@ public:
     {
         if(!from) return 0;
         SceneObject* new_object = CreateObject();
+        new_object->SetController(controller);
         new_object->Name(from->Name());
         for(auto so : from->objects)
         {
