@@ -38,6 +38,7 @@
         "odbccp32.lib",
         "winmm.lib",
         "Shlwapi.lib",
+        "comctl32.lib",
         "legacy_stdio_definitions.lib",
         "Opengl32.lib",
         "aurora.lib",

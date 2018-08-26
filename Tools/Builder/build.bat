@@ -1,6 +1,6 @@
 @echo off
 
-set COMPILER_ARGS=/MP /D NOMINMAX /D _CRT_SECURE_NO_WARNINGS /D "_UNICODE" /D "UNICODE" /GS /GL /analyze- /W3 /Gy /Zc:wchar_t /EHsc /MT /WX- /Zc:forScope /Gd /Oy- /Oi /Gm- /O2 /nologo /Zi
+set COMPILER_ARGS=/MP /D NOMINMAX /D _CRT_SECURE_NO_WARNINGS /D "_UNICODE" /D "UNICODE" /GS /GL /analyze- /W3 /Gy /Zc:wchar_t /EHsc /MT /WX- /Zc:forScope /Gd /Oy- /Oi /Gm- /O2 /nologo /Zi 
 
 setlocal enableextensions enabledelayedexpansion
 
@@ -85,6 +85,7 @@ if exist build.txt (
     set BUILDDIR=%BUILDDIRNAME%
 )
 
+rmdir /S /Q obj
 
 mkdir %OUTDIR%
 mkdir obj
@@ -93,6 +94,7 @@ pushd obj
 REM Compile
 cl /c %INCLUDE_PATHS% ^
 %COMPILER_ARGS% ^
+%ADDITIONAL_COMPILE_ARGS% ^
 %SOURCES%
 
 REM Collect all obj files
