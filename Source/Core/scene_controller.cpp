@@ -13,6 +13,7 @@ bool SceneController::Init()
 void SceneController::SetScene(SceneObject* sceneObject){
     // TODO: Cleanup
     scene = sceneObject;
+    scene->SetController(this);
     // TODO: Hook up callbacks and stuff
     _firstTimeSceneProcess(sceneObject);
 }
