@@ -17,8 +17,11 @@ public:
     }
     void Add(const std::string& name, ResourceRaw* raw)
     {
-        if(Exists(name)) delete resources[name];
-        resources[name] = raw;
+        //if(Exists(name)) delete resources[name];
+        if(!Exists(name))
+        {
+            resources[name] = raw;
+        }
     }
     bool Exists(const std::string& name)
     {
