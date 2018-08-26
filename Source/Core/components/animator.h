@@ -168,9 +168,12 @@ public:
                 gfxm::quat rot = kv.second.rotation();
                 gfxm::vec3 scl = kv.second.scale();
 
-                t->Position(gfxm::lerp(t->Position(), pos, weight));
-                t->Rotation(gfxm::slerp(t->Rotation(), rot, weight));
-                t->Scale(gfxm::lerp(t->Scale(), scl, weight));
+                gfxm::vec3 tpos = t->Position();
+                gfxm::quat trot = t->Rotation();
+                gfxm::vec3 tscl = t->Scale();
+                t->Position(gfxm::lerp(tpos, pos, weight));
+                t->Rotation(gfxm::slerp(trot, rot, weight));
+                t->Scale(gfxm::lerp(tscl, scl, weight));
             }
         }
         rootMotionPosDelta = 
