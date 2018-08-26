@@ -129,7 +129,7 @@ public:
         _state.Bind<Transform, void, float, const gfxm::vec3&>(&Transform::Rotate, "RotateVec");
         _state.Bind<Transform, void, float, float, float>(&Transform::Position, "Position");
         _state.Bind<Transform, void, const gfxm::vec3&>(&Transform::Position, "PositionVec");
-        _state.Bind<Transform, gfxm::vec3>(&Transform::Position, "GetPosition");
+        _state.Bind<Transform, const gfxm::vec3&>(&Transform::Position, "GetPosition");
         _state.Bind<Transform, void, float, float, float>(&Transform::Rotation, "Rotation");
         _state.Bind<Transform, void, float>(&Transform::Scale, "Scale");
         _state.Bind<Transform, SceneObject*>(&Transform::GetObject, "GetObject");

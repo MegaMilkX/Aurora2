@@ -230,6 +230,8 @@ void Transform::Position(const gfxm::vec3& position)
 { _position = position; Dirty(); }
 void Transform::Rotation(float x, float y, float z)
 { _rotation = gfxm::euler_to_quat(gfxm::vec3(x, y, z)); Dirty(); }
+void Transform::Rotation(gfxm::vec3 euler)
+{ _rotation = gfxm::euler_to_quat(gfxm::vec3(euler.x, euler.y, euler.z)); Dirty(); }
 void Transform::Rotation(float x, float y, float z, float w)
 { Rotation(gfxm::quat(x, y, z, w)); }
 void Transform::Rotation(const gfxm::quat& rotation)
@@ -241,12 +243,16 @@ void Transform::Scale(float x, float y, float z)
 { Scale(gfxm::vec3(x, y, z)); }
 void Transform::Scale(const gfxm::vec3& scale)
 { _scale = scale; Dirty(); }
+void Transform::ScaleIncrement(const gfxm::vec3& scale)
+{
+    _scale = _scale + scale;
+}
 
 gfxm::vec3 Transform::WorldPosition()
 {
     return GetTransform()[3];
 }
-gfxm::vec3 Transform::Position()
+const gfxm::vec3& Transform::Position()
 { return _position; }
 gfxm::quat Transform::WorldRotation()
 {
@@ -258,7 +264,11 @@ gfxm::quat Transform::WorldRotation()
 }
 gfxm::quat Transform::Rotation()
 { return _rotation; }
-gfxm::vec3 Transform::Scale()
+gfxm::vec3 Transform::RotationEuler()
+{
+    return gfxm::to_euler(_rotation);
+}
+const gfxm::vec3& Transform::Scale()
 { return _scale; }
 
 gfxm::vec3 Transform::Right()

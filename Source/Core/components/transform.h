@@ -52,17 +52,20 @@ public:
     void Position(float x, float y, float z);
     void Position(const gfxm::vec3& position);
     void Rotation(float x, float y, float z);
+    void Rotation(gfxm::vec3 euler);
     void Rotation(const gfxm::quat& rotation);
     void Rotation(float x, float y, float z, float w);
     void Scale(float scale);
     void Scale(float x, float y, float z);
     void Scale(const gfxm::vec3& scale);
+    void ScaleIncrement(const gfxm::vec3& scale);
     
     gfxm::vec3 WorldPosition();
-    gfxm::vec3 Position();
+    const gfxm::vec3& Position();
     gfxm::quat WorldRotation();
     gfxm::quat Rotation();
-    gfxm::vec3 Scale();
+    gfxm::vec3 RotationEuler();
+    const gfxm::vec3& Scale();
     
     gfxm::vec3 Right();
     gfxm::vec3 Up();
@@ -142,7 +145,23 @@ STATIC_RUN(Transform)
         .property(
             "matrix", 
             &Transform::GetLocalTransform, 
-            &Transform::SetTransform);
+            &Transform::SetTransform
+        )
+        .property(
+            "Translation",
+            rttr::select_overload<const gfxm::vec3&()>(&Transform::Position),
+            rttr::select_overload<void(const gfxm::vec3&)>(&Transform::Position)
+        )
+        .property(
+            "Rotation",
+            rttr::select_overload<gfxm::vec3()>(&Transform::RotationEuler),
+            rttr::select_overload<void(gfxm::vec3)>(&Transform::Rotation)
+        )
+        .property(
+            "Scale",
+            rttr::select_overload<const gfxm::vec3&()>(&Transform::Scale),
+            rttr::select_overload<void(const gfxm::vec3&)>(&Transform::Scale)
+        );
 }
 
 #endif
