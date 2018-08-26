@@ -10,7 +10,7 @@
 #include "debug_draw.h"
 #include "common.h"
 
-#include "data_headers/test_texture.png.h"
+#include "data_headers/test.png.h"
 
 struct Renderable
 {
@@ -222,7 +222,7 @@ public:
         gBuffer.Init(1280, 720);
 
         test_texture.reset(new Texture2D());
-        ResourceRawMemory raw((char*)test_texture_png, sizeof(test_texture_png));
+        ResourceRawMemory raw((char*)test_png, sizeof(test_png));
         test_texture->Build(&raw);
 
         return true;
