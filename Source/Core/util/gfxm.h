@@ -743,8 +743,7 @@ inline tmat3<T> to_orient_mat3(const tmat4<T>& m)
     {
         tvec3<T> v3 = mt[i];
         v3 = normalize(v3);
-        tvec4<T> v4 = tvec4<T>(v3.x, v3.y, v3.z, 0.0f);
-        mt[i] = v4;
+        mt[i] = v3;
     }
 
     return mt;
@@ -764,6 +763,83 @@ inline tquat<T> euler_to_quat(tvec3<T>& euler)
     tquat<T> qz = angle_axis(euler.z, tvec3<T>(0.0f, 0.0f, 1.0f));
     return normalize(qz * qy * qx);
 }
+template<typename T>
+inline tvec3<T> to_euler(const tquat<T>& q)
+{
+    tquat<T> q1 = normalize(q);
+    double heading, attitude, bank;
+    double test = q1.x*q1.y + q1.z*q1.w;
+	if (test > 0.499) { // singularity at north pole
+		heading = 2 * atan2(q1.x,q1.w);
+		attitude = pi/2.0f;
+		bank = 0;
+		return tvec3<T>((T)attitude, (T)heading, (T)bank);
+	}
+	if (test < -0.499) { // singularity at south pole
+		heading = -2 * atan2(q1.x,q1.w);
+		attitude = - pi/2.0f;
+		bank = 0;
+		return tvec3<T>((T)attitude, (T)heading, (T)bank);
+	}
+    double sqx = q1.x*q1.x;
+    double sqy = q1.y*q1.y;
+    double sqz = q1.z*q1.z;
+    heading = atan2(2*q1.y*q1.w-2*q1.x*q1.z , 1 - 2*sqy - 2*sqz);
+	attitude = asin(2*test);
+	bank = atan2(2*q1.x*q1.w-2*q1.y*q1.z , 1 - 2*sqx - 2*sqz);
+    return tvec3<T>((T)attitude, (T)heading, (T)bank);
+}
+/*
+template<typename T>
+inline tquat<T> to_quat(tmat3<T>& m)
+{
+    tquat<T> q(0.0f, 0.0f, 0.0f, 1.0f);
+
+    T& m00 = m[0][0]; T& m01 = m[0][1]; T& m02 = m[0][2];
+    T& m10 = m[1][0]; T& m11 = m[1][1]; T& m12 = m[1][2];
+    T& m20 = m[2][0]; T& m21 = m[2][1]; T& m22 = m[2][2];
+    T& x = q.x;
+    T& y = q.y;
+    T& z = q.z;
+    T& w = q.w;
+
+    // Use the Graphics Gems code, from 
+    // ftp://ftp.cis.upenn.edu/pub/graphics/shoemake/quatut.ps.Z
+    T t = m00 + m11 + m22;
+    // we protect the division by s by ensuring that s>=1
+    if (t >= 0) { // by w
+        T s = sqrt(t + (T)1);
+        w = (T)0.5 * s;
+        s = (T)0.5 / s;                 
+        x = (m21 - m12) * s;
+        y = (m02 - m20) * s;
+        z = (m10 - m01) * s;
+    } else if ((m00 > m11) && (m00 > m22)) { // by x
+        T s = sqrt(1 + m00 - m11 - m22); 
+        x = s * (T)0.5; 
+        s = (T)0.5 / s;
+        y = (m10 + m01) * s;
+        z = (m02 + m20) * s;
+        w = (m21 - m12) * s;
+    } else if (m11 > m22) { // by y
+        T s = sqrt(1 + m11 - m00 - m22); 
+        y = s * (T)0.5; 
+        s = (T)0.5 / s;
+        x = (m10 + m01) * s;
+        z = (m21 + m12) * s;
+        w = (m02 - m20) * s;
+    } else { // by z
+        T s = sqrt(1 + m22 - m00 - m11); 
+        z = s * (T)0.5; 
+        s = (T)0.5 / s;
+        x = (m02 + m20) * s;
+        y = (m21 + m12) * s;
+        w = (m10 - m01) * s;
+    }
+
+    return normalize(q);
+}
+*/
 template<typename T>
 inline tquat<T> to_quat(tmat3<T>& m)
 {
@@ -801,7 +877,6 @@ inline tquat<T> to_quat(tmat3<T>& m)
 
     return normalize(q);
 }
-
 template<typename T>
 inline tmat4<T>& perspective(tmat4<T>& m, float fov, float aspect, float znear, float zfar)
 {
