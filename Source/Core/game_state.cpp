@@ -2,9 +2,11 @@
 
 SceneController GameState::sceneController;
 
-FrameGraph GameState::frameGraph;
+//FrameGraph GameState::frameGraph;
 
 ImGuiDbgConsole GameState::dbgConsole;
+
+EditorGui GameState::editorGui;
 
 uint64_t GameState::frameCount = 0;
 float GameState::deltaTime = 0.0f;
@@ -15,5 +17,4 @@ GLFWwindow* GameState::window;
 AudioMixer3D GameState::audioMixer;
 
 InputKeyboardMouseWin32* GameState::keyboardWin32;
-Input GameState::input;
 

@@ -35,11 +35,7 @@
 
 #include "debug_draw.h"
 
-inline void FramebufferResizeCallback(GLFWwindow* win, int width, int height)
-{
-    Common.frameSize.x = width;
-    Common.frameSize.y = height;
-}
+#include <editor/editor_gui.h>
 
 class GameState
 {
@@ -49,6 +45,20 @@ public:
     static SceneController& GetSceneController() { return sceneController; }
 
     static void Init()
+    {
+        _InitCommon();
+        Update();
+    }
+
+    static void InitEditor()
+    {
+        _InitCommon();
+        editorGui.Init(GetInput());
+        sceneController.SetScene(editorGui.GetScene());
+        Update();
+    }
+
+    static void _InitCommon()
     {
         if(!glfwInit())
         {
@@ -68,7 +78,7 @@ public:
             std::cout << "failed to create a window" << std::endl;
             return;
         }
-        glfwSetFramebufferSizeCallback(window, &FramebufferResizeCallback);
+        glfwSetFramebufferSizeCallback(window, &GameState::FramebufferResizeCallback);
         Common.frameSize.x = 1280;
         Common.frameSize.y = 720;
         glfwMakeContextCurrent(window);
@@ -95,18 +105,67 @@ public:
 
         keyboardWin32 = new InputKeyboardMouseWin32(window);
         //mouseWin32 = new InputMouseWin32(window);
-        input.AddDevice(keyboardWin32);
-        input.Init();
+        gInput.AddDevice(keyboardWin32);
+        gInput.Init();
 
         sceneController.Init();
 
         deltaTime = 0.0f;
 
         ImGuiInit();
-
-        Update();
     }
     static ImGuiDbgConsole dbgConsole;
+    static EditorGui editorGui;
+
+    static void DrawEditorGUI()
+    {
+        editorGui.Draw();
+        bool t = true;
+        ImGui::ShowDemoWindow(&t);
+
+        double xcpos, ycpos;
+        glfwGetCursorPos(window, &xcpos, &ycpos);
+        ImGuiIO& io = ImGui::GetIO();
+        io.MousePos = ImVec2((float)xcpos, (float)ycpos);
+        int mlstate, mrstate;
+        mlstate = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+        mrstate = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
+        if (mlstate == GLFW_PRESS) io.MouseDown[0] = true;
+        else io.MouseDown[0] = false;
+        if (mrstate == GLFW_PRESS) io.MouseDown[1] = true;
+        else io.MouseDown[1] = false;
+
+        bool consoleOpen = false;
+        bool profOverlay = true;
+        //dbgConsole.Draw("Dev console", &consoleOpen);
+        ShowProfOverlay(&profOverlay, (int)(1.0f / deltaTime), 1);
+        //ShowFpsPlot((int)(1.0f / deltaTime));
+        ImGuiDraw();
+    }
+
+    static bool UpdateEditor()
+    {
+        bool result;
+        timer.Start();
+
+        result = glfwWindowShouldClose(window) == 0;
+        glfwWaitEvents();
+
+        gInput.Update();
+
+        FrameStart(Job());
+        AudioMix(Job());
+        sceneController.Update();
+
+        DrawEditorGUI();
+
+        glfwSwapBuffers(window);
+
+        deltaTime = timer.End() / 1000000.0f;
+        frameCount++;
+
+        return result;
+    }
     
     static bool Update()
     {
@@ -116,7 +175,7 @@ public:
         result = glfwWindowShouldClose(window) == 0;
         glfwPollEvents();
 
-        input.Update();
+        gInput.Update();
 
         FrameStart(Job());
         AudioMix(Job());
@@ -126,22 +185,6 @@ public:
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_BLEND);
         glDisable(GL_DEPTH_TEST);
-
-        if(ImGui::BeginMainMenuBar())
-        {
-            if(ImGui::BeginMenu("File"))
-            {
-                if(ImGui::MenuItem("New")) {}
-                if(ImGui::MenuItem("Open")) {}
-                if(ImGui::MenuItem("Exit")) {}
-                ImGui::EndMenu();
-            }
-
-            ImGui::EndMainMenuBar();
-        }
-
-        bool t = true;
-        ImGui::ShowDemoWindow(&t);
 
         double xcpos, ycpos;
         glfwGetCursorPos(window, &xcpos, &ycpos);
@@ -205,15 +248,23 @@ public:
     static float DeltaTime() { return deltaTime; }
     static uint64_t FrameCount() { return frameCount; }
     
-    static FrameGraph* GetFrameGraph() { return &frameGraph; }
+    //static FrameGraph* GetFrameGraph() { return &frameGraph; }
     static AudioMixer3D* GetAudioMixer() { return &audioMixer; }
-    static Input* GetInput() { return &input; }
+    static Input* GetInput() { return &gInput; }
     
 private:
+    static void FramebufferResizeCallback(GLFWwindow* win, int width, int height)
+    {
+        Common.frameSize.x = width;
+        Common.frameSize.y = height;
+        sceneController.GetRenderer().GetGBuffer()->ResizeBuffers(width, height);
+    }
+
     static void FrameStart(Job&)
     {
         ImGuiIO& io = ImGui::GetIO();
         ImGuiUpdate(DeltaTime());
+        ImGuizmo::BeginFrame();
     }
 
     static void AudioMix(Job&)
@@ -224,7 +275,7 @@ private:
 
     static SceneController sceneController;
 
-    static FrameGraph frameGraph;
+    //static FrameGraph frameGraph;
 
     static uint64_t frameCount;
     static float deltaTime;
@@ -234,7 +285,6 @@ private:
     static AudioMixer3D audioMixer;
 
     static InputKeyboardMouseWin32* keyboardWin32;
-    static Input input;
 };
 
 #endif

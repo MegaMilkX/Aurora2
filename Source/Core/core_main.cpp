@@ -50,7 +50,23 @@ void InitArchiveResources()
 
 void Aurora2Init();
 
-int main()
+int editor_main(int argc, char** argv)
+{
+    InitArchiveResources();
+    GameState::InitEditor();
+
+    while(GameState::UpdateEditor())
+    {
+        glfwPostEmptyEvent();
+        GameState::UpdateEditor();
+        glfwPostEmptyEvent();
+        GameState::UpdateEditor();
+    }
+    GameState::Cleanup();
+    return 0;
+}
+
+int game_main(int argc, char** argv)
 {
     InitArchiveResources();
     
@@ -60,4 +76,13 @@ int main()
     {}
     GameState::Cleanup();
     return 0;
+}
+
+int main(int argc, char** argv)
+{
+#ifdef AURORA2_BUILD_EDITOR
+    return editor_main(argc, argv);
+#else
+    return game_main(argc, argv);
+#endif
 }
