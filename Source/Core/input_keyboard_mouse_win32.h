@@ -32,16 +32,19 @@ public:
 
         keys_mouse = {
             {"MOUSE_1", 0}, {"MOUSE_2", 1}, {"MOUSE_3", 2}, {"MOUSE_4", 3}, {"MOUSE_5", 4}, {"MOUSE_6", 5}, {"MOUSE_7", 6},
-            {"MOUSE_8", 7}, {"MOUSE_LEFT", 0}, {"MOUSE_RIGHT", 1}, {"MOUSE_MIDDLE", 2}, {"MOUSE_X", 998}, {"MOUSE_Y", 999}
+            {"MOUSE_8", 7}, {"MOUSE_LEFT", 0}, {"MOUSE_RIGHT", 1}, {"MOUSE_MIDDLE", 2}, {"MOUSE_X", 998}, {"MOUSE_Y", 999},
+            {"MOUSE_SCROLL", 997}
         };
 
         mouse_objects[keys_mouse["MOUSE_X"]] = new InputObject();
         mouse_objects[keys_mouse["MOUSE_Y"]] = new InputObject();
+        mouse_objects[keys_mouse["MOUSE_SCROLL"]] = new InputObject();
 
         glfwSetWindowUserPointer(window, (void*)this);
 
         glfwSetKeyCallback(window, &InputKeyboardMouseWin32::_onKey);
         glfwSetMouseButtonCallback(window, &InputKeyboardMouseWin32::_onMouseKey);
+        glfwSetScrollCallback(window, &InputKeyboardMouseWin32::_onMouseScroll);
         //glfwSetCursorPosCallback(window, &InputKeyboardMouseWin32::_onMouseMove);
 
         //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -103,6 +106,9 @@ public:
         mouse_objects[keys_mouse["MOUSE_Y"]]->Set(mouse_pos_rel.y); 
 
         mouse_pos_prev = mouse_pos;
+
+        mouse_objects[keys_mouse["MOUSE_SCROLL"]]->Set(mouseScrollAccum);
+        mouseScrollAccum = 0.0f;
     }
 
 private:
@@ -114,6 +120,7 @@ private:
     std::map<int, InputObject*> mouse_objects;
 
     gfxm::vec2 mouse_pos_prev;
+    float mouseScrollAccum = 0.0f;
 
     static void _onKey(GLFWwindow* window, int key, int scancode, int action, int mods)
     {
@@ -153,6 +160,12 @@ private:
         ptr->mouse_objects[ptr->keys_mouse["MOUSE_Y"]]->Set(mouse_pos_rel.y); 
 
         ptr->mouse_pos_prev = mouse_pos;        
+    }
+
+    static void _onMouseScroll(GLFWwindow* window, double xoffset, double yoffset)
+    {
+        InputKeyboardMouseWin32* ptr = (InputKeyboardMouseWin32*)glfwGetWindowUserPointer(window);
+        ptr->mouseScrollAccum += (float)yoffset;
     }
 };
 
