@@ -231,6 +231,8 @@ public:
     void SetCamera(Camera* cam) { camera = cam; }
     Camera* GetCamera() { return camera; }
 
+    GBuffer* GetGBuffer() { return &gBuffer; }
+
     void Render() {
         if(!camera) return;
         gfxm::mat4 projection = camera->Projection();
@@ -244,30 +246,49 @@ public:
         _drawDebugElements(projection, view);
     }
 
+    void _addRenderable(Model* m, SceneObject* so)
+    {
+        Mesh* mesh = m->mesh.Get<Mesh>();
+        if(!mesh) {
+            LOG("No mesh specified");
+            return;
+        }
+        Material* mat = m->material.Get<Material>();
+        Texture2D* tex = 0;
+        if(mat) tex = ResourceRef(mat->GetString("Diffuse")).Get<Texture2D>();
+        if(!tex) tex = test_texture.get();
+
+        renderables[so] = Renderable{
+            so->Get<Transform>(),
+            m->mesh.Get<Mesh>()->GetVao({
+                { "Position", 3, GL_FLOAT, GL_FALSE },
+                { "UV", 2, GL_FLOAT, GL_FALSE },
+                { "Normal", 3, GL_FLOAT, GL_FALSE }
+            }),
+            (int)m->mesh.Get<Mesh>()->GetIndexCount(),
+            tex
+        };
+
+        LOG("Renderable added " << so);
+    }
+
     void _onAddComponent(rttr::type type, SceneObject::Component* c, SceneObject* so)
     {
         if(type == rttr::type::get<Model>()) {
             Model* m = (Model*)c;
-            Mesh* mesh = m->mesh.Get<Mesh>();
-            if(!mesh) {
-                LOG("No mesh specified");
-                return;
-            }
-            Material* mat = m->material.Get<Material>();
-            Texture2D* tex = 0;
-            if(mat) tex = ResourceRef(mat->GetString("Diffuse")).Get<Texture2D>();
-            if(!tex) tex = test_texture.get();
+            
+            m->mesh.AddChangeCallback(
+                [this, so, m](ResourceRef* ref){
+                    _addRenderable(m, so);
+                }
+            );
+            m->material.AddChangeCallback(
+                [this, so, m](ResourceRef* ref){
+                    _addRenderable(m, so);
+                }
+            );
 
-            renderables[so] = Renderable{
-                so->Get<Transform>(),
-                m->mesh.Get<Mesh>()->GetVao({
-                    { "Position", 3, GL_FLOAT, GL_FALSE },
-                    { "UV", 2, GL_FLOAT, GL_FALSE },
-                    { "Normal", 3, GL_FLOAT, GL_FALSE }
-                }),
-                (int)m->mesh.Get<Mesh>()->GetIndexCount(),
-                tex
-            };
+            _addRenderable(m, so);
         }
         else if(type == rttr::type::get<Camera>()) {
             SetCamera((Camera*)c);
@@ -287,6 +308,7 @@ public:
     {
         if(type == rttr::type::get<Model>()) {
             renderables.erase(so);
+            LOG("Renderable removed " << so);
         }
         else if(type == rttr::type::get<Camera>()) {
             if(camera == (Camera*)c) SetCamera(0);
