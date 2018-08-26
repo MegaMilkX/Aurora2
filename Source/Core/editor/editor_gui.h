@@ -335,6 +335,30 @@ public:
                         selectedObject = 0;
                     }
                 }
+                if(ImGui::MenuItem("Merge..."))
+                {
+                    char* outPath;
+                    auto r = NFD_OpenDialog("scn", NULL, &outPath);
+                    if(r == NFD_OKAY) {
+                        auto so = editedScene->CreateObject();
+
+                        std::cout << outPath << std::endl;
+                        std::string filePath(outPath);
+                        DeserializeScene(filePath, *so);
+                    }
+                }
+                if(ImGui::MenuItem("Merge FBX..."))
+                {
+                    char* outPath;
+                    auto r = NFD_OpenDialog("fbx", NULL, &outPath);
+                    if(r == NFD_OKAY) {
+                        auto so = editedScene->CreateObject();
+
+                        std::cout << outPath << std::endl;
+                        std::string filePath(outPath);
+                        SceneFromFbx(filePath, so);
+                    }
+                }
                 if(ImGui::MenuItem("Save"))
                 {
                     if(currentSceneFile.empty())
