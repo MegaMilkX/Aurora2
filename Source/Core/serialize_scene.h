@@ -113,7 +113,7 @@ inline std::string SerializeComponentToJson(mz_zip_archive& archive, rttr::type 
                 if(raw && raw->Size() > 0)
                 {
                     std::vector<char> buf;
-                    buf.resize(raw->Size());
+                    buf.resize((size_t)raw->Size());
                     raw->ReadAll((char*)buf.data());
                     mz_zip_writer_add_mem(
                         &archive,
