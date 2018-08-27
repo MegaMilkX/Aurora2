@@ -5,7 +5,7 @@
 #include <string>
 #include "fbx_object.h"
 
-class FbxLight : FbxObject
+class FbxLight : public FbxObject
 {
 public:
     static char* Type() { return "Light"; }

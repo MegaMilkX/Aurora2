@@ -15,7 +15,7 @@ public:
     FbxModel(){}
 
     unsigned ChildCount() const;
-    FbxModel& GetChild(unsigned i, FbxScene& scene);
+    FbxModel* GetChild(unsigned i, FbxScene& scene);
 
     void SetName(const std::string& name) { this->name = name; }
     const std::string& GetName() const { return name; }

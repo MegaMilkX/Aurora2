@@ -6,12 +6,15 @@
 #include "fbx_mesh.h"
 #include "fbx_light.h"
 #include "fbx_geometry.h"
-#include "fbx_connection.h"
+#include "fbx_animation_stack.h"
+#include "fbx_connections.h"
 #include "fbx_math.h"
+#include "fbx_type_index.h"
 
 #include <string>
 #include <vector>
 #include <iostream>
+#include <memory>
 
 struct FbxSettings
 {
@@ -20,14 +23,25 @@ struct FbxSettings
 
 class FbxScene
 {
+private:
+    FbxScene(){}
 public:
-    unsigned ModelCount() const;
-    FbxModel& GetModel(unsigned i);
-    FbxModel& GetModelByUid(int64_t uid);
-    FbxMesh& GetMesh(int64_t uid);
-    unsigned GeometryCount() const;
-    FbxGeometry& GetGeometry(unsigned i);
-    FbxGeometry& GetGeometryByUid(int64_t uid);
+    static FbxScene* Create() { return new FbxScene(); }
+    void Destroy() { delete this; }
+
+    template<typename T>
+    size_t Count();
+    template<typename T>
+    T* Get(size_t i);
+    template<typename T>
+    T* GetByUid(int64_t uid);
+    template<typename T>
+    T* GetOrCreateByUid(int64_t uid);
+    template<typename T>
+    T* Add(FbxObject* ptr);
+
+    size_t RootModelCount() const { return rootModels.size(); }
+    FbxModel* GetRootModel(size_t i) { return GetByUid<FbxModel>(rootModels[i]); }
 
     void _dumpFile(const std::string& filename);
     /* Don't use this */
@@ -36,22 +50,61 @@ public:
     FbxNode& _getRootNode() { return rootNode; }
 private:
     void _makeGlobalSettings();
-    FbxModel& _makeModel(FbxNode& node);
+    FbxModel* _makeModel(FbxNode& node);
     void _makeMesh(FbxNode& node);
-    FbxConnection* _findObjectToObjectParentConnection(int64_t uid);
 
     FbxNode rootNode;
 
     FbxSettings settings;
 
+    struct FbxObjectContainer
+    {
+        std::vector<int64_t> uids;
+        std::map<int64_t, std::shared_ptr<FbxObject>> objects;
+    };
+    std::map<FbxTypeIndex, FbxObjectContainer> objects;
+
     std::vector<int64_t> rootModels;
-    std::map<int64_t, FbxModel> models;
 
-    std::map<int64_t, FbxMesh> meshes;
-    std::vector<int64_t> geometryUids;
-    std::map<int64_t, FbxGeometry> geometries;
-
-    std::vector<FbxConnection> connections;
+    FbxConnections connections;
 };
+
+template<typename T>
+size_t FbxScene::Count() {
+    return objects[FbxTypeInfo<T>::Index()].uids.size();
+}
+template<typename T>
+T* FbxScene::Get(size_t i) {
+    auto& container = objects[FbxTypeInfo<T>::Index()];
+    return (T*)container.objects[container.uids[i]].get();
+}
+template<typename T>
+T* FbxScene::GetByUid(int64_t uid) {
+    auto& container = objects[FbxTypeInfo<T>::Index()];
+    return (T*)container.objects[uid].get();
+}
+template<typename T>
+T* FbxScene::GetOrCreateByUid(int64_t uid) {
+    auto& container = objects[FbxTypeInfo<T>::Index()];
+    auto it = container.objects.find(uid);
+    if(it == container.objects.end())
+    {
+        T* o = new T();
+        container.objects[uid].reset(o);
+        container.uids.emplace_back(uid);
+        return o;
+    }
+    else
+    {
+        return (T*)it->second.get();
+    }
+}
+template<typename T>
+T* FbxScene::Add(FbxObject* ptr) {
+    auto& container = objects[FbxTypeInfo<T>::Index()];
+    container.uids.emplace_back(ptr->GetUid());
+    container.objects[ptr->GetUid()].reset(ptr);
+    return (T*)ptr;
+}
 
 #endif

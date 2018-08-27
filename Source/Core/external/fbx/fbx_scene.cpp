@@ -2,41 +2,6 @@
 #include <sstream>
 #include <fstream>
 
-unsigned FbxScene::ModelCount() const
-{
-    return rootModels.size();
-}
-
-FbxModel& FbxScene::GetModel(unsigned i)
-{
-    return models[rootModels[i]];
-}
-
-FbxModel& FbxScene::GetModelByUid(int64_t uid)
-{
-    return models[uid];
-}
-
-FbxMesh& FbxScene::GetMesh(int64_t uid)
-{
-    return meshes[uid];
-}
-
-unsigned FbxScene::GeometryCount() const
-{
-    return geometryUids.size();
-}
-
-FbxGeometry& FbxScene::GetGeometry(unsigned i)
-{
-    return geometries[geometryUids[i]];
-}
-
-FbxGeometry& FbxScene::GetGeometryByUid(int64_t uid)
-{
-    return geometries[uid];
-}
-
 void FbxScene::_dumpFile(const std::string& filename)
 {
     std::ostringstream sstr;
@@ -53,23 +18,44 @@ void FbxScene::_finalize()
     for(unsigned i = 0; i < rootNode.ChildCount("Geometry"); ++i){
         FbxNode& node = rootNode.GetNode("Geometry", i);
         int64_t uid = node.GetProperty(0).GetInt64();
-        FbxGeometry& geom = geometries[uid];
-        geometryUids.emplace_back(uid);
-        geom.Make(node, settings.scaleFactor);
+        FbxGeometry* geom = GetOrCreateByUid<FbxGeometry>(uid);
+        geom->Make(node, settings.scaleFactor);
     }
 
     for(unsigned i = 0; i < rootNode.ChildCount("C"); ++i){
         FbxNode& node = rootNode.GetNode("C", i);
-        connections.emplace_back(FbxConnection(node));
+        connections.Add(FbxConnection(node));
     }
 
     for(unsigned i = 0; i < rootNode.ChildCount("Model"); ++i){
         FbxNode& node = rootNode.GetNode("Model", i);
-        FbxModel& model = _makeModel(node);
-        if(model.GetType() == FbxMesh::Type())
+        FbxModel* model = _makeModel(node);
+        if(model->GetType() == FbxMesh::Type())
         {
             _makeMesh(node);
-        }        
+        }
+    }
+
+    for(unsigned i = 0; i < rootNode.ChildCount("AnimationLayer"); ++i){
+        FbxNode& node = rootNode.GetNode("AnimationLayer", i);
+        int64_t uid = node.GetProperty(0).GetInt64();
+        FbxAnimationLayer* animLayer = GetOrCreateByUid<FbxAnimationLayer>(uid);
+        animLayer->Make(node);
+    }
+
+    for(unsigned i = 0; i < rootNode.ChildCount("AnimationStack"); ++i){
+        FbxNode& node = rootNode.GetNode("AnimationStack", i);
+        int64_t uid = node.GetProperty(0).GetInt64();
+        FbxAnimationStack* anim = GetOrCreateByUid<FbxAnimationStack>(uid);
+        
+        anim->Make(node, connections);
+
+        std::cout << anim->Name() << std::endl;
+        for(size_t i = 0; i < anim->LayerCount(); ++i)
+        {
+            int64_t layerUid = anim->GetLayerUid(i);
+
+        }
     }
 }
 
@@ -88,21 +74,19 @@ void FbxScene::_makeGlobalSettings()
     }
 }
 
-FbxModel& FbxScene::_makeModel(FbxNode& node)
+FbxModel* FbxScene::_makeModel(FbxNode& node)
 {
     int64_t uid = node.GetProperty(0).GetInt64();
-    FbxModel& model = models[uid];
-    model.SetUid(uid);
-    model.SetName(node.GetProperty(1).GetString());
-    model.SetType(node.GetProperty(2).GetString());
+    FbxModel* model = GetOrCreateByUid<FbxModel>(uid);
+    model->SetUid(uid);
+    model->SetName(node.GetProperty(1).GetString());
+    model->SetType(node.GetProperty(2).GetString());
 
-    FbxConnection* conn = _findObjectToObjectParentConnection(uid);
-    if(!conn || conn->parent_uid == 0)
+    int64_t parent_uid = connections.FindObjectToObjectParent(uid);
+    if(parent_uid <= 0)
         rootModels.emplace_back(uid);
     else
-    {
-        models[conn->parent_uid]._addChild(uid);
-    }
+        GetOrCreateByUid<FbxModel>(parent_uid)->_addChild(uid);
 
     FbxVector3 lclTranslation( 0.0f, 0.0f, 0.0f );
     FbxVector3 lclRotation( 0.0f, 0.0f, 0.0f );
@@ -172,10 +156,10 @@ FbxModel& FbxScene::_makeModel(FbxNode& node)
         FbxToMatrix4(preQuat * rotation * postQuat) *
         FbxScale(FbxMatrix4(1.0f), lclScaling);
 
-    model.SetTransform(transform);
-    model.SetLclTranslation(lclTranslation);
-    model.SetLclRotation(lclRotation);
-    model.SetLclScaling(lclScaling);
+    model->SetTransform(transform);
+    model->SetLclTranslation(lclTranslation);
+    model->SetLclRotation(lclRotation);
+    model->SetLclScaling(lclScaling);
 
     return model;
 }
@@ -183,24 +167,14 @@ FbxModel& FbxScene::_makeModel(FbxNode& node)
 void FbxScene::_makeMesh(FbxNode& node)
 {
     int64_t uid = node.GetProperty(0).GetInt64();
-    FbxMesh& mesh = meshes[uid];
-    mesh.SetUid(uid);
+    FbxMesh* mesh = GetOrCreateByUid<FbxMesh>(uid);
+    mesh->SetUid(uid);
 
-    for(auto& conn : connections){
-        if(conn.parent_uid == uid)
-        {
-            auto it = geometries.find(conn.child_uid);
-            if(it == geometries.end()) continue;
-            mesh.SetGeometryUid(it->first);
+    int64_t child_uid = connections.FindObjectToObjectChild(uid);
+    if(child_uid > 0) {
+        FbxGeometry* geom = GetByUid<FbxGeometry>(child_uid);
+        if(geom) {
+            mesh->SetGeometryUid(child_uid);
         }
     }
-}
-
-FbxConnection* FbxScene::_findObjectToObjectParentConnection(int64_t uid)
-{
-    for(auto& conn : connections){
-        if(conn.child_uid == uid)
-            return &conn;
-    }
-    return 0;
 }

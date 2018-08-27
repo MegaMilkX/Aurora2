@@ -7,9 +7,9 @@ unsigned FbxModel::ChildCount() const
     return children.size();
 }
 
-FbxModel& FbxModel::GetChild(unsigned i, FbxScene& scene)
+FbxModel* FbxModel::GetChild(unsigned i, FbxScene& scene)
 {
-    return scene.GetModelByUid(children[i]);
+    return scene.GetByUid<FbxModel>(children[i]);
 }
 
 void FbxModel::_addChild(int64_t uid){
