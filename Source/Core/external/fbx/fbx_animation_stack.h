@@ -14,15 +14,7 @@ public:
     size_t LayerCount() const { return layers.size(); }
     int64_t GetLayerUid(int i) { return layers[i]; }
 
-    void Make(FbxNode& node, FbxConnections& conns)
-    {
-        int64_t uid = node.GetProperty(0).GetInt64();
-        name = node.GetProperty(1).GetString();
-        for(unsigned i = 0; i < conns.CountChildrenOO(uid); ++i) {
-            int64_t animLayerUid = conns.GetChildOO(uid, i);
-            layers.emplace_back(animLayerUid);
-        }
-    }
+    virtual bool Make(FbxNode& node);
 private:
     std::string name;
     std::vector<int64_t> layers;

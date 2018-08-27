@@ -14,17 +14,13 @@ void FbxScene::_dumpFile(const std::string& filename)
 void FbxScene::_finalize()
 {
     _makeGlobalSettings();
-
-    for(unsigned i = 0; i < rootNode.ChildCount("Geometry"); ++i){
-        FbxNode& node = rootNode.GetNode("Geometry", i);
-        int64_t uid = node.GetProperty(0).GetInt64();
-        FbxGeometry* geom = GetOrCreateByUid<FbxGeometry>(uid);
-        geom->Make(node, settings.scaleFactor);
-    }
-
     for(unsigned i = 0; i < rootNode.ChildCount("C"); ++i){
         FbxNode& node = rootNode.GetNode("C", i);
         connections.Add(FbxConnection(node));
+    }
+
+    for(unsigned i = 0; i < rootNode.ChildCount("Geometry"); ++i){
+        FbxGeometry* geom = Make<FbxGeometry>(rootNode.GetNode("Geometry", i));
     }
 
     for(unsigned i = 0; i < rootNode.ChildCount("Model"); ++i){
@@ -37,18 +33,11 @@ void FbxScene::_finalize()
     }
 
     for(unsigned i = 0; i < rootNode.ChildCount("AnimationLayer"); ++i){
-        FbxNode& node = rootNode.GetNode("AnimationLayer", i);
-        int64_t uid = node.GetProperty(0).GetInt64();
-        FbxAnimationLayer* animLayer = GetOrCreateByUid<FbxAnimationLayer>(uid);
-        animLayer->Make(node);
+        FbxAnimationLayer* animLayer = Make<FbxAnimationLayer>(rootNode.GetNode("AnimationLayer", i));
     }
 
     for(unsigned i = 0; i < rootNode.ChildCount("AnimationStack"); ++i){
-        FbxNode& node = rootNode.GetNode("AnimationStack", i);
-        int64_t uid = node.GetProperty(0).GetInt64();
-        FbxAnimationStack* anim = GetOrCreateByUid<FbxAnimationStack>(uid);
-        
-        anim->Make(node, connections);
+        FbxAnimationStack* anim = Make<FbxAnimationStack>(rootNode.GetNode("AnimationStack", i));
 
         std::cout << anim->Name() << std::endl;
         for(size_t i = 0; i < anim->LayerCount(); ++i)

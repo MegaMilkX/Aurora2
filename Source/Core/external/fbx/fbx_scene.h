@@ -29,6 +29,9 @@ public:
     static FbxScene* Create() { return new FbxScene(); }
     void Destroy() { delete this; }
 
+    FbxSettings& Settings() { return settings; }
+    FbxConnections& Connections() { return connections; }
+
     template<typename T>
     size_t Count();
     template<typename T>
@@ -38,7 +41,7 @@ public:
     template<typename T>
     T* GetOrCreateByUid(int64_t uid);
     template<typename T>
-    T* Add(FbxObject* ptr);
+    T* Make(FbxNode& node);
 
     size_t RootModelCount() const { return rootModels.size(); }
     FbxModel* GetRootModel(size_t i) { return GetByUid<FbxModel>(rootModels[i]); }
@@ -90,6 +93,7 @@ T* FbxScene::GetOrCreateByUid(int64_t uid) {
     if(it == container.objects.end())
     {
         T* o = new T();
+        o->SetScene(this);
         container.objects[uid].reset(o);
         container.uids.emplace_back(uid);
         return o;
@@ -100,11 +104,19 @@ T* FbxScene::GetOrCreateByUid(int64_t uid) {
     }
 }
 template<typename T>
-T* FbxScene::Add(FbxObject* ptr) {
+T* FbxScene::Make(FbxNode& node) {
     auto& container = objects[FbxTypeInfo<T>::Index()];
-    container.uids.emplace_back(ptr->GetUid());
-    container.objects[ptr->GetUid()].reset(ptr);
-    return (T*)ptr;
+    int64_t uid = node.GetProperty(0).GetInt64();
+    T* o = new T();
+    o->SetScene(this);
+    if(!o->Make(node)) {
+        delete o;
+        return 0;
+    }
+
+    container.objects[uid].reset(o);
+    container.uids.emplace_back(uid);
+    return o;
 }
 
 #endif

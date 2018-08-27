@@ -14,6 +14,10 @@ class FbxModel : public FbxObject
 public:
     FbxModel(){}
 
+    virtual bool Make(FbxNode& node) {
+        return true;
+    }
+
     unsigned ChildCount() const;
     FbxModel* GetChild(unsigned i, FbxScene& scene);
 

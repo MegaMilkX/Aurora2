@@ -9,6 +9,10 @@ class FbxLight : public FbxObject
 {
 public:
     static char* Type() { return "Light"; }
+
+    virtual bool Make(FbxNode& node) {
+        
+    }
 };
 
 #endif

@@ -8,9 +8,10 @@
 class FbxAnimationLayer : public FbxObject
 {
 public:
-    void Make(FbxNode& node)
+    virtual bool Make(FbxNode& node)
     {
         name = node.GetProperty(1).GetString();
+        return true;
     }
 private:
     std::string name;

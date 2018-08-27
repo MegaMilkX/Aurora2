@@ -11,6 +11,10 @@ class FbxMesh : public FbxObject
 public:
     static char* Type() { return "Mesh"; }
 
+    virtual bool Make(FbxNode& node) {
+        return true;
+    }
+
     void SetGeometryUid(int64_t uid) { geomUid = uid; }
     int64_t GetGeometryUid() const { return geomUid; }
 private:
