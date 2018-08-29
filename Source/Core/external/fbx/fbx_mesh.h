@@ -5,16 +5,11 @@
 #include <string>
 #include "fbx_object.h"
 #include "fbx_geometry.h"
+#include "fbx_model.h"
 
-class FbxMesh : public FbxObject
+class FbxMesh : public FbxModel
 {
 public:
-    static char* Type() { return "Mesh"; }
-
-    virtual bool Make(FbxNode& node) {
-        return true;
-    }
-
     void SetGeometryUid(int64_t uid) { geomUid = uid; }
     int64_t GetGeometryUid() const { return geomUid; }
 private:

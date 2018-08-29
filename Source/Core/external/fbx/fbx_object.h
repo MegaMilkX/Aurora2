@@ -13,6 +13,8 @@ public:
     int64_t GetUid() const { return uid; }
 
     void SetScene(FbxScene* scn) { scene = scn; }
+
+    virtual const char* Type() const = 0;
     virtual bool Make(FbxNode& node) = 0;
 protected:
     int64_t uid;

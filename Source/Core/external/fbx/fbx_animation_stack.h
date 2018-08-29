@@ -12,12 +12,15 @@ class FbxAnimationStack : public FbxObject
 public:
     const std::string& Name() const { return name; }
     size_t LayerCount() const { return layers.size(); }
-    int64_t GetLayerUid(int i) { return layers[i]; }
+    FbxAnimationLayer* GetLayer(int i) { return layers[i]; }
 
+    virtual const char* Type() const { return "AnimationStack"; }
     virtual bool Make(FbxNode& node);
 private:
     std::string name;
-    std::vector<int64_t> layers;
+    double fps;
+    double length;
+    std::vector<FbxAnimationLayer*> layers;
 };
 
 #endif

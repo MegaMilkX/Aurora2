@@ -5,16 +5,19 @@
 
 #include "fbx_object.h"
 
+#include "fbx_animation_curve_node.h"
+
 class FbxAnimationLayer : public FbxObject
 {
 public:
-    virtual bool Make(FbxNode& node)
-    {
-        name = node.GetProperty(1).GetString();
-        return true;
-    }
+    virtual const char* Type() const { return "AnimationLayer"; }
+    virtual bool Make(FbxNode& node);
+
+    size_t CurveNodeCount() const { return curveNodes.size(); }
+    FbxAnimationCurveNode* GetCurveNode(size_t i) { return curveNodes[i]; }
 private:
     std::string name;
+    std::vector<FbxAnimationCurveNode*> curveNodes;
 };
 
 #endif

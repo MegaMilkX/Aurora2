@@ -14,6 +14,7 @@ class FbxModel : public FbxObject
 public:
     FbxModel(){}
 
+    virtual const char* Type() const { return "Model"; }
     virtual bool Make(FbxNode& node) {
         return true;
     }

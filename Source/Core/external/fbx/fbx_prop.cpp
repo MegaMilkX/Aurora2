@@ -34,6 +34,11 @@ int32_t FbxProp::GetInt32(){
         return 0;
     return *(int32_t*)(data.data());
 }
+int16_t FbxProp::GetInt16(){
+    if(data.size() != sizeof(int16_t))
+        return 0;
+    return *(int16_t*)(data.data());
+}
 float FbxProp::GetFloat(){
     if(data.size() != sizeof(float))
         return 0.0;

@@ -19,31 +19,30 @@ void FbxScene::_finalize()
         connections.Add(FbxConnection(node));
     }
 
-    for(unsigned i = 0; i < rootNode.ChildCount("Geometry"); ++i){
-        FbxGeometry* geom = Make<FbxGeometry>(rootNode.GetNode("Geometry", i));
-    }
-
     for(unsigned i = 0; i < rootNode.ChildCount("Model"); ++i){
         FbxNode& node = rootNode.GetNode("Model", i);
         FbxModel* model = _makeModel(node);
-        if(model->GetType() == FbxMesh::Type())
+        if(model->GetType() == "Mesh")
         {
             _makeMesh(node);
         }
     }
 
-    for(unsigned i = 0; i < rootNode.ChildCount("AnimationLayer"); ++i){
-        FbxAnimationLayer* animLayer = Make<FbxAnimationLayer>(rootNode.GetNode("AnimationLayer", i));
-    }
-
     for(unsigned i = 0; i < rootNode.ChildCount("AnimationStack"); ++i){
-        FbxAnimationStack* anim = Make<FbxAnimationStack>(rootNode.GetNode("AnimationStack", i));
+        FbxAnimationStack* anim = _make<FbxAnimationStack>(rootNode.GetNode("AnimationStack", i));
 
         std::cout << anim->Name() << std::endl;
         for(size_t i = 0; i < anim->LayerCount(); ++i)
         {
-            int64_t layerUid = anim->GetLayerUid(i);
-
+            auto layer = anim->GetLayer(i);
+            for(size_t j = 0; j < layer->CurveNodeCount(); ++j)
+            {
+                auto curveNode = layer->GetCurveNode(j);
+                for(size_t k = 0; k < curveNode->CurveCount(); ++k)
+                {
+                    auto curve = curveNode->GetCurve(k);
+                }
+            }
         }
     }
 }
@@ -52,21 +51,52 @@ void FbxScene::_makeGlobalSettings()
 {
     if(rootNode.ChildCount(PROPERTY_NODE_NAME) == 0)
         return;
+
+    FBX_TIME_MODE timeMode = FBX_FRAMES_60;
+    double fps = 60.0;
+
     FbxNode& props70 = rootNode.GetNode(PROPERTY_NODE_NAME, 0);
     for(unsigned i = 0; i < props70.ChildCount("P"); ++i)
     {
         FbxNode& prop = props70.GetNode("P", i);
-        if(prop.GetProperty(0).GetString() == "UnitScaleFactor")
-        {
+        if(prop.GetProperty(0).GetString() == "UnitScaleFactor") {
             settings.scaleFactor = prop.GetProperty(4).GetDouble() * 0.01;
+        } else if(prop.GetProperty(0).GetString() == "TimeMode") {
+            timeMode = (FBX_TIME_MODE)prop.GetProperty(4).GetInt32();
+        } else if(prop.GetProperty(0).GetString() == "CustomFrameRate") {
+            fps = prop.GetProperty(4).GetDouble();
         }
     }
+
+    switch(timeMode) {
+    case FBX_FRAMES_DEFAULT: break;
+    case FBX_FRAMES_120: fps = 120.0; break;
+    case FBX_FRAMES_100: fps = 100.0; break;
+    case FBX_FRAMES_60: fps = 60.0; break;
+    case FBX_FRAMES_50: fps = 50.0; break;
+    case FBX_FRAMES_48: fps = 48.0; break;
+    case FBX_FRAMES_30: fps = 30.0; break;
+    case FBX_FRAMES_30_DROP: fps = 30.0; break;
+    case FBX_FRAMES_NTSC_DROP: fps = 29.97; break;
+    case FBX_FRAMES_NTSC_FULL: fps = 29.97; break;
+    case FBX_FRAMES_PAL: fps = 25.0; break;
+    case FBX_FRAMES_CINEMA: fps = 24.0; break;
+    // Should not be used for frame rate
+    case FBX_FRAMES_1000m: fps = 30.0; break;
+    case FBX_FRAMES_CINEMA_ND: fps = 23.976; break;
+    case FBX_FRAMES_CUSTOM: break;
+    case FBX_FRAMES_96: fps = 96.0; break;
+    case FBX_FRAMES_72: fps = 72.0; break;
+    case FBX_FRAMES_59dot94: fps = 59.94; break;
+    }
+
+    settings.frameRate = fps;
 }
 
 FbxModel* FbxScene::_makeModel(FbxNode& node)
 {
     int64_t uid = node.GetProperty(0).GetInt64();
-    FbxModel* model = GetOrCreateByUid<FbxModel>(uid);
+    FbxModel* model = GetByUid<FbxModel>(uid);
     model->SetUid(uid);
     model->SetName(node.GetProperty(1).GetString());
     model->SetType(node.GetProperty(2).GetString());
@@ -75,7 +105,7 @@ FbxModel* FbxScene::_makeModel(FbxNode& node)
     if(parent_uid <= 0)
         rootModels.emplace_back(uid);
     else
-        GetOrCreateByUid<FbxModel>(parent_uid)->_addChild(uid);
+        GetByUid<FbxModel>(parent_uid)->_addChild(uid);
 
     FbxVector3 lclTranslation( 0.0f, 0.0f, 0.0f );
     FbxVector3 lclRotation( 0.0f, 0.0f, 0.0f );
@@ -156,7 +186,11 @@ FbxModel* FbxScene::_makeModel(FbxNode& node)
 void FbxScene::_makeMesh(FbxNode& node)
 {
     int64_t uid = node.GetProperty(0).GetInt64();
-    FbxMesh* mesh = GetOrCreateByUid<FbxMesh>(uid);
+    FbxMesh* mesh = GetByUid<FbxMesh>(uid);
+    /*
+    objects[FbxTypeInfo<FbxMesh>::Index()].objects[uid].reset(mesh);
+    objects[FbxTypeInfo<FbxMesh>::Index()].uids.emplace_back(uid);
+*/
     mesh->SetUid(uid);
 
     int64_t child_uid = connections.FindObjectToObjectChild(uid);

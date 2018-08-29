@@ -14,10 +14,23 @@ public:
     std::string GetString();
     int64_t GetInt64();
     int32_t GetInt32();
+    int16_t GetInt16();
     float GetFloat();
     double GetDouble();
     template<typename T>
     std::vector<T> GetArray();
+
+    bool IsString() const { return type == 'S'; }
+    bool IsInt64() const { return type == 'L'; }
+    bool IsInt32() const { return type == 'I'; }
+    bool IsInt16() const { return type == 'Y'; }
+    bool IsFloat() const { return type == 'F'; }
+    bool IsDouble() const { return type == 'D'; }
+    bool IsInt64Array() const { return type == 'l'; }
+    bool IsInt32Array() const { return type == 'i'; }
+    bool IsFloatArray() const { return type == 'f'; }
+    bool IsDoubleArray() const { return type == 'd'; }
+    bool IsBinaryData() const { return type == 'R'; }
     
     void Print(std::ostringstream& sstr, unsigned level = 0);
 private:

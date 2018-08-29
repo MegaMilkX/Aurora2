@@ -80,6 +80,7 @@ public:
     const std::vector<float>& GetUV(int layer = 0) const { return uv_layers[layer]; }
     const std::vector<float>& GetRGB(int layer = 0) const { return rgb_layers[layer]; }
 
+    virtual const char* Type() const { return "Geometry"; }
     virtual bool Make(FbxNode& node);
 private:
     std::string name;
