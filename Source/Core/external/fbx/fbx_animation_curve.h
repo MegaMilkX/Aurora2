@@ -50,6 +50,7 @@ public:
 
     unsigned KeyframeCount() { return keyframes.size(); }
     FbxKeyframe* GetKeyframe(unsigned id) { return &keyframes[id]; }
+    const std::vector<FbxKeyframe>& GetKeyframes() { return keyframes; }
 private:
     std::string name;
     std::vector<FbxKeyframe> keyframes;

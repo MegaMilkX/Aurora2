@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <memory>
+#include <string>
 
 class ResourceRaw
 {
@@ -10,7 +11,12 @@ public:
     virtual ~ResourceRaw() {}
 
     virtual bool ReadAll(char* dest) = 0;
-    virtual uint64_t Size() const = 0; 
+    virtual uint64_t Size() const = 0;
+
+    void SetName(const std::string& name) { this->name = name; }
+    const std::string& Name() const { return name; }
+private:
+    std::string name;
 };
 
 #define MINIZ_HEADER_FILE_ONLY

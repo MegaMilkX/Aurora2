@@ -15,12 +15,9 @@ public:
         return g_resourceRegistry.Exists(name);
     }
     void operator=(const ResourceRef& other) {
-        std::cout << "operator= " << other.name << std::endl;
         Set(other.name);
     }
-    void Set(const std::string& name) 
-    { 
-        std::cout << "Set " << name << std::endl;
+    void Set(const std::string& name) {
         this->name = name;
         Changed(); 
     }

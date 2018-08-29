@@ -103,6 +103,7 @@ inline std::string SerializeComponentToJson(mz_zip_archive& archive, rttr::type 
     for(auto p : props)
     {
         SetJsonMember(j, p, c);
+        /*
         if(embed_resources)
         {
             if(p.get_type() == rttr::type::get<ResourceRef>())
@@ -123,6 +124,7 @@ inline std::string SerializeComponentToJson(mz_zip_archive& archive, rttr::type 
                 }
             }
         }
+        */
     }
 
     result = j.dump();
@@ -190,6 +192,25 @@ inline bool SerializeScene(const SceneObject* scene, const std::string& filename
 
     std::string file_prefix;
     SerializeScene_(scene, archive, file_prefix, embed_resources);
+
+    if(embed_resources)
+    {
+        for(size_t i = 0; i < g_resourceRegistry.Count(); ++i)
+        {
+            ResourceRaw* raw = g_resourceRegistry.GetById(i);
+            if(raw && raw->Size() > 0)
+            {
+                std::vector<char> buf;
+                buf.resize((size_t)raw->Size());
+                raw->ReadAll((char*)buf.data());
+                mz_zip_writer_add_mem(
+                    &archive,
+                    ("resources/" + raw->Name()).c_str(),
+                    buf.data(), buf.size(), 0
+                );
+            }
+        }
+    }
 
     mz_zip_writer_finalize_archive(&archive);
     mz_zip_writer_end(&archive);

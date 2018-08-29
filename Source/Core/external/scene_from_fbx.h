@@ -6,6 +6,8 @@
 #include "../../lib/miniz.c"
 #include <scene_object.h>
 
+#include <animation_driver.h>
+
 inline void ResourcesFromFbxScene(FbxScene& fbxScene)
 {
     for(unsigned i = 0; i < fbxScene.Count<FbxGeometry>(); ++i)
@@ -42,9 +44,61 @@ inline void ResourcesFromFbxScene(FbxScene& fbxScene)
         mz_zip_writer_end(&zip);
     }
 
-    for(unsigned i = 0; i < fbxScene.Count<FbxAnimationStack>(); ++i)
-    {
+    
+    auto _rename = [](const std::string& name) -> std::string {
+        static std::map<std::string, std::string> nameMap = {
+            { "T", "Translation" },
+            { "R", "Rotation" },
+            { "S", "Scale" },
+            { "d|X", "x" },
+            { "d|Y", "y" },
+            { "d|Z", "z" }
+        };
+        if(nameMap.count(name)) return nameMap[name];
+        return name;
+    };
 
+    for(unsigned i = 0; i < fbxScene.Count<FbxAnimationStack>(); ++i) {
+        FbxAnimationStack* stack = fbxScene.Get<FbxAnimationStack>(i);
+        mz_zip_archive zip;
+        memset(&zip, 0, sizeof(zip));
+        mz_zip_writer_init_heap(&zip, 0, 0);
+
+        double fps = fbxScene.Settings().frameRate;
+        mz_zip_writer_add_mem(&zip, "FrameRate", (void*)&fps, sizeof(fps), 0);
+        double len = stack->Length();
+        mz_zip_writer_add_mem(&zip, "Length", (void*)&len, sizeof(len), 0);
+
+        for(unsigned j = 0; j < stack->LayerCount(); ++j) {
+            FbxAnimationLayer* layer = stack->GetLayer(j);
+            for(unsigned k = 0; k < layer->CurveNodeCount(); ++k) {
+                FbxAnimationCurveNode* curveNode = layer->GetCurveNode(k);
+                for(unsigned l = 0; l < curveNode->CurveCount(); ++l) {
+                    auto curv = curveNode->GetCurve(l);
+
+                    auto& kf = curv->GetKeyframes();
+
+                    mz_zip_writer_add_mem(
+                        &zip, 
+                        MKSTR(
+                            j << "/" <<
+                            curveNode->OwnerName() << "/" << 
+                            _rename(curveNode->Name()) << "/" << 
+                            _rename(curv->Name())).c_str(),
+                        (void*)kf.data(), sizeof(FbxKeyframe) * kf.size(), 0
+                    );
+                }
+            }
+        }
+
+        void* bufptr;
+        size_t sz;
+        mz_zip_writer_finalize_heap_archive(&zip, &bufptr, &sz);
+        g_resourceRegistry.Add(
+            MKSTR(stack->Name() << ".anim"), 
+            new ResourceRawMemory((char*)bufptr, sz)
+        );
+        mz_zip_writer_end(&zip);
     }
 }
 
@@ -94,6 +148,12 @@ inline void SceneFromFbx(FbxScene& fbxScene, SceneObject* scene){
         SceneObject* child = scene->CreateObject();
         scene->Get<Transform>()->Attach(child->Get<Transform>());
         SceneFromFbxModel(fbxScene.GetRootModel(i), fbxScene, child);
+    }
+
+    if(fbxScene.Count<FbxAnimationStack>() > 0) {
+        auto animDriver = scene->Get<AnimationDriver>();
+        auto stack = fbxScene.Get<FbxAnimationStack>(0);
+        animDriver->animation = ResourceRef(MKSTR(stack->Name() << ".anim"));
     }
 }
 

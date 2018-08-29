@@ -8,8 +8,8 @@ bool FbxAnimationStack::Make(FbxNode& node) {
     auto& conns = scene->Connections();
     int64_t uid = node.GetProperty(0).GetInt64();
     name = node.GetProperty(1).GetString();
-    for(unsigned i = 0; i < conns.CountChildrenOO(uid); ++i) {
-        int64_t animLayerUid = conns.GetChildOO(uid, i);
+    for(unsigned i = 0; i < conns.CountChildren(FBX_OBJECT_OBJECT, uid); ++i) {
+        int64_t animLayerUid = conns.GetChild(FBX_OBJECT_OBJECT, uid, i);
         auto layer = scene->GetByUid<FbxAnimationLayer>(animLayerUid);
         if(!layer) continue;
         layers.emplace_back(layer);

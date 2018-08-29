@@ -14,6 +14,8 @@ public:
     size_t LayerCount() const { return layers.size(); }
     FbxAnimationLayer* GetLayer(int i) { return layers[i]; }
 
+    double Length() const { return length; }
+
     virtual const char* Type() const { return "AnimationStack"; }
     virtual bool Make(FbxNode& node);
 private:

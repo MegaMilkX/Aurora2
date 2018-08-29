@@ -10,19 +10,19 @@ public:
         connections.emplace_back(conn);
     }
 
-    size_t CountChildrenOO(int64_t parent) {
+    size_t CountChildren(FBX_CONNECTION_TYPE type, int64_t parent) {
         size_t c = 0;
         for(auto& conn : connections){
-            if(conn.parent_uid == parent && conn.type == "OO")
+            if(conn.parent_uid == parent && conn.type == type)
                 ++c;
         }
         return c;
     }
 
-    int64_t GetChildOO(int64_t parent, size_t index) {
+    int64_t GetChild(FBX_CONNECTION_TYPE type, int64_t parent, size_t index) {
         size_t c = 0;
         for(auto& conn : connections){
-            if(conn.parent_uid == parent && conn.type == "OO") {
+            if(conn.parent_uid == parent && conn.type == type) {
                 if(index == c)
                     return conn.child_uid;
                 ++c;
@@ -31,31 +31,31 @@ public:
         return -1;
     }
 
-    size_t CountChildrenOP(int64_t parent) {
+    size_t CountParents(FBX_CONNECTION_TYPE type, int64_t child) {
         size_t c = 0;
         for(auto& conn : connections){
-            if(conn.parent_uid == parent && conn.type == "OP")
+            if(conn.child_uid == child && conn.type == type)
                 ++c;
         }
         return c;
     }
 
-    int64_t GetChildOP(int64_t parent, size_t index) {
+    int64_t GetParent(FBX_CONNECTION_TYPE type, int64_t child, size_t index) {
         size_t c = 0;
         for(auto& conn : connections){
-            if(conn.parent_uid == parent && conn.type == "OP") {
+            if(conn.child_uid == child && conn.type == type) {
                 if(index == c)
-                    return conn.child_uid;
+                    return conn.parent_uid;
                 ++c;
             }
         }
         return -1;
     }
 
-    FbxConnection* GetChildOPConnection(int64_t parent, size_t index) {
+    FbxConnection* GetChildConnection(FBX_CONNECTION_TYPE type, int64_t parent, size_t index) {
         size_t c = 0;
         for(auto& conn : connections){
-            if(conn.parent_uid == parent && conn.type == "OP") {
+            if(conn.parent_uid == parent && conn.type == type) {
                 if(index == c)
                     return &conn;
                 ++c;
@@ -66,14 +66,14 @@ public:
 
     int64_t FindObjectToObjectParent(int64_t uid) {
         for(auto& conn : connections){
-            if(conn.child_uid == uid && conn.type == "OO")
+            if(conn.child_uid == uid && conn.type == FBX_OBJECT_OBJECT)
                 return conn.parent_uid;
         }
         return -1;
     }
     int64_t FindObjectToObjectChild(int64_t uid) {
         for(auto& conn : connections){
-            if(conn.parent_uid == uid && conn.type == "OO")
+            if(conn.parent_uid == uid && conn.type == FBX_OBJECT_OBJECT)
                 return conn.child_uid;
         }
         return -1;

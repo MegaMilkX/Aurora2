@@ -21,6 +21,7 @@ public:
         if(!Exists(name))
         {
             resources[name] = raw;
+            raw->SetName(name);
         }
     }
     bool Exists(const std::string& name)
@@ -31,6 +32,14 @@ public:
     {
         if(!Exists(name)) return 0;
         return resources[name];
+    }
+
+    size_t Count() const { return resources.size(); }
+    ResourceRaw* GetById(size_t id) {
+        auto it = resources.begin();
+        std::advance(it, id);
+        if(it == resources.end()) return 0;
+        return it->second;
     }
 private:
     std::map<std::string, ResourceRaw*> resources;
