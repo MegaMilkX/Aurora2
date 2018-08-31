@@ -6,7 +6,7 @@
 #include <model.h>
 #include <light_omni.h>
 #include <luascript.h>
-#include <animator.h>
+//#include <animator.h>
 #include <skeleton.h>
 #include <dynamics/rigid_body.h>
 #include <collision/collider.h>

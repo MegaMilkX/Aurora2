@@ -77,15 +77,26 @@ inline void ResourcesFromFbxScene(FbxScene& fbxScene)
                     auto curv = curveNode->GetCurve(l);
 
                     auto& kf = curv->GetKeyframes();
+                    struct _keyframe {
+                        float time;
+                        float value;
+                    };
+                    std::vector<_keyframe> frames;
+                    for(auto& f : kf) {
+                        double timePerFrame = FbxTimeSecond / fbxScene.Settings().frameRate;
+                        float keyTime = f.frame / timePerFrame;
+                        frames.emplace_back(_keyframe{keyTime, f.value});
+                    }
 
                     mz_zip_writer_add_mem(
                         &zip, 
                         MKSTR(
-                            j << "/" <<
+                            "Layers/" << j << "/" <<
                             curveNode->OwnerName() << "/" << 
+                            "Transform/" <<
                             _rename(curveNode->Name()) << "/" << 
                             _rename(curv->Name())).c_str(),
-                        (void*)kf.data(), sizeof(FbxKeyframe) * kf.size(), 0
+                        (void*)frames.data(), sizeof(_keyframe) * frames.size(), 0
                     );
                 }
             }
@@ -153,7 +164,7 @@ inline void SceneFromFbx(FbxScene& fbxScene, SceneObject* scene){
     if(fbxScene.Count<FbxAnimationStack>() > 0) {
         auto animDriver = scene->Get<AnimationDriver>();
         auto stack = fbxScene.Get<FbxAnimationStack>(0);
-        animDriver->animation = ResourceRef(MKSTR(stack->Name() << ".anim"));
+        animDriver->AddAnim(MKSTR(stack->Name() << ".anim"), MKSTR(stack->Name() << ".anim"));
     }
 }
 

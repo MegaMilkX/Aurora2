@@ -7,6 +7,8 @@
 
 #include "fbx_object.h"
 
+extern const int64_t FbxTimeSecond;
+
 class FbxAnimationStack : public FbxObject
 {
 public:

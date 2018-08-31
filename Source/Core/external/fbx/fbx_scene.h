@@ -122,13 +122,12 @@ T* FbxScene::_make(FbxNode& node) {
     int64_t uid = node.GetProperty(0).GetInt64();
     T* o = new T();
     o->SetScene(this);
+    container.objects[uid].reset(o);
+    container.uids.emplace_back(uid);
     if(!o->Make(node)) {
         delete o;
         return 0;
     }
-
-    container.objects[uid].reset(o);
-    container.uids.emplace_back(uid);
     return o;
 }
 template<typename T>
