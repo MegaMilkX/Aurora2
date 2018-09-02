@@ -12,7 +12,8 @@
         "..\\..\\Source\\Core\\lib",
         "..\\..\\Include",
         "C:\\MyDocuments\\Projects\\lib\\glfw\\include",
-        "C:\\MyDocuments\\Projects\\lib\\rttr\\src"
+        "C:\\MyDocuments\\Projects\\lib\\rttr\\src",
+        "..\\..\\Source\\Core\\lib\\ozz\\include"
     ],
     "library_paths":[
         "C:\\MyDocuments\\Projects\\Aurora\\lib",
@@ -21,7 +22,8 @@
         "C:\\MyDocuments\\Projects\\lib\\freetype-2.8\\objs\\vc2010\\Win32",
         "C:\\MyDocuments\\Projects\\lib\\serial\\lib",
         "C:\\MyDocuments\\Projects\\lib\\glfw\\lib",
-        "C:\\MyDocuments\\Projects\\lib\\rttr\\lib"
+        "C:\\MyDocuments\\Projects\\lib\\rttr\\lib",
+        "..\\..\\Source\\Core\\lib\\ozz\\lib"
     ],
     "libraries":[
         "kernel32.lib",
@@ -49,6 +51,9 @@
         "freetype28MT.lib",
         "serial.lib",
         "glfw3.lib",
-        "librttr_core.lib"
+        "librttr_core.lib",
+        "ozz_animation_r.lib",
+        "ozz_base_r.lib",
+        "ozz_options_r.lib"
     ]
 }

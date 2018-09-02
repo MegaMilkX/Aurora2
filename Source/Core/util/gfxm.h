@@ -756,7 +756,7 @@ inline tmat4<T> to_mat4(const tquat<T>& q)
     return m;
 }
 template<typename T>
-inline tquat<T> euler_to_quat(tvec3<T>& euler)
+inline tquat<T> euler_to_quat(const tvec3<T>& euler)
 {
     tquat<T> qx = angle_axis(euler.x, tvec3<T>(1.0f, 0.0f, 0.0f));
     tquat<T> qy = angle_axis(euler.y, tvec3<T>(0.0f, 1.0f, 0.0f));
@@ -764,30 +764,45 @@ inline tquat<T> euler_to_quat(tvec3<T>& euler)
     return normalize(qz * qy * qx);
 }
 template<typename T>
+T roll(const tquat<T>& q) {
+    return static_cast<T>(
+        atan2(
+            static_cast<T>(2) * (q.x * q.y + q.w * q.z),
+            q.w * q.w + q.x * q.x - q.y * q.y - q.z * q.z
+        )
+    );
+}
+template<typename T>
+T pitch(const tquat<T>& q) {
+    T const y = static_cast<T>(2) * (q.y * q.z + q.w * q.x);
+    T const x = q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z;
+
+    if(std::abs(x) <= std::numeric_limits<float>::epsilon() &&
+        std::abs(y) <= std::numeric_limits<float>::epsilon())
+    {
+        return static_cast<T>(static_cast<T>(2) * atan2(q.x, q.w));    
+    }
+
+    return static_cast<T>(atan2(y, x));
+}
+template<typename T>
+T yaw(const tquat<T>& q) {
+    return asin(
+        clamp(
+            static_cast<T>(-2) * (q.x * q.z - q.w * q.y),
+            static_cast<T>(-1),
+            static_cast<T>(1)
+        )
+    );
+}
+template<typename T>
 inline tvec3<T> to_euler(const tquat<T>& q)
 {
-    tquat<T> q1 = normalize(q);
-    double heading, attitude, bank;
-    double test = q1.x*q1.y + q1.z*q1.w;
-	if (test > 0.499) { // singularity at north pole
-		heading = 2 * atan2(q1.x,q1.w);
-		attitude = pi/2.0f;
-		bank = 0;
-		return tvec3<T>((T)attitude, (T)heading, (T)bank);
-	}
-	if (test < -0.499) { // singularity at south pole
-		heading = -2 * atan2(q1.x,q1.w);
-		attitude = - pi/2.0f;
-		bank = 0;
-		return tvec3<T>((T)attitude, (T)heading, (T)bank);
-	}
-    double sqx = q1.x*q1.x;
-    double sqy = q1.y*q1.y;
-    double sqz = q1.z*q1.z;
-    heading = atan2(2*q1.y*q1.w-2*q1.x*q1.z , 1 - 2*sqy - 2*sqz);
-	attitude = asin(2*test);
-	bank = atan2(2*q1.x*q1.w-2*q1.y*q1.z , 1 - 2*sqx - 2*sqz);
-    return tvec3<T>((T)attitude, (T)heading, (T)bank);
+    return tvec3<T>(pitch(q), yaw(q), roll(q));
+}
+template<typename T>
+inline tquat<T> to_quat(const tvec3<T>& euler) {
+    return euler_to_quat(euler);
 }
 /*
 template<typename T>
@@ -953,19 +968,31 @@ inline float lerp(float a, float b, float x)
 }
 
 template<typename T>
-inline tvec3<T> lerp(tvec3<T>& a, tvec3<T>& b, float x)
+inline tvec2<T> lerp(const tvec2<T>& a, const tvec2<T>& b, float x)
+{
+    return tvec2<T>(lerp(a.x, b.x, x), lerp(a.y, b.y, x));
+}
+
+template<typename T>
+inline tvec3<T> lerp(const tvec3<T>& a, const tvec3<T>& b, float x)
 {
     return tvec3<T>(lerp(a.x, b.x, x), lerp(a.y, b.y, x), lerp(a.z, b.z, x));
 }
 
 template<typename T>
-inline tquat<T> lerp(tquat<T>& a, tquat<T>& b, float x)
+inline tvec4<T> lerp(const tvec4<T>& a, const tvec4<T>& b, float x)
+{
+    return tvec4<T>(lerp(a.x, b.x, x), lerp(a.y, b.y, x), lerp(a.z, b.z, x), lerp(a.w, b.w, x));
+}
+
+template<typename T>
+inline tquat<T> lerp(const tquat<T>& a, const tquat<T>& b, float x)
 {
     return normalize(a * (1.0f - x) + b * x);
 }
 
 template<typename T>
-inline tquat<T> slerp(tquat<T>& a, tquat<T>& b, float x)
+inline tquat<T> slerp(const tquat<T>& a, const tquat<T>& b, float x)
 {
     tquat<T> r = tquat<T>(0.0f, 0.0f, 0.0f, 1.0f);
     float d = dot(a, b);

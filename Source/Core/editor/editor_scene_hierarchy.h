@@ -29,6 +29,10 @@ public:
         }
         else
         {
+            if(ImGui::Button("Create Object")) {
+                scene->CreateObject();
+            }
+            ImGui::Separator();
             SceneHierarchyViewNode(scene);
             ImGui::End();
         }
@@ -43,11 +47,24 @@ private:
             {
                 SetSelected(scene);
             }
+            if (ImGui::BeginPopupContextItem()) // When used after an item that has an ID (here the Button), we can skip providing an ID to BeginPopupContextItem().
+            {
+                ImGui::Selectable("Export...");
+                ImGui::Selectable("Delete");
+                ImGui::EndPopup();
+            }
         }
         else
         {
             bool node_open = ImGui::TreeNodeEx(
                 (void*)scene, selectedObject == scene ? ImGuiTreeNodeFlags_Selected : 0, scene->Name().c_str());
+            if (ImGui::BeginPopupContextItem()) // When used after an item that has an ID (here the Button), we can skip providing an ID to BeginPopupContextItem().
+            {
+                ImGui::Selectable("Export...");
+                ImGui::Selectable("Delete");
+                ImGui::EndPopup();
+            }
+
             if (ImGui::IsItemClicked())
             {
                 SetSelected(scene);

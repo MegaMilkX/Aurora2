@@ -7,6 +7,7 @@
 #include <scene_object.h>
 
 #include <animation_driver.h>
+//#include <skeleton_animator.h>
 
 inline void ResourcesFromFbxScene(FbxScene& fbxScene)
 {
@@ -71,6 +72,60 @@ inline void ResourcesFromFbxScene(FbxScene& fbxScene)
 
         for(unsigned j = 0; j < stack->LayerCount(); ++j) {
             FbxAnimationLayer* layer = stack->GetLayer(j);
+
+            struct kf3_t {
+                float frame;
+                gfxm::vec3 value;
+            };
+            struct kf4_t {
+                float frame;
+                gfxm::vec4 value;
+            };
+
+            for(size_t k = 0; k < fbxScene.Count<FbxModel>(); ++k) {
+                FbxModel* model = fbxScene.Get<FbxModel>(k);
+                std::vector<kf3_t> tc;
+                std::vector<kf4_t> rc;
+                std::vector<kf3_t> sc;
+                for(double f = 0.0; f < stack->Length(); f += 1.0f) {
+                    FbxVector3 t = layer->EvalTranslation(*model, f);
+                    FbxQuat r = layer->EvalRotation(*model, f);
+                    FbxVector3 s = layer->EvalScale(*model, f);
+
+                    tc.emplace_back(kf3_t{(float)f, gfxm::vec3(t.x, t.y, t.z)});
+                    rc.emplace_back(kf4_t{(float)f, gfxm::vec4(r.x, r.y, r.z, r.w)});
+                    sc.emplace_back(kf3_t{(float)f, gfxm::vec3(s.x, s.y, s.z)});
+                }
+
+                mz_zip_writer_add_mem(
+                    &zip, 
+                    MKSTR(
+                        "Layers/" << j << "/" <<
+                        model->GetName() << "/" << 
+                        "Transform/" << 
+                        "Translation.curve3").c_str(),
+                    (void*)tc.data(), sizeof(kf3_t) * tc.size(), 0
+                );
+                mz_zip_writer_add_mem(
+                    &zip, 
+                    MKSTR(
+                        "Layers/" << j << "/" <<
+                        model->GetName() << "/" << 
+                        "Transform/" << 
+                        "Quaternion.curveq").c_str(),
+                    (void*)rc.data(), sizeof(kf4_t) * rc.size(), 0
+                );
+                mz_zip_writer_add_mem(
+                    &zip, 
+                    MKSTR(
+                        "Layers/" << j << "/" <<
+                        model->GetName() << "/" << 
+                        "Transform/" << 
+                        "Scale.curve3").c_str(),
+                    (void*)sc.data(), sizeof(kf3_t) * sc.size(), 0
+                );
+            }
+            /*
             for(unsigned k = 0; k < layer->CurveNodeCount(); ++k) {
                 FbxAnimationCurveNode* curveNode = layer->GetCurveNode(k);
                 for(unsigned l = 0; l < curveNode->CurveCount(); ++l) {
@@ -100,6 +155,7 @@ inline void ResourcesFromFbxScene(FbxScene& fbxScene)
                     );
                 }
             }
+            */
         }
 
         void* bufptr;
@@ -161,10 +217,11 @@ inline void SceneFromFbx(FbxScene& fbxScene, SceneObject* scene){
         SceneFromFbxModel(fbxScene.GetRootModel(i), fbxScene, child);
     }
 
-    if(fbxScene.Count<FbxAnimationStack>() > 0) {
+    for(size_t i = 0; i < fbxScene.Count<FbxAnimationStack>(); ++i) {
+        //auto animDriver = scene->Get<SkeletonAnimator>();
         auto animDriver = scene->Get<AnimationDriver>();
-        auto stack = fbxScene.Get<FbxAnimationStack>(0);
-        animDriver->AddAnim(MKSTR(stack->Name() << ".anim"), MKSTR(stack->Name() << ".anim"));
+        auto stack = fbxScene.Get<FbxAnimationStack>(i);
+        animDriver->AddAnim(stack->Name(), MKSTR(stack->Name() << ".anim"));
     }
 }
 

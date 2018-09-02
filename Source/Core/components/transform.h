@@ -63,7 +63,7 @@ public:
     gfxm::vec3 WorldPosition();
     const gfxm::vec3& Position();
     gfxm::quat WorldRotation();
-    gfxm::quat Rotation();
+    const gfxm::quat& Rotation();
     gfxm::vec3 RotationEuler();
     const gfxm::vec3& Scale();
     
@@ -156,6 +156,11 @@ STATIC_RUN(Transform)
             "Rotation",
             rttr::select_overload<gfxm::vec3()>(&Transform::RotationEuler),
             rttr::select_overload<void(gfxm::vec3)>(&Transform::Rotation)
+        )
+        .property(
+            "Quaternion",
+            rttr::select_overload<const gfxm::quat&()>(&Transform::Rotation),
+            rttr::select_overload<void(const gfxm::quat&)>(&Transform::Rotation)
         )
         .property(
             "Scale",

@@ -16,6 +16,12 @@ public:
 
     size_t CurveCount() const { return curves.size(); }
     FbxAnimationCurve* GetCurve(size_t i) { return curves[i]; }
+    FbxAnimationCurve* GetCurve(const std::string& name) {
+        for(auto c : curves) {
+            if(c->Name() == name) return c;
+        }
+        return 0;
+    }
 private:
     std::string name;
     std::string ownerName;

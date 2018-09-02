@@ -4,18 +4,97 @@
 #include <util/gfxm.h>
 #include <vector>
 
+template<typename T>
 struct keyframe
 {
     keyframe(): time(0) {}
     keyframe(float time): time(time) {}
-    void operator=(float value)
+    void operator=(const T& value)
     { this->value = value; }
-    bool operator<(const keyframe& other)
+    bool operator<(const keyframe<T>& other)
     { return time < other.time; }
     float time;
-    float value;
+    T value;
 };
 
+template<typename T>
+T curve_value_interp(const T& a, const T& b, float t) {
+    return T();
+}
+template<>
+inline float curve_value_interp(const float& a, const float& b, float t) {
+    return a + t * (b - a);
+}
+template<>
+inline gfxm::vec2 curve_value_interp(const gfxm::vec2& a, const gfxm::vec2& b, float t) {
+    return gfxm::vec2(
+        a.x + t * (b.x - a.x),
+        a.y + t * (b.y - a.y)
+    );
+}
+template<>
+inline gfxm::vec3 curve_value_interp(const gfxm::vec3& a, const gfxm::vec3& b, float t) {
+    return gfxm::vec3(
+        a.x + t * (b.x - a.x),
+        a.y + t * (b.y - a.y),
+        a.z + t * (b.z - a.z)
+    );
+}
+template<>
+inline gfxm::quat curve_value_interp(const gfxm::quat& a, const gfxm::quat& b, float t) {
+    return gfxm::slerp(a, b, t);
+}
+
+template<typename T>
+class curve {
+public:
+    T at(float time, T def = T()) {
+        if(keyframes.empty())
+            return def;
+        keyframe<T>* k0 = 0, *k1 = 0;
+        for(int i = keyframes.size() - 1; i >= 0; --i)
+        {
+            k0 = &keyframes[i];
+            if(i == keyframes.size() - 1)
+                k1 = k0;
+            else
+                k1 = &keyframes[i + 1];
+            if(k0->time <= time)
+                break;
+        }
+        if(k0 == 0)
+            return def;
+        if(k0 == k1)
+            return k0->value;
+        T a = k0->value;
+        T b = k1->value;
+        float t = (time - k0->time) / (k1->time - k0->time);
+        return curve_value_interp(a, b, t);
+    }
+    T delta(float from, float to) {
+        return T();
+    }
+    keyframe<T>& operator[](float time) {
+        for(unsigned i = 0; i < keyframes.size(); ++i)
+        {
+            if(fabsf(keyframes[i].time - time) < FLT_EPSILON)
+            {
+                return keyframes[i];
+            }
+        }        
+        keyframes.push_back(keyframe<float>(time));
+        std::sort(keyframes.begin(), keyframes.end());
+        return operator[](time);
+    }
+    void set_keyframes(const std::vector<keyframe<T>> keyframes) {
+        this->keyframes = keyframes;
+        std::sort(this->keyframes.begin(), this->keyframes.end());
+    }
+private:
+    std::vector<keyframe<T>> keyframes;
+};
+
+/*
 class curve
 {
 public:
@@ -23,7 +102,7 @@ public:
     {
         if(keyframes.empty())
             return def;
-        keyframe* k0 = 0, *k1 = 0;
+        keyframe<float>* k0 = 0, *k1 = 0;
         for(int i = keyframes.size() - 1; i >= 0; --i)
         {
             k0 = &keyframes[i];
@@ -65,7 +144,7 @@ public:
         return d;
     }
 
-    keyframe& operator[](float time)
+    keyframe<float>& operator[](float time)
     {
         for(unsigned i = 0; i < keyframes.size(); ++i)
         {
@@ -75,14 +154,14 @@ public:
             }
         }
         
-        keyframes.push_back(keyframe(time));
+        keyframes.push_back(keyframe<float>(time));
         std::sort(keyframes.begin(), keyframes.end());
         return operator[](time);
     }
 
     bool empty() { return keyframes.empty(); }
 private:
-    std::vector<keyframe> keyframes;
+    std::vector<keyframe<float>> keyframes;
 };
 
 struct curve2
@@ -163,5 +242,5 @@ public:
     bool empty() { return x.empty() || y.empty() || x.empty() || w.empty(); }
     curve x, y, z, w;
 };
-
+*/
 #endif

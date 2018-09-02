@@ -3,6 +3,7 @@
 
 #include "editor_scene_hierarchy.h"
 #include "editor_scene_object_inspector.h"
+#include "editor_component_creator.h"
 #include "../external/imguizmo/imguizmo.h"
 #include <camera.h>
 #include "../data_headers/blender_icons.png.h"
@@ -12,6 +13,8 @@
 #include <deserialize_scene.h>
 #include <serialize_scene.h>
 #include <external/scene_from_fbx.h>
+
+#include <components/animation_driver.h>
 
 class EditorCamera : public SceneObject::Component
 {
@@ -185,6 +188,73 @@ public:
         icon_texture.reset(new Texture2D());
         ResourceRawMemory raw((char*)blender_icons_png, sizeof(blender_icons_png));
         icon_texture->Build(&raw);
+
+        editorSceneObjectInspector.AddComponentGuiExtension(
+            rttr::type::get<AnimationDriver>(),
+            [](SceneObject::Component* c){
+                AnimationDriver* driver = (AnimationDriver*)c;
+                bool preview = true;
+                if(ImGui::Checkbox("Preview", &preview)) {}
+                if(preview) glfwPostEmptyEvent();
+
+                for(size_t i = 0; i < driver->LayerCount(); ++i)
+                {
+                    AnimLayer* layer = driver->GetLayer(i);
+                    if (ImGui::TreeNode(MKSTR("Layer " << i).c_str()))
+                    {
+                        if (ImGui::BeginCombo("Current anim", layer->CurrentAnimName().c_str(), 0)) // The second parameter is the label previewed before opening the combo.
+                        {
+                            for(size_t n = 0; n < driver->AnimCount(); ++n) {
+                                const std::string& anim_name = driver->GetAnimName(n);
+                                bool is_selected = (anim_name == layer->CurrentAnimName());
+                                if(ImGui::Selectable(anim_name.c_str(), is_selected)) {
+                                    layer->Play(anim_name);
+                                }
+                                if(is_selected) ImGui::SetItemDefaultFocus();
+                            }
+                            ImGui::EndCombo();
+                        }
+                        rttr::type t = rttr::type::get<AnimLayer::MODE>();
+                        rttr::enumeration en = t.get_enumeration();
+                        if(ImGui::BeginCombo("Mode", en.value_to_name(layer->Mode()).to_string().c_str()))
+                        {                            
+                            for(auto& n : en.get_names()) {
+                                auto& val = en.name_to_value(n);
+                                bool is_selected = (val.get_value<AnimLayer::MODE>() == layer->Mode());
+                                if(ImGui::Selectable(n.to_string().c_str(), is_selected)) {
+                                    layer->SetMode(val.get_value<AnimLayer::MODE>());
+                                }
+                                if(is_selected) ImGui::SetItemDefaultFocus();
+                            }
+                            ImGui::EndCombo();
+                        }
+                        float weight = layer->Strength();
+                        if(ImGui::DragFloat("Weight", &weight, 0.01f, 0.0f, 1.0f)) {
+                            layer->SetStrength(weight);
+                        }
+                        bool looping = layer->Looping();
+                        if(ImGui::Checkbox("Looping", &looping)) {}
+                        layer->Looping(looping);
+                        if(ImGui::Button("Remove Layer")) {
+                            driver->RemoveLayer(i);
+                        }
+                        ImGui::TreePop();
+                    }
+                }
+                if(ImGui::Button("Add Layer")) {
+                    driver->AddLayer();
+                }
+                if (ImGui::TreeNode("Animations"))
+                {
+                    for(size_t i = 0; i < driver->AnimCount(); ++i)
+                    {
+                        const std::string& name = driver->GetAnimName(i);
+                        ImGui::Text(name.c_str());
+                    }
+                    ImGui::TreePop();
+                }
+            }
+        );
 
         input->BindActionPress(
             "GizmoTranslate", 
@@ -439,11 +509,15 @@ public:
             ImGui::End();
         }
         editorSceneHierarchy.Draw(editedScene);
-        editorSceneObjectInspector.Draw(selectedObject);
+        editorSceneObjectInspector.Draw(selectedObject, componentCreator);
+        componentCreator.Update(selectedObject);
     }
+    
 private:
     EditorSceneHierarchy editorSceneHierarchy;
     EditorSceneObjectInspector editorSceneObjectInspector;
+    EditorComponentCreator componentCreator;
+
     SceneObject* selectedObject;
     std::string currentSceneFile;
 };

@@ -76,6 +76,7 @@ GLuint ShaderProgram::GetUniform(const std::string& name)
 void ShaderProgram::Use()
 {
     glUseProgram(id);
+    
 }
 GLuint ShaderProgram::GetId()
 {

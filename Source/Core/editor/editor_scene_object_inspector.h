@@ -4,11 +4,16 @@
 #include <scene_object.h>
 #include <util/imgui_wrapper.h>
 #include <util/imgui_console.h>
+#include "editor_component_creator.h"
 
 class EditorSceneObjectInspector
 {
 public:
-    void Draw(SceneObject* object)
+    void AddComponentGuiExtension(rttr::type component_type, std::function<void(SceneObject::Component*)> func) {
+        componentGuiExtensions[component_type] = func;
+    }
+
+    void Draw(SceneObject* object, EditorComponentCreator& componentCreatorWindow)
     {
         bool t = true;
         const float DISTANCE = 10.0f;
@@ -33,6 +38,9 @@ public:
                 {
                     object->Name(buf);
                 }
+                if(ImGui::Button("Add component...")) {
+                    componentCreatorWindow.Show();
+                }
                 ImGui::Separator();
                 for(unsigned i = 0; i < object->ComponentCount(); ++i)
                 {
@@ -40,6 +48,11 @@ public:
                     rttr::type type = comp->GetType();
                     if (ImGui::TreeNode(type.get_name().to_string().c_str()))
                     {
+                        if(componentGuiExtensions.count(type) > 0)
+                        {
+                            componentGuiExtensions[type](comp);
+                        }
+
                         for(auto prop : type.get_properties())
                         {
                             rttr::type ptype = prop.get_type();
@@ -73,6 +86,9 @@ public:
             ImGui::End();
         }
     }
+
+private:
+    std::map<rttr::type, std::function<void(SceneObject::Component*)>> componentGuiExtensions;
 };
 
 #endif

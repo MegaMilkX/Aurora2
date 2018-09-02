@@ -2,110 +2,18 @@
 #define ANIMATION_DRIVER_H
 
 #include <updatable.h>
-#include <resource_ref.h>
-#include <util/animation/curve.h>
-#include <algorithm>
+#include <animation.h>
 
-class AnimationNode {
-public:
-    std::string name;
-    std::map<std::string, AnimationNode> children;
-    std::map<std::string, curve> curves;
-};
-
-class Animation : public ResourceObject {
-public:
-    size_t TargetCount() { return nodes.size(); }
-    AnimationNode* GetTarget(size_t i) {
-        auto it = nodes.begin();
-        std::advance(it, i);
-        if(it == nodes.end()) return 0;
-        return &it->second;
-    }
-
-    float FrameRate() { return frameRate; }
-    float Length() { return length; }
-
-    virtual bool Build(ResourceRaw* raw) {
-        if(raw->Size() == 0) return false;
-        std::vector<char> buffer;
-        buffer.resize((size_t)raw->Size());
-        raw->ReadAll((char*)buffer.data());
-
-        mz_zip_archive zip;
-        memset(&zip, 0, sizeof(zip));
-        if(!mz_zip_reader_init_mem(&zip, buffer.data(), buffer.size(), 0)) {
-            return false;
-        }
-
-        mz_zip_reader_extract_file_to_mem(
-            &zip, "FrameRate", (void*)&frameRate, (size_t)sizeof(frameRate), 0
-        );
-        mz_zip_reader_extract_file_to_mem(
-            &zip, "Length", (void*)&length, sizeof(length), 0
-        );
-
-        mz_uint num_files = mz_zip_reader_get_num_files(&zip);
-        for(mz_uint i = 0; i < num_files; ++i) {
-            mz_zip_archive_file_stat stat;
-            mz_zip_reader_file_stat(&zip, i, &stat);
-            std::string filename = stat.m_filename;
-            if(filename.compare(0, strlen("Layers/"), "Layers/") != 0)
-                continue;
-            
-            auto tokens = split(filename, '/');
-            std::string layer = tokens[1];
-            std::string target = tokens[2];
-            std::string comp_target = tokens[3];
-            std::string property = tokens[4];
-            std::string curve_name = tokens[5];
-            
-            struct kf {
-                float time;
-                float value;
-            };
-
-            if(stat.m_uncomp_size < sizeof(kf))
-                continue;
-
-            std::vector<kf> frames;
-            frames.resize((size_t)(stat.m_uncomp_size / sizeof(kf)));
-
-            mz_zip_reader_extract_file_to_mem(
-                &zip, 
-                stat.m_filename, 
-                (void*)frames.data(), 
-                (size_t)stat.m_uncomp_size, 0
-            );
-            nodes[target].name = target;
-            nodes[target].children[comp_target].name = comp_target;
-            nodes[target].children[comp_target].children[property].name = property;
-            for(auto& f : frames) {
-                nodes[target].children[comp_target].children[property].curves[curve_name][f.time] = f.value;
-            }
-        }
-
-        mz_zip_reader_end(&zip);
-
-        return true;
-    }
-private:
-    double frameRate;
-    double length;
-    std::map<std::string, AnimationNode> nodes;
-};
-
+/*
 class AnimMotorVec3 {
 public:
     AnimMotorVec3() : prop(rttr::type::get<AnimMotorVec3>().get_property("INVALID")) {}
-    AnimMotorVec3(SceneObject::Component* c, rttr::property prop, curve* x, curve* y, curve* z, float length)
-    : comp(c), prop(prop), curves{x, y, z}, length(length) {
+    AnimMotorVec3(SceneObject::Component* c, rttr::property prop, curve* x, curve* y, curve* z)
+    : comp(c), prop(prop), curves{x, y, z} {
 
     }
 
-    void Tick(float dt) {
-        cursor += dt;
-        if(cursor > length) { cursor = cursor - length; }
+    void Overwrite(float cursor) {
         gfxm::vec3 evaluated(
             curves[0]->at(cursor),
             curves[1]->at(cursor),
@@ -113,27 +21,278 @@ public:
         );
         prop.set_value(comp, evaluated);
     }
+
+    void Blend(float cursor, float weight) {
+        gfxm::vec3 before = prop.get_value(comp).get_value<gfxm::vec3>();
+        gfxm::vec3 evaluated(
+            curves[0]->at(cursor),
+            curves[1]->at(cursor),
+            curves[2]->at(cursor)
+        );
+        prop.set_value(comp, gfxm::lerp(before, evaluated, weight));
+    }
+
+    void Add(float cursor, float weight) {
+        gfxm::vec3 before = prop.get_value(comp).get_value<gfxm::vec3>();
+        gfxm::vec3 start_evaluated(
+            curves[0]->at(0.0f),
+            curves[1]->at(0.0f),
+            curves[2]->at(0.0f)
+        );
+        gfxm::vec3 evaluated(
+            curves[0]->at(cursor),
+            curves[1]->at(cursor),
+            curves[2]->at(cursor)
+        );
+        gfxm::vec3 delta = evaluated - start_evaluated;
+        delta *= weight;
+        prop.set_value(comp, before + delta);
+    }
 private:
-    float cursor = 0.0f;
     SceneObject::Component* comp;
     rttr::property prop;
     curve* curves[3];
-    float length = 0.0f;
 };
 
-class AnimMotion {
-    
+class AnimMotorRotation {
+public:
+    AnimMotorRotation() : prop(rttr::type::get<AnimMotorRotation>().get_property("INVALID")) {}
+    AnimMotorRotation(SceneObject::Component* c, rttr::property prop, curve* x, curve* y, curve* z)
+    : comp(c), prop(prop), curves{x, y, z} { }
+    void Overwrite(float cursor) {
+        gfxm::vec3 evaluated(
+            curves[0]->at(cursor),
+            curves[1]->at(cursor),
+            curves[2]->at(cursor)
+        );
+        prop.set_value(comp, evaluated);
+    }
+    void Blend(float cursor, float weight) {
+        gfxm::vec3 before = prop.get_value(comp).get_value<gfxm::vec3>();
+        gfxm::vec3 evaluated(
+            curves[0]->at(cursor),
+            curves[1]->at(cursor),
+            curves[2]->at(cursor)
+        );
+        gfxm::quat qa = gfxm::euler_to_quat(before);
+        gfxm::quat qb = gfxm::euler_to_quat(evaluated);
+        gfxm::quat fin = gfxm::slerp(qa, qb, weight);
+        prop.set_value(comp, gfxm::to_euler(fin));
+    }
+    void Add(float cursor, float weight) {
+        gfxm::vec3 before = prop.get_value(comp).get_value<gfxm::vec3>();
+        gfxm::vec3 start_evaluated(
+            curves[0]->at(0.0f),
+            curves[1]->at(0.0f),
+            curves[2]->at(0.0f)
+        );
+        gfxm::vec3 evaluated(
+            curves[0]->at(cursor),
+            curves[1]->at(cursor),
+            curves[2]->at(cursor)
+        );
+        gfxm::quat qa = gfxm::euler_to_quat(start_evaluated);
+        gfxm::quat qb = gfxm::euler_to_quat(evaluated);
+        gfxm::quat qc = gfxm::euler_to_quat(before);
+        gfxm::quat fin = gfxm::slerp(qa, qb, weight);
+        fin = qc * fin;
+        prop.set_value(comp, gfxm::to_euler(fin));
+    }
+private:
+    SceneObject::Component* comp;
+    rttr::property prop;
+    curve* curves[3];
+};
+*/
+
+class AnimPropMotorBase {
+public:
+    virtual ~AnimPropMotorBase() {}
+    virtual void Overwrite(float) = 0;
+    virtual void Blend(float, float) = 0;
+    virtual void Add(float, float) = 0;
+};
+
+template<typename T>
+class AnimPropMotor : public AnimPropMotorBase {
+public:
+    AnimPropMotor(SceneObject::Component* c, rttr::property p, curve<T>* cu)
+    : comp(c), prop(p), curv(cu) { }
+    void Overwrite(float cursor) {
+        prop.set_value(comp, curv->at(cursor));
+    }
+    void Blend(float cursor, float weight) {
+        T before = prop.get_value(comp).get_value<T>();
+        T eval = curv->at(cursor);
+        prop.set_value(comp, Interpolate(before, eval, weight));
+    }
+    void Add(float cursor, float weight) {
+        T before = prop.get_value(comp).get_value<T>();
+        T zero_eval = curv->at(0.0f);
+        T eval = curv->at(cursor);
+        T delta = Diff(zero_eval, eval);
+        prop.set_value(comp, AddValues(before, delta));
+    }
+private:
+    SceneObject::Component* comp;
+    rttr::property prop;
+    curve<T>* curv;
+
+    template<typename T>
+    T Diff(const T& a, const T& b) {
+        return a - b;
+    }
+    template<>
+    gfxm::quat Diff(const gfxm::quat& a, const gfxm::quat& b) {
+        return gfxm::inverse(a) * b;
+    }
+
+    template<typename T>
+    T AddValues(const T& a, const T& b) {
+        return a + b;
+    }
+    template<>
+    gfxm::quat AddValues(const gfxm::quat& a, const gfxm::quat& b) {
+        return a * b;
+    }
+
+    template<typename T>
+    T Interpolate(const T& a, const T& b, float f) {
+        return gfxm::lerp(a, b, f);
+    }
+    template<>
+    gfxm::quat Interpolate(const gfxm::quat& a, const gfxm::quat& b, float f) {
+        return gfxm::slerp(a, b, f);
+    }
+};
+
+class AnimMotor {
+public:
+    template<typename T>
+    void Add(SceneObject::Component* c, rttr::property p, curve<T>* cu) {
+        motors.emplace_back(
+            std::shared_ptr<AnimPropMotorBase>(
+                new AnimPropMotor<T>(c, p, cu)
+            )
+        );
+    }
+    void Length(float len) { length = len; }
+    float Length() const { return length; }
+    void FrameRate(float fps) { frameRate = fps; }
+    float FrameRate() const { return frameRate; }
+
+    void Overwrite(float cursor) {
+        for(auto& motor : motors) {
+            motor->Overwrite(cursor);
+        }
+    }
+    void Blend(float cursor, float weight) {
+        for(auto& motor : motors) {
+            motor->Blend(cursor, weight);
+        }
+    }
+    void Add(float cursor, float weight) {
+        for(auto& motor : motors) {
+            motor->Add(cursor, weight);
+        }
+    }
+private:
+    float length = 0.0f;
+    float frameRate = 60.0f;
+    std::vector<std::shared_ptr<AnimPropMotorBase>> motors;
+};
+
+class AnimationDriver;
+class AnimLayer {
+public:
+    enum MODE {
+        OVERWRITE,
+        BLEND,
+        ADD
+    };
+    AnimLayer(AnimationDriver* driver);
+    void Play(const std::string& anim);
+    void BlendOver(const std::string& anim, float speed);
+    void SetMode(MODE mode) { this->mode = mode; }
+    MODE Mode() const { return mode; }
+    void Looping(bool v) { looping = v; }
+    bool Looping() const { return looping; }
+    void SetStrength(float s) { strength = s; }
+    float Strength() const { return strength; }
+    const std::string& CurrentAnimName() const { return currentAnimName; }
+
+    void Tick(float dt) {
+        if(!current) return;
+        cursor += dt * current->FrameRate();
+        if(cursor > current->Length()) {
+            if(looping) {
+                cursor = cursor - current->Length();
+            } else {
+                cursor = current->Length();
+            }
+        }
+
+        if(mode == OVERWRITE) {
+            current->Overwrite(cursor);
+        } else if (mode == BLEND) {
+            current->Blend(cursor, strength);
+        } else if (mode == ADD) {
+            current->Add(cursor, strength);
+        }
+    }
+private:
+    float cursor = 0.0f;
+
+    AnimationDriver* driver;
+    MODE mode = OVERWRITE;
+    bool looping = true;
+    float blend = 0.0f;
+    float blendTick = 0.0f;
+    float strength = 1.0f;
+    AnimMotor* current = 0;
+    AnimMotor* blendTarget = 0;
+    std::string currentAnimName;
 };
 
 class AnimationDriver : public Updatable
 {
     RTTR_ENABLE(Updatable)
 public:
-    ResourceRef animation;
+    AnimationDriver() {
+        AddLayer();
+    }
+
+    size_t LayerCount() const { return layers.size(); }
+    AnimLayer* GetLayer(size_t i) { return &layers[i]; }
+    AnimLayer* AddLayer() { 
+        layers.emplace_back(AnimLayer(this));
+        return &layers[layers.size() - 1];
+    }
+    void RemoveLayer(size_t i) {
+        layers.erase(layers.begin() + i);
+    }
+
+    template<typename T>
+    bool AddMotor(AnimMotor& motor, SceneObject::Component* comp, rttr::property prop, AnimationNode& animNode) {
+        rttr::type prop_type = prop.get_type();
+        if(prop_type != rttr::type::get<T>()) {
+            return false;
+        }
+        if(animNode.CurveType() != rttr::type::get<curve<T>>()) {
+            std::cout << "Curve type and property are mismatched" << std::endl;
+            return false;
+        }
+
+        motor.Add(comp, prop, animNode.GetCurve<T>());
+
+        return true;
+    }
 
     void AddAnim(const std::string& name, const std::string& resource) {
-        anim = ResourceRef(resource).Get<Animation>();
-        motorsVec3.clear();
+        Animation* anim = ResourceRef(resource).Get<Animation>();
+        AnimMotor& motor = motors[name];
+        motor.Length(anim->Length());
+        motor.FrameRate(anim->FrameRate());
         for(size_t i = 0; i < anim->TargetCount(); ++i) {
             auto target = anim->GetTarget(i);
             auto so = Object()->FindObject(target->name);
@@ -145,46 +304,73 @@ public:
                 for(auto& prop_node : comp_node.second.children) {
                     rttr::property prop = comp_type.get_property(prop_node.second.name);
                     if(!prop.is_valid()) continue;
-                    if(prop.get_type() == rttr::type::get<gfxm::vec3>()) {
-                        motorsVec3.emplace_back(
-                            AnimMotorVec3(
-                                comp, 
-                                prop, 
-                                &prop_node.second.curves["x"],
-                                &prop_node.second.curves["y"],
-                                &prop_node.second.curves["z"],
-                                anim->Length()
-                            )
-                        );
-                    } else {
-                        std::cout << "Property " <<
-                        prop.get_name().to_string().c_str() <<
-                        " wasn't animated (unsupported type)" << std::endl;
+                    rttr::type prop_type = prop.get_type();
+
+                    if(AddMotor<float>(motor, comp, prop, prop_node.second) ||
+                        AddMotor<gfxm::vec2>(motor, comp, prop, prop_node.second) ||
+                        AddMotor<gfxm::vec3>(motor, comp, prop, prop_node.second) ||
+                        AddMotor<gfxm::vec4>(motor, comp, prop, prop_node.second) ||
+                        AddMotor<gfxm::quat>(motor, comp, prop, prop_node.second)) {
                     }
                 }
             }
         }
     }
-    void Play(const std::string& name);
+
+    size_t AnimCount() { return motors.size(); }
+    AnimMotor* GetAnim(size_t i) { 
+        auto it = motors.begin();
+        std::advance(it, i);
+        if(it == motors.end()) return 0;
+        return &it->second;
+    }
+    AnimMotor* GetAnim(const std::string& name) {
+        auto it = motors.find(name);
+        if(it == motors.end()) return 0;
+        return &it->second;
+    }
+    const std::string& GetAnimName(size_t i) { 
+        auto it = motors.begin();
+        std::advance(it, i);
+        if(it == motors.end()) return "";
+        return it->first;
+    }
 
     virtual void OnUpdate() {
-        for(auto& motor : motorsVec3) {
-            motor.Tick(1.0f / 60.0f * anim->FrameRate());
+        for(auto& l : layers) {
+            l.Tick(1.0f / 60.0f);
         }
     }
 private:
-    Animation* anim;
-    std::vector<AnimMotorVec3> motorsVec3;
+    std::vector<AnimLayer> layers;
+    std::map<std::string, AnimMotor> motors;
 };
 STATIC_RUN(AnimationDriver) {
+    rttr::registration::enumeration<AnimLayer::MODE>("AnimLayerMode")(
+        rttr::value("OVERWRITE", AnimLayer::OVERWRITE),
+        rttr::value("BLEND", AnimLayer::BLEND),
+        rttr::value("ADD", AnimLayer::ADD)  
+    );
+
     rttr::registration::class_<AnimationDriver>("AnimationDriver")
         .constructor<>()(
             rttr::policy::ctor::as_raw_ptr
-        )
-        .property(
-            "animation",
-            &AnimationDriver::animation
         );
+}
+
+inline AnimLayer::AnimLayer(AnimationDriver* driver)
+: driver(driver) {
+
+}
+
+inline void AnimLayer::Play(const std::string& anim) {
+    if(!driver) return;
+    current = driver->GetAnim(anim);
+    blend = 0.0f;
+    blendTick = 0.0f;
+    if(!current) return;
+    currentAnimName = anim;
+    cursor = 0.0f;
 }
 
 #endif

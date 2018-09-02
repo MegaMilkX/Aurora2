@@ -262,7 +262,7 @@ gfxm::quat Transform::WorldRotation()
     m3[2] /= gfxm::length(m3[2]);
     return gfxm::to_quat(m3);
 }
-gfxm::quat Transform::Rotation()
+const gfxm::quat& Transform::Rotation()
 { return _rotation; }
 gfxm::vec3 Transform::RotationEuler()
 {

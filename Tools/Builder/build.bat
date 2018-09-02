@@ -71,7 +71,7 @@ REM =============================================
 REM Collect all source files
 set SOURCES=
 for %%x in (%SOURCE_DIRS%) do (
-    for /F "delims=" %%A in ('dir /b /S "%%~x*.c" "%%~x*.cpp" "%%~x*.res" "%%~x*.def"') do (
+    for /F "delims=" %%A in ('dir /b /S "%%~x*.c" "%%~x*.cpp" "%%~x*.cc" "%%~x*.cxx" "%%~x*.res" "%%~x*.def"') do (
         set SOURCES=!SOURCES! "%%A"
     )
 )
