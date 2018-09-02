@@ -55,6 +55,7 @@ public:
         return 0;
     }
     
+    Model* GetRootModel() { return &rootModel; }
     unsigned ModelCount();
     Model* GetModel(unsigned id);
     Model* GetModelByUID(int64_t uid);
@@ -80,7 +81,7 @@ public:
     void DumpFile(const std::string& filename)
     {
         std::ostringstream sstr;
-        rootNode.Print(sstr);
+        rootNode.PrintNoProp(sstr);
         
         std::ofstream file(filename + ".dump", std::ios::out);
         file << sstr.str();
@@ -109,7 +110,10 @@ private:
     Settings settings;
     Node rootNode;
     CoordSystem coordSys;
+
+    Model rootModel;
     std::vector<Model> models;
+
     std::vector<Mesh> meshes;
     std::vector<Bone> bones;
     std::vector<AnimationStack> animStacks;

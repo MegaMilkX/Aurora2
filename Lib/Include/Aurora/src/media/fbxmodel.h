@@ -15,6 +15,7 @@ namespace FBX{
 class Model
 {
 public:
+    Model() {}
     Model(Settings* settings, Node* root, Node* node)
     : settings(settings), 
       root(root), 
@@ -34,6 +35,8 @@ public:
             root->GetConnectedParent("Model", uid, &conn);
         if(parent)
             parentUID = (*parent)[0].GetInt64();
+
+        children = root->GetConnectedChildren("Model", uid);
         
         Node* poseData = root->GetWhere("Pose", 2, "BindPose");
         Pose pose(*settings, root, poseData);
@@ -66,6 +69,9 @@ public:
     }
     
     bool IsBone() { return deformerUID != 0; }
+    bool IsRoot() { return parentUID == 0; };
+    unsigned ChildCount() { return children.size(); }
+    Node* GetChild(unsigned i) { return children[i]; }
     
     Settings* settings;
     
@@ -79,6 +85,8 @@ public:
     
     Node* root;
     Node* node;
+
+    std::vector<Node*> children;
 };    
  
 }

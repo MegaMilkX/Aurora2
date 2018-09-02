@@ -396,6 +396,15 @@ public:
         for(unsigned i = 0; i < children.size(); ++i)
             children[i].Print(sstr, level);
     }
+
+    void PrintNoProp(std::ostringstream& sstr, unsigned level = 0)
+    {
+        for(unsigned i = 0; i < level; ++i)
+            sstr << "  ";
+        ++level;
+        for(unsigned i = 0; i < children.size(); ++i)
+            children[i].PrintNoProp(sstr, level);
+    }
     
 private:
     std::string name;

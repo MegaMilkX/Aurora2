@@ -251,6 +251,10 @@ void Reader::_loadModels()
         
         Model model(&settings, &rootNode, &modelNode);
         models.push_back(model);
+        if(model.IsRoot())
+        {
+            rootModel = model;
+        }
     }
 }
 

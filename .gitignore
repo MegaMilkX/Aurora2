@@ -54,7 +54,6 @@ x64/
 build/*
 !build/data/
 bld/
-[Bb]in/
 [Oo]bj/
 
 #other
@@ -227,6 +226,5 @@ FakesAssemblies/
 *.sln
 *.vcxproj
 *.filters
-*.lib
 *.sublime-workspace
 lib/lib.txt
