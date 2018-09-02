@@ -74,9 +74,12 @@ public:
                             }
                             else if(ptype == rttr::type::get<ResourceRef>())
                             {
-                                std::string text = prop.get_value(comp).get_value<ResourceRef>().GetTargetName();
-                                text.resize(256);
-                                ImGui::InputText(prop.get_name().to_string().c_str(), (char*)text.data(), 256);
+                                ImGui::Text(prop.get_name().to_string().c_str());
+                                std::string res_name = prop.get_value(comp).get_value<ResourceRef>().GetTargetName();
+                                if(res_name.empty()) res_name = "[empty]";
+                                if(ImGui::Button(res_name.c_str())){
+
+                                }
                             }
                         }
                         ImGui::TreePop();

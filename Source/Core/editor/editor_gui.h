@@ -511,6 +511,15 @@ public:
         editorSceneHierarchy.Draw(editedScene);
         editorSceneObjectInspector.Draw(selectedObject, componentCreator);
         componentCreator.Update(selectedObject);
+
+        if(ImGui::Begin("Resource Inspector", &t)) {
+            for(size_t i = 0; i < g_resourceRegistry.Count(); ++i) {
+                ResourceRaw* raw = g_resourceRegistry.GetById(i);
+                ImGui::Text(raw->Name().c_str());
+            }
+
+            ImGui::End();
+        }
     }
     
 private:
