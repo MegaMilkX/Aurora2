@@ -16,6 +16,8 @@
 
 #include <components/animation_driver.h>
 
+#include "editor_config.h"
+
 class EditorCamera : public SceneObject::Component
 {
     RTTR_ENABLE(SceneObject::Component)
@@ -138,46 +140,8 @@ public:
     SceneObject* editedScene;
     EditorCamera* editorCamera = 0;
 
-    std::string projectConfPath;
-    std::string builderPath;
-
-    void LoadConfig()
-    {
-        using json = nlohmann::json;
-        std::ifstream json_file(get_module_dir() + "\\config.json");
-        if(!json_file.is_open())
-        {
-            return;
-        }
-        json j;
-        try
-        {
-            json_file >> j;
-        }
-        catch(std::exception& ex)
-        {
-            std::cout << ex.what();
-            return;
-        }
-        if(!j.is_object())
-        {
-            std::cout << "config json is not object";
-            return;
-        }
-
-        if(j["project_config"].is_string())
-        {
-            projectConfPath = j["project_config"].get<std::string>();
-        }
-        if(j["builder"].is_string())
-        {
-            builderPath = j["builder"].get<std::string>();
-        }
-    }
-
     void Init(Input* input)
     {
-        LoadConfig();
         char* outPath;
         auto r = NFD_OpenDialog(NULL, NULL, &outPath);
 
@@ -471,10 +435,10 @@ public:
                 if(ImGui::MenuItem("Build")) {}
                 if(ImGui::MenuItem("Build and run")) 
                 {
-                    if(!projectConfPath.empty()
-                        && !builderPath.empty())
+                    if(!EditorConfig().projectConfPath.empty()
+                        && !EditorConfig().builderPath.empty())
                     {
-                        if(system(("call \"" + builderPath + "\" \"" + projectConfPath + "\"").c_str()) != 0)
+                        if(system(("call \"" + EditorConfig().builderPath + "\" \"" + EditorConfig().projectConfPath + "\"").c_str()) != 0)
                         {
                             std::cout << "Failed to build project" << std::endl;
                             return;

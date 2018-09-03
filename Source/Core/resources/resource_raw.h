@@ -71,7 +71,19 @@ private:
 class ResourceRawFilesystem : public ResourceRaw
 {
 public:
-    ResourceRawFilesystem(const std::string& name);
+    ResourceRawFilesystem(const std::string& name)
+    : path(name) {
+
+    }
+
+    virtual bool ReadAll(char* dest) {
+        return false;
+    }
+    virtual uint64_t Size() const {
+        return 0;
+    }
+private:
+    std::string path;
 };
 
 #endif

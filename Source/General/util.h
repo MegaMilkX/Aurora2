@@ -2,6 +2,7 @@
 #define UTIL_H
 
 #include <windows.h>
+#include <shlwapi.h>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -113,10 +114,8 @@ inline bool copy_file(const std::string& from, const std::string& to)
     return true;
 }
 
-inline std::vector<std::string> find_all_files(const std::string& dir, const std::string& filter)
-{
-    std::string full_filter = dir + "\\" + filter;
-    std::vector<std::string> names;
+inline void find_files(const std::string& dir, const std::string& filter, std::vector<std::string>& out) {
+    std::string full_filter = dir + "\\*";
     WIN32_FIND_DATAA data;
     HANDLE hFind = FindFirstFileA(full_filter.c_str(), &data);
 
@@ -133,11 +132,24 @@ inline std::vector<std::string> find_all_files(const std::string& dir, const std
             {
                 continue;
             }
-            names.push_back(dir + "\\" + std::string(data.cFileName));
+
+            if(data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+                find_files(dir + "\\" + std::string(data.cFileName), filter, out);
+                continue;
+            }
+
+            if(PathMatchSpecA(data.cFileName, filter.c_str())) {
+                out.push_back(dir + "\\" + std::string(data.cFileName));
+            }
         } while (FindNextFileA(hFind, &data));
         FindClose(hFind);
     }
+}
 
+inline std::vector<std::string> find_all_files(const std::string& dir, const std::string& filter)
+{
+    std::vector<std::string> names;
+    find_files(dir, filter, names);
     return names;
 }
 

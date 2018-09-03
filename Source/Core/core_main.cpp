@@ -14,6 +14,8 @@
 #include <text_mesh.h>
 #include <asset.h>
 
+#include "editor/editor_config.h"
+
 
 #define MINIZ_HEADER_FILE_ONLY
 #include "../lib/miniz.c"
@@ -48,11 +50,27 @@ void InitArchiveResources()
     }
 }
 
+void InitFilesystemResources(const std::string& rootDir) {
+    std::vector<std::string> files =
+        find_all_files(rootDir, "*.scn;*.geo;*.anim;*.mat");
+    std::vector<std::string> resNames = files;
+    for(auto& f : resNames) {
+        f.erase(f.find_first_of(rootDir), rootDir.size());
+        if(f[0] == '\\') f.erase(0, 1);
+        std::replace(f.begin(), f.end(), '\\', '/');
+    }
+
+    for(size_t i = 0; i < files.size(); ++i) {
+        g_resourceRegistry.Add(resNames[i], new ResourceRawFilesystem(files[i]));
+    }
+}
+
 void Aurora2Init();
 
 int editor_main(int argc, char** argv)
 {
-    InitArchiveResources();
+    EditorConfig().Init();
+    InitFilesystemResources(EditorConfig().projectRoot + "\\resources");
     GameState::InitEditor();
 
     while(GameState::UpdateEditor())
