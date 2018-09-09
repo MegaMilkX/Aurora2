@@ -1,7 +1,7 @@
 #ifndef ANIMATION_H
 #define ANIMATION_H
 
-#include <resource_ref.h>
+#include <resources/resource/resource.h>
 #include <util/animation/curve.h>
 #include <algorithm>
 
@@ -44,7 +44,7 @@ public:
     }
 };
 
-class Animation : public ResourceObject {
+class Animation : public Resource {
 public:
     size_t TargetCount() { return nodes.size(); }
     AnimationNode* GetTarget(size_t i) {
@@ -57,7 +57,7 @@ public:
     float FrameRate() { return (float)frameRate; }
     float Length() { return length; }
 
-    virtual bool Build(ResourceRaw* raw) {
+    virtual bool Build(DataSourceRef raw) {
         if(raw->Size() == 0) return false;
         std::vector<char> buffer;
         buffer.resize((size_t)raw->Size());

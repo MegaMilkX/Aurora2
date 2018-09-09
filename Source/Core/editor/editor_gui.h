@@ -150,8 +150,10 @@ public:
         editedScene->Name("Root");
 
         icon_texture.reset(new Texture2D());
-        ResourceRawMemory raw((char*)blender_icons_png, sizeof(blender_icons_png));
-        icon_texture->Build(&raw);
+        std::shared_ptr<DataSource> raw(
+            new DataSourceMemory((char*)blender_icons_png, sizeof(blender_icons_png))
+        );
+        icon_texture->Build(raw);
 
         editorSceneObjectInspector.AddComponentGuiExtension(
             rttr::type::get<AnimationDriver>(),
@@ -477,9 +479,8 @@ public:
         componentCreator.Update(selectedObject);
 
         if(ImGui::Begin("Resource Inspector", &t)) {
-            for(size_t i = 0; i < g_resourceRegistry.Count(); ++i) {
-                ResourceRaw* raw = g_resourceRegistry.GetById(i);
-                ImGui::Text(raw->Name().c_str());
+            for(size_t i = 0; i < GlobalDataRegistry().Count(); ++i) {
+                ImGui::Text(GlobalDataRegistry().GetNameById(i).c_str());
             }
 
             ImGui::End();

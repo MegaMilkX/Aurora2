@@ -1,7 +1,6 @@
 #ifndef TEXTURE2D_H
 #define TEXTURE2D_H
 
-#include <asset.h>
 #include <aurora/gfx.h>
 #include <util/load_asset.h>
 
@@ -9,9 +8,9 @@ extern "C"{
 #include "../lib/stb_image.h"
 }
 
-#include <resource_object.h>
+#include "resource/resource.h"
 
-class Texture2D : public ResourceObject
+class Texture2D : public Resource
 {
 public:
     Texture2D()
@@ -45,7 +44,7 @@ public:
     int Width() { return width; }
     int Height() { return height; }
 
-    bool Build(ResourceRaw* r)
+    bool Build(DataSourceRef r)
     {
         std::vector<char> bytes;
         if(r->Size() == 0) return false;

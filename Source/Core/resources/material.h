@@ -11,7 +11,6 @@
 #include <aurora/lua.h>
 
 #include "../scene_object.h"
-#include "renderer.h"
 
 #include <resource.h>
 
@@ -19,10 +18,9 @@
 
 #include "../external/json.hpp"
 
-#include <asset.h>
-#include <resource_object.h>
+#include "resource/resource.h"
 
-class Material : public ResourceObject
+class Material : public Resource
 {
 public:    
     Material()
@@ -37,7 +35,7 @@ public:
 
     std::string GetString(const std::string& key) { return strstr[key]; }
     
-    bool Build(ResourceRaw* r)
+    bool Build(DataSourceRef r)
     {
         std::vector<char> data;
         if(r->Size() == 0) return false;

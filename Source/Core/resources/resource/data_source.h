@@ -1,14 +1,12 @@
-#ifndef RESOURCE_RAW_H
-#define RESOURCE_RAW_H
+#ifndef DATA_SOURCE_H
+#define DATA_SOURCE_H
 
-#include <vector>
-#include <memory>
 #include <string>
+#include <memory>
 
-class ResourceRaw
-{
+class DataSource {
 public:
-    virtual ~ResourceRaw() {}
+    virtual ~DataSource() {}
 
     virtual bool ReadAll(char* dest) = 0;
     virtual uint64_t Size() const = 0;
@@ -20,12 +18,12 @@ private:
 };
 
 #define MINIZ_HEADER_FILE_ONLY
-#include "../../lib/miniz.c"
+#include "../../../lib/miniz.c"
 
-class ResourceRawArchive : public ResourceRaw
+class DataSourceArchive : public DataSource
 {
 public:
-    ResourceRawArchive(uint32_t file_index, std::shared_ptr<mz_zip_archive> archive)
+    DataSourceArchive(uint32_t file_index, std::shared_ptr<mz_zip_archive> archive)
     : file_index(file_index), archive(archive) {}
     virtual bool ReadAll(char* dest) {
         mz_zip_archive_file_stat f_stat;
@@ -43,14 +41,14 @@ private:
     std::shared_ptr<mz_zip_archive> archive;
 };
 
-class ResourceRawMemory : public ResourceRaw
+class DataSourceMemory : public DataSource
 {
 public:
-    ResourceRawMemory() {}
-    ResourceRawMemory(const char* src, size_t size) {
+    DataSourceMemory() {}
+    DataSourceMemory(const char* src, size_t size) {
         Fill(src, size);
     }
-    ~ResourceRawMemory() {}
+    ~DataSourceMemory() {}
 
     void Fill(const char* src, size_t size) {
         data.resize(size);
@@ -68,22 +66,17 @@ private:
     std::vector<char> data;
 };
 
-class ResourceRawFilesystem : public ResourceRaw
-{
+class DataSourceFilesystem : public DataSource {
 public:
-    ResourceRawFilesystem(const std::string& name)
-    : path(name) {
+    DataSourceFilesystem(const std::string& path) {
 
     }
-
-    virtual bool ReadAll(char* dest) {
-        return false;
-    }
-    virtual uint64_t Size() const {
-        return 0;
-    }
+    virtual bool ReadAll(char* dest) { return false; }
+    virtual uint64_t Size() const { return 0; }
 private:
-    std::string path;
+
 };
+
+typedef std::shared_ptr<DataSource> DataSourceRef;
 
 #endif

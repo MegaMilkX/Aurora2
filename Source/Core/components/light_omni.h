@@ -2,7 +2,6 @@
 #define COMPONENT_LIGHT_OMNI_H
 
 #include "../scene_object.h"
-#include "renderer.h"
 
 #include <util/gfxm.h>
 

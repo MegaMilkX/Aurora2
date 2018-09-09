@@ -5,15 +5,13 @@
 #include <aurora/gfx.h>
 #include <aurora/media/fbx.h>
 
-#include <asset.h>
-
 #include "../util/gl_helpers.h"
 
 #include <util/scoped_timer.h>
 
 #include "../util/gfxm.h"
 
-#include <resource_object.h>
+#include "resource/resource.h"
 
 struct GLAttribDesc
 {
@@ -23,7 +21,7 @@ struct GLAttribDesc
     GLboolean normalized;
 };
 
-class Mesh : public ResourceObject
+class Mesh : public Resource
 {
 public:
     struct SubData
@@ -79,7 +77,7 @@ public:
     }
 
 public:
-    bool Build(ResourceRaw* r)
+    bool Build(DataSourceRef r)
     {
         if(r->Size() == 0) return false;
         std::vector<char> buffer;

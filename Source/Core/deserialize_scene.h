@@ -37,7 +37,8 @@ inline bool DeserializeScene(unsigned char* data, size_t size, SceneObject& scen
                 (void*)buf.data(), 
                 res_size, 0
             );
-            g_resourceRegistry.Add(res_name, new ResourceRawMemory(buf.data(), buf.size()));
+            //g_resourceRegistry.Add(res_name, new ResourceRawMemory(buf.data(), buf.size()));
+            GlobalDataRegistry().Add(res_name, DataSourceRef(new DataSourceMemory(buf.data(), buf.size())));
             continue;
         }
 

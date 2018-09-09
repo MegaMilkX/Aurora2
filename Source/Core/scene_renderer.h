@@ -12,12 +12,14 @@
 
 #include "data_headers/test.png.h"
 
+#include <resources/resource/resource_factory.h>
+
 struct Renderable
 {
     Transform* transform;
     GLuint vao;
     int indexCount;
-    asset<Texture2D> texDiffuse;
+    std::shared_ptr<Texture2D> texDiffuse;
 };
 
 struct StaticDrawData
@@ -222,8 +224,14 @@ public:
         gBuffer.Init(1280, 720);
 
         test_texture.reset(new Texture2D());
-        ResourceRawMemory raw((char*)test_png, sizeof(test_png));
-        test_texture->Build(&raw);
+        test_texture->Build(
+            DataSourceRef(
+                new DataSourceMemory(
+                    (char*)test_png, 
+                    sizeof(test_png)
+                )
+            )
+        );
 
         return true;
     }
@@ -254,9 +262,9 @@ public:
             return;
         }
         Material* mat = m->material.Get<Material>();
-        Texture2D* tex = 0;
-        if(mat) tex = ResourceRef(mat->GetString("Diffuse")).Get<Texture2D>();
-        if(!tex) tex = test_texture.get();
+        std::shared_ptr<Texture2D> tex = 0;
+        if(mat) tex = GlobalResourceFactory().Get<Texture2D>(mat->GetString("Diffuse"));
+        if(!tex) tex = test_texture;
 
         renderables[so] = Renderable{
             so->Get<Transform>(),
@@ -287,7 +295,7 @@ public:
                     _addRenderable(m, so);
                 }
             );
-
+            
             _addRenderable(m, so);
         }
         else if(type == rttr::type::get<Camera>()) {

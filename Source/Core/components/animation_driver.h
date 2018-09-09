@@ -168,6 +168,9 @@ private:
 
 class AnimMotor {
 public:
+    void SetAnim(std::shared_ptr<Animation> anim) {
+        this->anim = anim;
+    }
     template<typename T>
     void Add(SceneObject::Component* c, rttr::property p, curve<T>* cu) {
         motors.emplace_back(
@@ -200,6 +203,7 @@ private:
     float length = 0.0f;
     float frameRate = 60.0f;
     std::vector<std::shared_ptr<AnimPropMotorBase>> motors;
+    std::shared_ptr<Animation> anim;
 };
 
 class AnimationDriver;
@@ -289,8 +293,10 @@ public:
     }
 
     void AddAnim(const std::string& name, const std::string& resource) {
-        Animation* anim = ResourceRef(resource).Get<Animation>();
+        std::shared_ptr<Animation> anim = 
+            GlobalResourceFactory().Get<Animation>(resource);
         AnimMotor& motor = motors[name];
+        motor.SetAnim(anim);
         motor.Length(anim->Length());
         motor.FrameRate(anim->FrameRate());
         for(size_t i = 0; i < anim->TargetCount(); ++i) {

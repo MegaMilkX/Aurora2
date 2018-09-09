@@ -7,12 +7,10 @@
 #include <light_omni.h>
 #include <luascript.h>
 //#include <animator.h>
-#include <skeleton.h>
 #include <dynamics/rigid_body.h>
 #include <collision/collider.h>
 #include <sound_emitter.h>
 #include <text_mesh.h>
-#include <asset.h>
 
 #include "editor/editor_config.h"
 
@@ -45,7 +43,10 @@ void InitArchiveResources()
                 continue;
             }
 
-            g_resourceRegistry.Add(f_stat.m_filename, new ResourceRawArchive(f_stat.m_file_index, zip));
+            GlobalDataRegistry().Add(
+                f_stat.m_filename,
+                DataSourceRef(new DataSourceArchive(f_stat.m_file_index, zip))
+            );
         }
     }
 }
@@ -61,7 +62,10 @@ void InitFilesystemResources(const std::string& rootDir) {
     }
 
     for(size_t i = 0; i < files.size(); ++i) {
-        g_resourceRegistry.Add(resNames[i], new ResourceRawFilesystem(files[i]));
+        GlobalDataRegistry().Add(
+            resNames[i],
+            DataSourceRef(new DataSourceFilesystem(files[i]))
+        );
     }
 }
 

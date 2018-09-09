@@ -3,8 +3,6 @@
 
 #include "../scene_object.h"
 
-#include "renderer.h"
-
 #include <font_data.h>
 #include "../lib/nimbusmono_bold.otf.h"
 
@@ -134,9 +132,7 @@ public:
     }
     
     void OnInit()
-    {
-        renderer = GetObject()->Root()->GetComponent<Renderer>();
-        
+    {        
         vao.Init({
             { "Position", 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, GL_STATIC_DRAW },
             { "UV", 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, GL_STATIC_DRAW }
@@ -145,8 +141,7 @@ public:
     
 protected:
     GLVertexArrayObject vao;
-    Renderer* renderer;
-    
+        
     FontData* CreateDefaultFontData()
     {
         FontData* fd = new FontData();

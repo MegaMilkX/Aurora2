@@ -128,7 +128,7 @@ public:
         Collider::OnInit();
         
     }
-    
+    /*
     void SetMesh(const std::string& resourceName)
     { SetMesh(asset<Mesh>::get(resourceName)); }
     
@@ -159,9 +159,10 @@ public:
         
         collision->AddCollider(this);
     }
+    */
 private:
     btTriangleMesh* triMesh;
-    asset<Mesh> meshData;
+    //asset<Mesh> meshData;
 };
 
 #endif

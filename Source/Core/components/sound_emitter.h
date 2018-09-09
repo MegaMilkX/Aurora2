@@ -13,9 +13,9 @@ class SoundEmitter : public SceneObject::Component
     RTTR_ENABLE(SceneObject::Component)
 public:
     SoundEmitter()
-    : clip(0)
     {}
 
+    /*
     void SetClip(const std::string& name)
     {
         clip = asset<SoundClip>::get(name);
@@ -24,7 +24,7 @@ public:
         emitter = GameState::GetAudioMixer()->CreateEmitter(clip->GetBuffer());
         emitter->Play(1);
     }
-
+    */
     void OnInit()
     {
         soundRoot = GetObject()->Root()->GetComponent<SoundRoot>();
@@ -32,7 +32,6 @@ public:
     }
 protected:
     SoundRoot* soundRoot;
-    asset<SoundClip> clip;
     AudioEmitter* emitter;
 };
 

@@ -4,6 +4,7 @@
 #include <scene_object.h>
 #include <util/gfxm.h>
 #include <util/static_run.h>
+#include <resources/resource/resource_factory.h>
 
 typedef std::function<void(rttr::variant&, nlohmann::json&)> json_prop_parser_t;
 inline std::map<rttr::type, json_prop_parser_t> InitPropertyParsers()
@@ -103,8 +104,11 @@ inline std::map<rttr::type, json_prop_parser_t> InitPropertyParsers()
     };
     parsers[rttr::type::get<ResourceRef>()] = [](rttr::variant& v, nlohmann::json& j){
         if(!j.is_string()) return;
-        ResourceRef ref(j.get<std::string>());
-        v = ref;
+        
+        //ResourceRef ref(j.get<std::string>());
+        //v = ref;
+
+        v.get_value<ResourceRef>().Set(j.get<std::string>());
     };
 
     return parsers;

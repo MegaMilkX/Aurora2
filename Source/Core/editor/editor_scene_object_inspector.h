@@ -75,7 +75,7 @@ public:
                             else if(ptype == rttr::type::get<ResourceRef>())
                             {
                                 ImGui::Text(prop.get_name().to_string().c_str());
-                                std::string res_name = prop.get_value(comp).get_value<ResourceRef>().GetTargetName();
+                                std::string res_name;// = prop.get_value(comp).get_value<ResourceRef>().GetTargetName();
                                 if(res_name.empty()) res_name = "[empty]";
                                 if(ImGui::Button(res_name.c_str())){
 

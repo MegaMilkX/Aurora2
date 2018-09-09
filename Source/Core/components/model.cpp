@@ -3,7 +3,8 @@
 Model::Model()
 : dirty(true),
 transform(0),
-renderer(0)
+mesh(ResourceRef::Make<Mesh>()),
+material(ResourceRef::Make<Material>())
 {
 }
 

@@ -48,12 +48,16 @@ inline void ToJson(nlohmann::json& j, gfxm::mat4& value){
 }
 template<>
 inline void ToJson(nlohmann::json& j, ResourceRef& value){
-    j = value.GetTargetName();
+    if(!value) return;
+    Resource* res = value.Get<Resource>();
+    if(!res) return;
+    j = res->Name();
 }
 
 template<typename T>
 bool TrySetJsonMember(nlohmann::json& j, rttr::property p, SceneObject::Component* c)
 {
+    
     if(p.get_type() == rttr::type::get<T>())
     {
         j[p.get_name().to_string()]["type"] = rttr::type::get<T>().get_name().to_string();
@@ -195,9 +199,9 @@ inline bool SerializeScene(const SceneObject* scene, const std::string& filename
 
     if(embed_resources)
     {
-        for(size_t i = 0; i < g_resourceRegistry.Count(); ++i)
+        for(size_t i = 0; i < GlobalDataRegistry().Count(); ++i)
         {
-            ResourceRaw* raw = g_resourceRegistry.GetById(i);
+            DataSourceRef raw = GlobalDataRegistry().GetById(i);
             if(raw && raw->Size() > 0)
             {
                 std::vector<char> buf;
@@ -205,7 +209,7 @@ inline bool SerializeScene(const SceneObject* scene, const std::string& filename
                 raw->ReadAll((char*)buf.data());
                 mz_zip_writer_add_mem(
                     &archive,
-                    ("resources/" + raw->Name()).c_str(),
+                    ("resources/" + GlobalDataRegistry().GetNameById(i)).c_str(),
                     buf.data(), buf.size(), 0
                 );
             }

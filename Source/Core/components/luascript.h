@@ -5,18 +5,15 @@
 #include <resource.h>
 
 #include "transform.h"
-#include "renderer.h"
 #include "camera.h"
 #include "light_omni.h"
 #include "model.h"
 
 //#include "animator.h"
-#include "skeleton.h"
+//#include "skeleton.h"
 
 #include "dynamics/rigid_body.h"
 #include "collision/collider.h"
-
-#include "../asset.h"
 
 #include <aurora/lua.h>
 
@@ -67,7 +64,7 @@ public:
         rootScript->_unlink(this);
         _state.Cleanup();
     }
-    
+    /*
     void SetScript(const std::string& name)
     {
         ScriptData* sd = asset<ScriptData>::get(name);
@@ -78,7 +75,7 @@ public:
         _state.LoadSource(sd->Get());
         _state.Call("Init");
     }
-    
+    */
     virtual void OnInit()
     {
         SceneObject* root = GetObject()->Root();
@@ -96,12 +93,12 @@ public:
         _state.Bind(&gfxm::vec3::x, "x");
         _state.Bind(&gfxm::vec3::y, "y");
         _state.Bind(&gfxm::vec3::z, "z");
-
+        /*
         _state.Bind(&asset<Mesh>::set, "Set");
         _state.Bind(&asset<Material>::set, "Set");
         //_state.Bind(&asset<Animation>::set, "Set");
         _state.Bind(&asset<SkeletonData>::set, "Set");
-        
+        */
         _state.Bind(&SceneObject::Root, "Root");
         _state.Bind(&SceneObject::CreateObject, "CreateObject");
         _state.Bind(&SceneObject::FindObject, "FindObject");
@@ -112,16 +109,16 @@ public:
         _state.Bind(&SceneObject::GetComponent<Camera>, "Camera");
         _state.Bind(&SceneObject::GetComponent<LightOmni>, "LightOmni");
         _state.Bind(&SceneObject::GetComponent<LightDirect>, "LightDirect");
-        _state.Bind(&SceneObject::GetComponent<Renderer>, "Renderer");
+        //_state.Bind(&SceneObject::GetComponent<Renderer>, "Renderer");
         _state.Bind(&SceneObject::GetComponent<Model>, "Model");
         //_state.Bind(&SceneObject::GetComponent<Animator>, "Animation");
-        _state.Bind(&SceneObject::GetComponent<Skeleton>, "Skeleton");
+        //_state.Bind(&SceneObject::GetComponent<Skeleton>, "Skeleton");
 		_state.Bind(&SceneObject::GetComponent<PlaneCollider>, "PlaneCollider");
 		_state.Bind(&SceneObject::GetComponent<SphereCollider>, "SphereCollider");
         _state.Bind(&SceneObject::GetComponent<MeshCollider>, "MeshCollider");
         _state.Bind(&SceneObject::GetComponent<RigidBody>, "RigidBody");
         
-        _state.Bind(&LuaScript::SetScript, "SetScript");
+        //_state.Bind(&LuaScript::SetScript, "SetScript");
         _state.Bind<LuaScript, SceneObject*>(&LuaScript::GetObject, "GetObject");
         
         _state.Bind<Transform, void, float, float, float>(&Transform::Translate, "Translate");
@@ -152,10 +149,6 @@ public:
         _state.Bind<LightDirect, void, float, float, float>(&LightDirect::Direction, "Direction");
         _state.Bind<LightDirect, SceneObject*>(&LightDirect::GetObject, "GetObject");
         
-        _state.Bind<Renderer, void, Camera*>(&Renderer::CurrentCamera, "SetCurrentCamera");
-        _state.Bind<Renderer, Camera*>(&Renderer::CurrentCamera, "GetCurrentCamera");
-        _state.Bind<Renderer, SceneObject*>(&Renderer::GetObject, "GetObject");
-        
         _state.Bind(&Model::mesh, "mesh");
         _state.Bind(&Model::material, "material");
         _state.Bind<Model, SceneObject*>(&Model::GetObject, "GetObject");
@@ -164,10 +157,10 @@ public:
         //_state.Bind(&Animator::Play, "Play");
         //_state.Bind<Animator, SceneObject*>(&Animator::GetObject, "GetObject");
         
-        _state.Bind<Skeleton, void, const std::string&>(&Skeleton::SetData, "SetData");
-        _state.Bind<Skeleton, SceneObject*>(&Skeleton::GetObject, "GetObject");
+        //_state.Bind<Skeleton, void, const std::string&>(&Skeleton::SetData, "SetData");
+        //_state.Bind<Skeleton, SceneObject*>(&Skeleton::GetObject, "GetObject");
 		
-		_state.Bind<MeshCollider, void, const std::string&>(&MeshCollider::SetMesh, "SetMesh");
+		//_state.Bind<MeshCollider, void, const std::string&>(&MeshCollider::SetMesh, "SetMesh");
         
         _state.Bind<RigidBody, void, const gfxm::vec3&>(&RigidBody::SetLinearVelocity, "SetLinearVelocity");
         _state.Bind(&RigidBody::SetLinearFactor, "SetLinearFactor");

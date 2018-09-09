@@ -38,9 +38,9 @@ inline void ResourcesFromFbxScene(FbxScene& fbxScene)
         size_t sz;
         mz_zip_writer_finalize_heap_archive(&zip, &bufptr, &sz);
 
-        g_resourceRegistry.Add(
-            MKSTR(geom->GetUid() << geom->GetName() << ".geo"), 
-            new ResourceRawMemory((char*)bufptr, sz)
+        GlobalDataRegistry().Add(
+            MKSTR(geom->GetUid() << geom->GetName() << ".geo"),
+            DataSourceRef(new DataSourceMemory((char*)bufptr, sz))
         );
         mz_zip_writer_end(&zip);
     }
@@ -161,10 +161,16 @@ inline void ResourcesFromFbxScene(FbxScene& fbxScene)
         void* bufptr;
         size_t sz;
         mz_zip_writer_finalize_heap_archive(&zip, &bufptr, &sz);
+        GlobalDataRegistry().Add(
+            MKSTR(stack->Name() << ".anim"),
+            DataSourceRef(new DataSourceMemory((char*)bufptr, sz))
+        );
+        /*
         g_resourceRegistry.Add(
             MKSTR(stack->Name() << ".anim"), 
             new ResourceRawMemory((char*)bufptr, sz)
         );
+        */
         mz_zip_writer_end(&zip);
     }
 }
@@ -187,6 +193,7 @@ inline void SceneFromFbxModel(FbxModel* fbxModel, FbxScene& fbxScene, SceneObjec
     {
         FbxMesh* fbxMesh = fbxScene.GetByUid<FbxMesh>(fbxModel->GetUid());
         FbxGeometry* fbxGeometry = fbxScene.GetByUid<FbxGeometry>(fbxMesh->GetGeometryUid());
+        std::cout << "is mesh" << std::endl;
         sceneObject->Get<Model>()->SetMesh(
             MKSTR(fbxGeometry->GetUid() << fbxGeometry->GetName() << ".geo")
         );

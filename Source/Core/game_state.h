@@ -25,8 +25,6 @@
 #include <glfw/glfw3.h>
 #include <glfw/glfw3native.h>
 
-#include <asset.h>
-
 #include <common.h>
 
 #include <util/frame_graph.h>

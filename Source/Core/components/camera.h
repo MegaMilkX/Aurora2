@@ -5,7 +5,6 @@
 
 #include "transform.h"
 #include "../scene_object.h"
-#include "renderer.h"
 
 #undef GetObject
 
@@ -56,7 +55,6 @@ private:
     gfxm::mat4 projection;
 
     Transform* transform;
-    Renderer* renderer;
 };
 STATIC_RUN(Camera)
 {
