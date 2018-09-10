@@ -211,6 +211,7 @@ inline void DrawQuad()
     
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
+    glDeleteVertexArrays(1, &vao_handle);
     glDeleteBuffers(1, &vbuf);
 }
 
