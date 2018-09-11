@@ -292,9 +292,8 @@ public:
         return true;
     }
 
-    void AddAnim(const std::string& name, const std::string& resource) {
-        std::shared_ptr<Animation> anim = 
-            GlobalResourceFactory().Get<Animation>(resource);
+    void AddAnim(const std::string& name, std::shared_ptr<Animation> anim) {
+        if(!anim) return;
         AnimMotor& motor = motors[name];
         motor.SetAnim(anim);
         motor.Length(anim->Length());
@@ -321,6 +320,12 @@ public:
                 }
             }
         }
+    }
+
+    void AddAnim(const std::string& name, const std::string& resource) {
+        std::shared_ptr<Animation> anim = 
+            GlobalResourceFactory().Get<Animation>(resource);
+        AddAnim(name, anim);
     }
 
     size_t AnimCount() { return motors.size(); }

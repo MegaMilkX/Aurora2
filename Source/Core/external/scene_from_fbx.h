@@ -9,7 +9,10 @@
 #include <animation_driver.h>
 //#include <skeleton_animator.h>
 
-inline void ResourcesFromFbxScene(FbxScene& fbxScene)
+typedef std::map<int64_t, std::shared_ptr<Mesh>> mesh_res_map_t;
+typedef std::map<int64_t, std::shared_ptr<Animation>> anim_res_map_t;
+
+inline void ResourcesFromFbxScene(FbxScene& fbxScene, mesh_res_map_t& meshes, anim_res_map_t& anims)
 {
     for(unsigned i = 0; i < fbxScene.Count<FbxGeometry>(); ++i)
     {
@@ -38,10 +41,17 @@ inline void ResourcesFromFbxScene(FbxScene& fbxScene)
         size_t sz;
         mz_zip_writer_finalize_heap_archive(&zip, &bufptr, &sz);
 
+        DataSourceRef data_ref(new DataSourceMemory((char*)bufptr, sz));
+        std::shared_ptr<Mesh> mesh_ref(new Mesh());
+        mesh_ref->Build(data_ref);
+        meshes[geom->GetUid()] = mesh_ref;
+
+        /*
         GlobalDataRegistry().Add(
             MKSTR(geom->GetUid() << geom->GetName() << ".geo"),
             DataSourceRef(new DataSourceMemory((char*)bufptr, sz))
         );
+        */
         mz_zip_writer_end(&zip);
     }
 
@@ -125,63 +135,33 @@ inline void ResourcesFromFbxScene(FbxScene& fbxScene)
                     (void*)sc.data(), sizeof(kf3_t) * sc.size(), 0
                 );
             }
-            /*
-            for(unsigned k = 0; k < layer->CurveNodeCount(); ++k) {
-                FbxAnimationCurveNode* curveNode = layer->GetCurveNode(k);
-                for(unsigned l = 0; l < curveNode->CurveCount(); ++l) {
-                    auto curv = curveNode->GetCurve(l);
-
-                    auto& kf = curv->GetKeyframes();
-                    struct _keyframe {
-                        float time;
-                        float value;
-                    };
-                    std::vector<_keyframe> frames;
-                    for(auto& f : kf) {
-                        double timePerFrame = FbxTimeSecond / fbxScene.Settings().frameRate;
-                        float keyTime = f.frame / timePerFrame;
-                        frames.emplace_back(_keyframe{keyTime, f.value});
-                    }
-
-                    mz_zip_writer_add_mem(
-                        &zip, 
-                        MKSTR(
-                            "Layers/" << j << "/" <<
-                            curveNode->OwnerName() << "/" << 
-                            "Transform/" <<
-                            _rename(curveNode->Name()) << "/" << 
-                            _rename(curv->Name())).c_str(),
-                        (void*)frames.data(), sizeof(_keyframe) * frames.size(), 0
-                    );
-                }
-            }
-            */
         }
 
         void* bufptr;
         size_t sz;
         mz_zip_writer_finalize_heap_archive(&zip, &bufptr, &sz);
+        
+        DataSourceRef data_ref(new DataSourceMemory((char*)bufptr, sz));
+        std::shared_ptr<Animation> anim_ref(new Animation());
+        anim_ref->Build(data_ref);
+        anims[stack->GetUid()] = anim_ref;
+        /*
         GlobalDataRegistry().Add(
             MKSTR(stack->Name() << ".anim"),
             DataSourceRef(new DataSourceMemory((char*)bufptr, sz))
         );
-        /*
-        g_resourceRegistry.Add(
-            MKSTR(stack->Name() << ".anim"), 
-            new ResourceRawMemory((char*)bufptr, sz)
-        );
-        */
+*/
         mz_zip_writer_end(&zip);
     }
 }
 
-inline void SceneFromFbxModel(FbxModel* fbxModel, FbxScene& fbxScene, SceneObject* sceneObject){
+inline void SceneFromFbxModel(FbxModel* fbxModel, FbxScene& fbxScene, SceneObject* sceneObject, mesh_res_map_t& meshes, anim_res_map_t& anims){
     for(unsigned i = 0; i < fbxModel->ChildCount(); ++i)
     {
         SceneObject* child = sceneObject->CreateObject();
         sceneObject->Get<Transform>()->Attach(child->Get<Transform>());
 
-        SceneFromFbxModel(fbxModel->GetChild(i, fbxScene), fbxScene, child);
+        SceneFromFbxModel(fbxModel->GetChild(i, fbxScene), fbxScene, child, meshes, anims);
     }
 
     sceneObject->Name(fbxModel->GetName());
@@ -193,11 +173,17 @@ inline void SceneFromFbxModel(FbxModel* fbxModel, FbxScene& fbxScene, SceneObjec
     {
         FbxMesh* fbxMesh = fbxScene.GetByUid<FbxMesh>(fbxModel->GetUid());
         FbxGeometry* fbxGeometry = fbxScene.GetByUid<FbxGeometry>(fbxMesh->GetGeometryUid());
-        std::cout << "is mesh" << std::endl;
+        
+        if(meshes.count(fbxMesh->GetGeometryUid())) {
+            auto mesh_ref = meshes[fbxMesh->GetGeometryUid()];
+            sceneObject->Get<Model>()->mesh.Set(mesh_ref);
+        }
+        
+        /*
         sceneObject->Get<Model>()->SetMesh(
             MKSTR(fbxGeometry->GetUid() << fbxGeometry->GetName() << ".geo")
         );
-
+        */
         auto& vertices = fbxGeometry->GetVertices();
         auto& indices = fbxGeometry->GetIndices();
     }
@@ -216,19 +202,20 @@ inline void SceneFromFbxModel(FbxModel* fbxModel, FbxScene& fbxScene, SceneObjec
     }
 }
 
-inline void SceneFromFbx(FbxScene& fbxScene, SceneObject* scene){
+inline void SceneFromFbx(FbxScene& fbxScene, SceneObject* scene, mesh_res_map_t& meshes, anim_res_map_t& anims){
     for(unsigned i = 0; i < fbxScene.RootModelCount(); ++i)
     {
         SceneObject* child = scene->CreateObject();
         scene->Get<Transform>()->Attach(child->Get<Transform>());
-        SceneFromFbxModel(fbxScene.GetRootModel(i), fbxScene, child);
+        SceneFromFbxModel(fbxScene.GetRootModel(i), fbxScene, child, meshes, anims);
     }
 
     for(size_t i = 0; i < fbxScene.Count<FbxAnimationStack>(); ++i) {
         //auto animDriver = scene->Get<SkeletonAnimator>();
         auto animDriver = scene->Get<AnimationDriver>();
         auto stack = fbxScene.Get<FbxAnimationStack>(i);
-        animDriver->AddAnim(stack->Name(), MKSTR(stack->Name() << ".anim"));
+        animDriver->AddAnim(stack->Name(), anims[stack->GetUid()]);
+        //animDriver->AddAnim(stack->Name(), MKSTR(stack->Name() << ".anim"));
     }
 }
 
@@ -237,8 +224,10 @@ inline bool SceneFromFbx(const char* data, size_t size, SceneObject* scene)
     FbxScene* fbxScene = FbxScene::Create();
     if(!FbxReadMem(*fbxScene, data, size))
         return false;
-    ResourcesFromFbxScene(*fbxScene);
-    SceneFromFbx(*fbxScene, scene);
+    mesh_res_map_t meshes;
+    anim_res_map_t anims;
+    ResourcesFromFbxScene(*fbxScene, meshes, anims);
+    SceneFromFbx(*fbxScene, scene, meshes, anims);
     fbxScene->Destroy();
     return true;
 }
@@ -248,8 +237,10 @@ inline bool SceneFromFbx(const std::string& filename, SceneObject* scene)
     FbxScene* fbxScene = FbxScene::Create();
     if(!FbxReadFile(*fbxScene, filename))
         return false;
-    ResourcesFromFbxScene(*fbxScene);
-    SceneFromFbx(*fbxScene, scene);
+    mesh_res_map_t meshes;
+    anim_res_map_t anims;
+    ResourcesFromFbxScene(*fbxScene, meshes, anims);
+    SceneFromFbx(*fbxScene, scene, meshes, anims);
     fbxScene->_dumpFile(filename);
     fbxScene->Destroy();
     return true;
