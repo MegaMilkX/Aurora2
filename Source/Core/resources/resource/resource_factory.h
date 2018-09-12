@@ -28,6 +28,7 @@ public:
             }
             weak = ptr;
             ptr->Name(name);
+            ptr->Storage(Resource::GLOBAL);
         } else {
             ptr = std::dynamic_pointer_cast<T>(weak.lock());
         }

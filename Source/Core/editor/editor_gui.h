@@ -11,7 +11,7 @@
 #include "../external/nativefiledialog/nfd.h"
 
 #include <deserialize_scene.h>
-#include <serialize_scene.h>
+#include <scene_serializer.h>
 #include <external/scene_from_fbx.h>
 
 #include <components/animation_driver.h>
@@ -404,7 +404,7 @@ public:
                         if(r == NFD_OKAY) {
                             std::cout << outPath << std::endl;
                             std::string filePath(outPath);
-                            if(SerializeScene(editedScene, filePath, true))
+                            if(SceneSerializer().Serialize(editedScene, filePath))
                             {
                                 std::cout << "Scene saved" << std::endl;
                                 currentSceneFile = filePath;
@@ -413,7 +413,7 @@ public:
                     }
                     else
                     {
-                        if(SerializeScene(editedScene, currentSceneFile, true))
+                        if(SceneSerializer().Serialize(editedScene, currentSceneFile))
                         {
                             std::cout << "Scene saved" << std::endl;
                         }
@@ -426,7 +426,7 @@ public:
                     if(r == NFD_OKAY) {
                         std::cout << outPath << std::endl;
                         std::string filePath(outPath);
-                        SerializeScene(editedScene, filePath, true);
+                        SceneSerializer().Serialize(editedScene, filePath);
                     }
                 }
                 if(ImGui::MenuItem("Exit")) {}

@@ -44,6 +44,8 @@ inline void ResourcesFromFbxScene(FbxScene& fbxScene, mesh_res_map_t& meshes, an
         DataSourceRef data_ref(new DataSourceMemory((char*)bufptr, sz));
         std::shared_ptr<Mesh> mesh_ref(new Mesh());
         mesh_ref->Build(data_ref);
+        mesh_ref->Name(MKSTR(geom->GetUid() << geom->GetName() << ".geo"));
+        mesh_ref->Storage(Resource::LOCAL);
         meshes[geom->GetUid()] = mesh_ref;
 
         /*
@@ -144,6 +146,8 @@ inline void ResourcesFromFbxScene(FbxScene& fbxScene, mesh_res_map_t& meshes, an
         DataSourceRef data_ref(new DataSourceMemory((char*)bufptr, sz));
         std::shared_ptr<Animation> anim_ref(new Animation());
         anim_ref->Build(data_ref);
+        anim_ref->Name(MKSTR(stack->Name() << ".anim"));
+        anim_ref->Storage(Resource::LOCAL);
         anims[stack->GetUid()] = anim_ref;
         /*
         GlobalDataRegistry().Add(

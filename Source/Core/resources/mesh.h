@@ -3,7 +3,6 @@
 
 #include <fstream>
 #include <aurora/gfx.h>
-#include <aurora/media/fbx.h>
 
 #include "../util/gl_helpers.h"
 
@@ -12,6 +11,8 @@
 #include "../util/gfxm.h"
 
 #include "resource/resource.h"
+
+#include "../../general/util.h"
 
 struct GLAttribDesc
 {
@@ -34,7 +35,7 @@ public:
     
     template<typename ATTR, typename T>
     void SetAttribArray(const std::vector<T>& data);
-    void SetIndices(const std::vector<unsigned>& data);
+    void SetIndices(const std::vector<uint32_t>& data);
     template<typename T>
     unsigned GetAttribCount();
     template<typename T>
@@ -49,7 +50,8 @@ public:
     std::vector<GLVertexArrayObject> vertexArrayObjects;
     std::vector<bool> vaoDirty;
     std::map<Au::AttribInfo, std::vector<unsigned char>> attribArrays;
-    std::vector<unsigned> indices;
+    std::vector<uint32_t> indices;
+    int vertexCount;
     
     bool _compareDesc(
         const std::vector<GLAttribDesc>& vertexDesc,
@@ -92,11 +94,11 @@ public:
             return false;
         }
 
-        int vertexCount = 0;
+        vertexCount = 0;
         std::vector<float> vertices;
         std::vector<float> normals;
         std::vector<float> uv;
-        std::vector<unsigned> indices;
+        std::vector<uint32_t> indices;
         std::vector<gfxm::vec4> boneIndices;
         std::vector<gfxm::vec4> boneWeights;
         unsigned int indexOffset = 0;
@@ -132,6 +134,29 @@ public:
         SetIndices(indices);
 
         mz_zip_reader_end(&zip);
+        return true;
+    }
+
+    virtual bool Serialize(std::vector<unsigned char>& data) {
+        mz_zip_archive zip;
+        memset(&zip, 0, sizeof(zip));
+        mz_zip_writer_init_heap(&zip, 0, 0);
+
+        int32_t vertexCount = this->vertexCount;
+        int32_t indexCount = (int32_t)indices.size();
+        mz_zip_writer_add_mem(&zip, "VertexCount", (void*)&vertexCount, sizeof(vertexCount), 0);
+        mz_zip_writer_add_mem(&zip, "IndexCount", (void*)&indexCount, sizeof(indexCount), 0);
+        mz_zip_writer_add_mem(&zip, "Indices", (void*)indices.data(), indexCount * sizeof(uint32_t), 0);
+        // TODO: GET RID OF AU:: ATTRIBUTE IDENTIFIERS
+        mz_zip_writer_add_mem(&zip, "Vertices", (void*)GetAttribBytes<Au::Position>().data(), vertexCount * 3 * sizeof(float), 0);
+        mz_zip_writer_add_mem(&zip, MKSTR("Normals." << 0).c_str(), (void*)GetAttribBytes<Au::Normal>().data(), vertexCount * 3 * sizeof(float), 0);
+        mz_zip_writer_add_mem(&zip, MKSTR("UV." << 0).c_str(), (void*)GetAttribBytes<Au::UV>().data(), vertexCount * 2 * sizeof(float), 0);
+
+        void* bufptr;
+        size_t sz;
+        mz_zip_writer_finalize_heap_archive(&zip, &bufptr, &sz);
+        data = std::vector<unsigned char>((unsigned char*)bufptr, (unsigned char*)bufptr + sz);
+        mz_zip_writer_end(&zip);
         return true;
     }
 };

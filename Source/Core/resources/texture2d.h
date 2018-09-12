@@ -60,6 +60,10 @@ public:
         Data(data, w, h, 4);
         return true;
     }
+    virtual bool Serialize(std::vector<unsigned char>& data) {
+        throw std::exception("not implemented");
+        return false;
+    }
 private:
     bool dirty;
     std::vector<unsigned char> _data;

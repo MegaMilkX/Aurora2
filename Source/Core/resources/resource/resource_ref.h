@@ -72,6 +72,7 @@ public:
         }
         return (T*)resource.get();
     }
+    std::shared_ptr<Resource> Get() { return resource; }
 
     void AddChangeCallback(resource_ref_changed_cb_t cb) {
         callbacks.emplace_back(cb);

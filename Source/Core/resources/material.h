@@ -64,7 +64,10 @@ public:
 
         return true;
     }
-    
+    virtual bool Serialize(std::vector<unsigned char>& data) {
+        throw std::exception("not implemented");
+        return false;
+    }
 private:
     std::map<std::string, std::string> strstr;
 };

@@ -218,6 +218,11 @@ public:
 
         return true;
     }
+
+    virtual bool Serialize(std::vector<unsigned char>& data) {
+        throw std::exception("not implemented");
+        return false;
+    }
 private:
     double frameRate;
     double length;

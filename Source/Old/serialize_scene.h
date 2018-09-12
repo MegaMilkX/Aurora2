@@ -18,46 +18,50 @@ void ToJsonArray(nlohmann::json& j, T* data, int count)
 }
 
 template<typename T>
-void ToJson(nlohmann::json& j, T& value){
+void ToJson(nlohmann::json& j, T& value, bool embed_resources){
     j = value;
 }
 template<>
-inline void ToJson(nlohmann::json& j, gfxm::vec2& value){
+inline void ToJson(nlohmann::json& j, gfxm::vec2& value, bool embed_resources){
     j = nlohmann::json::array();
     ToJsonArray(j, (float*)&value, 2);
 }
 template<>
-inline void ToJson(nlohmann::json& j, gfxm::vec3& value){
+inline void ToJson(nlohmann::json& j, gfxm::vec3& value, bool embed_resources){
     j = nlohmann::json::array();
     ToJsonArray(j, (float*)&value, 3);
 }
 template<>
-inline void ToJson(nlohmann::json& j, gfxm::vec4& value){
+inline void ToJson(nlohmann::json& j, gfxm::vec4& value, bool embed_resources){
     j = nlohmann::json::array();
     ToJsonArray(j, (float*)&value, 4);
 }
 template<>
-inline void ToJson(nlohmann::json& j, gfxm::mat3& value){
+inline void ToJson(nlohmann::json& j, gfxm::mat3& value, bool embed_resources){
     j = nlohmann::json::array();
     ToJsonArray(j, (float*)&value, 9);
 }
 template<>
-inline void ToJson(nlohmann::json& j, gfxm::mat4& value){
+inline void ToJson(nlohmann::json& j, gfxm::mat4& value, bool embed_resources){
     j = nlohmann::json::array();
     ToJsonArray(j, (float*)&value, 16);
 }
 template<>
-inline void ToJson(nlohmann::json& j, ResourceRef& value){
+inline void ToJson(nlohmann::json& j, ResourceRef& value, bool embed_resources){
     if(!value) return;
     Resource* res = value.Get<Resource>();
     if(!res) return;
     j = res->Name();
+
+    if(embed_resources) {
+        // TODO Check if already written
+        // Write a new resource
+    }
 }
 
 template<typename T>
-bool TrySetJsonMember(nlohmann::json& j, rttr::property p, SceneObject::Component* c)
+bool TrySetJsonMember(nlohmann::json& j, rttr::property p, SceneObject::Component* c, bool embed_resources)
 {
-    
     if(p.get_type() == rttr::type::get<T>())
     {
         j[p.get_name().to_string()]["type"] = rttr::type::get<T>().get_name().to_string();
@@ -66,16 +70,17 @@ bool TrySetJsonMember(nlohmann::json& j, rttr::property p, SceneObject::Componen
 
         ToJson(
             j[p.get_name().to_string()]["value"], 
-            v
+            v, 
+            bool embed_resources
         );
         return true;
     }
     return false;
 }
 
-inline void SetJsonMember(nlohmann::json& j, rttr::property p, SceneObject::Component* c)
+inline void SetJsonMember(nlohmann::json& j, rttr::property p, SceneObject::Component* c, bool embed_resources)
 {
-#define X(TYPE) if(TrySetJsonMember<TYPE>(j, p, c)) return;
+#define X(TYPE) if(TrySetJsonMember<TYPE>(j, p, c, embed_resources)) return;
     X(uint8_t)
     X(int8_t)
     X(uint16_t)
@@ -106,29 +111,7 @@ inline std::string SerializeComponentToJson(mz_zip_archive& archive, rttr::type 
     auto props = t.get_properties();
     for(auto p : props)
     {
-        SetJsonMember(j, p, c);
-        /*
-        if(embed_resources)
-        {
-            if(p.get_type() == rttr::type::get<ResourceRef>())
-            {
-                rttr::variant var = p.get_value(c);
-                ResourceRef ref = var.get_value<ResourceRef>();
-                ResourceRaw* raw = ref.GetRaw();
-                if(raw && raw->Size() > 0)
-                {
-                    std::vector<char> buf;
-                    buf.resize((size_t)raw->Size());
-                    raw->ReadAll((char*)buf.data());
-                    mz_zip_writer_add_mem(
-                        &archive,
-                        ("resources/" + ref.GetTargetName()).c_str(),
-                        buf.data(), buf.size(), 0
-                    );
-                }
-            }
-        }
-        */
+        SetJsonMember(j, p, c, embed_resources);
     }
 
     result = j.dump();
@@ -150,8 +133,7 @@ inline bool SerializeScene_(
 
         rttr::type type = comp->GetType();
 
-        if(type.get_name() == 
-            rttr::type::get(UnserializableComponentToken()).get_name())
+        if(type == rttr::type::get<void>())
             continue;
 
         if(!type.is_valid()) continue;
@@ -197,6 +179,7 @@ inline bool SerializeScene(const SceneObject* scene, const std::string& filename
     std::string file_prefix;
     SerializeScene_(scene, archive, file_prefix, embed_resources);
 
+    /*
     if(embed_resources)
     {
         for(size_t i = 0; i < GlobalDataRegistry().Count(); ++i)
@@ -215,6 +198,7 @@ inline bool SerializeScene(const SceneObject* scene, const std::string& filename
             }
         }
     }
+    */
 
     mz_zip_writer_finalize_archive(&archive);
     mz_zip_writer_end(&archive);
