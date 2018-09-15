@@ -108,7 +108,14 @@ inline std::map<rttr::type, json_prop_parser_t> InitPropertyParsers()
         //ResourceRef ref(j.get<std::string>());
         //v = ref;
 
-        v.get_value<ResourceRef>().Set(j.get<std::string>());
+        Resource::STORAGE storage = (Resource::STORAGE)j["storage"].get<int>();
+        std::string name = j["name"].get<std::string>();
+
+        if(storage == Resource::LOCAL) {
+            
+        } else if(storage == Resource::GLOBAL) {
+            v.get_value<ResourceRef>().Set(name);
+        }
     };
 
     return parsers;

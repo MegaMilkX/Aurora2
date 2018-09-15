@@ -10,7 +10,6 @@
 #include "../input.h"
 #include "../external/nativefiledialog/nfd.h"
 
-#include <deserialize_scene.h>
 #include <scene_serializer.h>
 #include <external/scene_from_fbx.h>
 
@@ -342,7 +341,7 @@ public:
 
                         std::cout << outPath << std::endl;
                         std::string filePath(outPath);
-                        DeserializeScene(filePath, *editedScene);
+                        SceneSerializer().Deserialize(filePath, *editedScene);
                         editorCamera->Reset(gfxm::vec3(0.0f,0.0f,0.0f));
                         currentSceneFile = filePath;
                         selectedObject = 0;
@@ -380,7 +379,7 @@ public:
 
                         std::cout << outPath << std::endl;
                         std::string filePath(outPath);
-                        DeserializeScene(filePath, *so);
+                        SceneSerializer().Deserialize(filePath, *so);
                     }
                 }
                 if(ImGui::MenuItem("Merge FBX..."))
