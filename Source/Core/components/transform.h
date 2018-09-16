@@ -5,6 +5,8 @@
 
 #include "../scene_object.h"
 
+#include <global_objects.h>
+
 #undef GetObject
 
 class Transform : public SceneObject::Component
@@ -167,6 +169,18 @@ STATIC_RUN(Transform)
             rttr::select_overload<const gfxm::vec3&()>(&Transform::Scale),
             rttr::select_overload<void(const gfxm::vec3&)>(&Transform::Scale)
         );
+
+    GlobalSceneSerializer()
+        .CustomComponentWriter<Transform>([](SceneObject::Component*, nlohmann::json&){
+        });
+    GlobalSceneSerializer()
+        .CustomComponentReader<Transform>([](SceneObject::Component* c, nlohmann::json&){
+            SceneObject* parent = c->Object()->Parent();
+            if(!parent) return;
+            Transform* t = parent->FindComponent<Transform>();
+            if(!t) return;
+            t->Attach((Transform*)c);
+        });
 }
 
 #endif

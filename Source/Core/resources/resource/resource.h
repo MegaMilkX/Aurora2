@@ -2,8 +2,10 @@
 #define RESOURCE_H
 
 #include "data_source.h"
+#include <rttr/type>
 
 class Resource {
+    RTTR_ENABLE()
 public:
     enum STORAGE
     {

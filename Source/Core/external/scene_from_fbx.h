@@ -180,7 +180,7 @@ inline void SceneFromFbxModel(FbxModel* fbxModel, FbxScene& fbxScene, SceneObjec
         
         if(meshes.count(fbxMesh->GetGeometryUid())) {
             auto mesh_ref = meshes[fbxMesh->GetGeometryUid()];
-            sceneObject->Get<Model>()->mesh.Set(mesh_ref);
+            sceneObject->Get<Model>()->mesh = mesh_ref;
         }
         
         /*

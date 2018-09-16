@@ -17,9 +17,10 @@
 struct Renderable
 {
     Transform* transform;
-    GLuint vao;
-    int indexCount;
-    std::shared_ptr<Texture2D> texDiffuse;
+    //GLuint vao;
+    //int indexCount;
+    //std::shared_ptr<Texture2D> texDiffuse;
+    Model* model;
 };
 
 struct StaticDrawData
@@ -257,18 +258,21 @@ public:
 
     void _addRenderable(Model* m, SceneObject* so)
     {
-        Mesh* mesh = m->mesh.Get<Mesh>();
+        /*
+        std::shared_ptr<Mesh> mesh = m->mesh;
         if(!mesh) {
             LOG("No mesh specified");
             return;
-        }
-        Material* mat = m->material.Get<Material>();
-        std::shared_ptr<Texture2D> tex = 0;
-        if(mat) tex = GlobalResourceFactory().Get<Texture2D>(mat->GetString("Diffuse"));
-        if(!tex) tex = test_texture;
+        }*/
+        //Material* mat = m->material.Get<Material>();
+        //std::shared_ptr<Texture2D> tex = 0;
+        //if(mat) tex = GlobalResourceFactory().Get<Texture2D>(mat->GetString("Diffuse"));
+        //if(!tex) tex = test_texture;
 
         renderables[so] = Renderable{
             so->Get<Transform>(),
+            m
+            /*
             m->mesh.Get<Mesh>()->GetVao({
                 { "Position", 3, GL_FLOAT, GL_FALSE },
                 { "UV", 2, GL_FLOAT, GL_FALSE },
@@ -276,6 +280,7 @@ public:
             }),
             (int)m->mesh.Get<Mesh>()->GetIndexCount(),
             tex
+            */
         };
 
         LOG("Renderable added " << so);
@@ -284,19 +289,7 @@ public:
     void _onAddComponent(rttr::type type, SceneObject::Component* c, SceneObject* so)
     {
         if(type == rttr::type::get<Model>()) {
-            Model* m = (Model*)c;
-            
-            m->mesh.AddChangeCallback(
-                [this, so, m](ResourceRef* ref){
-                    _addRenderable(m, so);
-                }
-            );
-            m->material.AddChangeCallback(
-                [this, so, m](ResourceRef* ref){
-                    _addRenderable(m, so);
-                }
-            );
-            
+            Model* m = (Model*)c;            
             _addRenderable(m, so);
         }
         else if(type == rttr::type::get<Camera>()) {
@@ -340,10 +333,6 @@ private:
         glViewport(0, 0, Common.frameSize.x, Common.frameSize.y);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        
-
-        // TODO: Render objects?
-        
         auto& in = staticDrawData;
         in.program->Use();
         glUniformMatrix4fv(in.uProjection, 1, GL_FALSE, (float*)&projection);
@@ -354,16 +343,21 @@ private:
         for(auto& kv : renderables)
         {
             Renderable& unit = kv.second;
+            if(!unit.model->mesh) continue;
+            
             glUniformMatrix4fv(
                 in.uModel, 1, GL_FALSE,
                 (float*)&unit.transform->GetTransform()
             );
             
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, unit.texDiffuse->GetGlName());
-
-            glBindVertexArray(unit.vao);
-            glDrawElements(GL_TRIANGLES, unit.indexCount, GL_UNSIGNED_INT, (void*)0);
+            if(unit.model->material && unit.model->material->diffuseMap) {
+                glBindTexture(GL_TEXTURE_2D, unit.model->material->diffuseMap->GetGlName());
+            } else {
+                glBindTexture(GL_TEXTURE_2D, test_texture->GetGlName());
+            }
+            glBindVertexArray(unit.model->mesh->GetVao());
+            glDrawElements(GL_TRIANGLES, unit.model->mesh->GetIndexCount(), GL_UNSIGNED_INT, (void*)0);
         }
         // ==========
     }

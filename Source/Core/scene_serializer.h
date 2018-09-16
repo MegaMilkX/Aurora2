@@ -9,7 +9,7 @@
 #define MINIZ_HEADER_FILE_ONLY
 #include <lib/miniz.c>
 #include <functional>
-#include <resources/resource/resource_ref.h>
+#include <resources/resource/resource_factory.h>
 
 template<typename T>
 void ToJsonArray(nlohmann::json& j, T* data, int count)
@@ -39,6 +39,11 @@ template<> inline bool ToJson<gfxm::vec4>(nlohmann::json& j, rttr::variant& valu
     ToJsonArray(j, (float*)&value.get_value<gfxm::vec4>(), 4);
     return true;
 }
+template<> inline bool ToJson<gfxm::quat>(nlohmann::json& j, rttr::variant& value){
+    j = nlohmann::json::array();
+    ToJsonArray(j, (float*)&value.get_value<gfxm::quat>(), 4);
+    return true;
+}
 template<> inline bool ToJson<gfxm::mat3>(nlohmann::json& j, rttr::variant& value){
     j = nlohmann::json::array();
     ToJsonArray(j, (float*)&value.get_value<gfxm::mat3>(), 9);
@@ -54,17 +59,27 @@ class SceneSerializer {
 public:
     typedef std::function<bool(nlohmann::json&, rttr::variant&)> serialize_prop_f;
     typedef std::function<void(rttr::variant&, nlohmann::json&)> json_prop_parser_t;
+    typedef std::function<void(SceneObject::Component*, nlohmann::json&)> custom_component_writer_f;
+    typedef std::function<void(SceneObject::Component*, nlohmann::json&)> custom_component_reader_f;
 
     SceneSerializer();
 
     bool Serialize(const SceneObject* scene, const std::string& filename);
     bool Deserialize(const std::string& filename, SceneObject& scene);
+
+    template<typename T>
+    void CustomComponentWriter(custom_component_writer_f f);
+    template<typename T>
+    void CustomComponentReader(custom_component_reader_f f);
 private:
     std::map<rttr::type, serialize_prop_f> prop_serializers;
     std::map<rttr::type, json_prop_parser_t> parsers;
     std::set<std::shared_ptr<Resource>> embedded_resources;
     std::map<std::string, DataSourceRef> data_sources;
     std::map<std::string, std::shared_ptr<Resource>> resources;
+
+    std::map<rttr::type, custom_component_writer_f> custom_component_writers;
+    std::map<rttr::type, custom_component_reader_f> custom_component_readers;
 
     bool SerializeEmbeddedResources(mz_zip_archive& archive);
     bool SerializeScene_(const SceneObject* scene, mz_zip_archive& archive, std::string& file_prefix);
@@ -74,5 +89,14 @@ private:
     rttr::variant JsonPropertyToVariant(rttr::variant& var, nlohmann::json& j);
     std::map<rttr::type, json_prop_parser_t> InitPropertyParsers();
 };
+
+template<typename T>
+void SceneSerializer::CustomComponentWriter(SceneSerializer::custom_component_writer_f f) {
+    custom_component_writers[rttr::type::get<T>()] = f;
+}
+template<typename T>
+void SceneSerializer::CustomComponentReader(SceneSerializer::custom_component_reader_f f) {
+    custom_component_readers[rttr::type::get<T>()] = f;
+}
 
 #endif

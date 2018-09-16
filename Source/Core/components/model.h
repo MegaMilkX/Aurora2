@@ -14,8 +14,8 @@
 
 #include <mutex>
 
-#include <resources/resource/resource_ref.h>
 #include <resources/resource/resource_factory.h>
+#include <resources/resource/resource_ref.h>
 
 #undef GetObject
 
@@ -27,18 +27,18 @@ public:
     Model();    
     ~Model();
 
-    ResourceRef mesh;
-    ResourceRef material;
+    resource_ref<Mesh> mesh;
+    resource_ref<Material> material;
 
     resource<gl::ShaderProgram> program;
 
     void SetMesh(std::string res) {
         std::cout << "Model::SetMesh " << res << std::endl; 
-        mesh.Set(GlobalResourceFactory().Get<Mesh>(res)); meshName = res; 
+        mesh = GlobalResourceFactory().Get<Mesh>(res); meshName = res; 
     }
     std::string GetMesh() const { return meshName; }
     void SetMaterial(std::string res)
-    { material.Set(GlobalResourceFactory().Get<Material>(res)); materialName = res; }
+    { material = GlobalResourceFactory().Get<Material>(res); materialName = res; }
     std::string GetMaterial() const { return materialName; }
     
     virtual void OnInit();

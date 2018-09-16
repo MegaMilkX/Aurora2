@@ -2,9 +2,7 @@
 
 Model::Model()
 : dirty(true),
-transform(0),
-mesh(ResourceRef::Make<Mesh>()),
-material(ResourceRef::Make<Material>())
+transform(0)
 {
 }
 

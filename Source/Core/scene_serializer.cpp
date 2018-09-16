@@ -1,5 +1,7 @@
 #include "scene_serializer.h"
 
+#include <resources/resource/resource_ref.h>
+
 SceneSerializer::SceneSerializer() {
     prop_serializers[rttr::type::get<uint8_t>()] = &ToJson<uint8_t>;
     prop_serializers[rttr::type::get<int8_t>()] = &ToJson<int8_t>;
@@ -14,22 +16,33 @@ SceneSerializer::SceneSerializer() {
     prop_serializers[rttr::type::get<gfxm::vec2>()] = &ToJson<gfxm::vec2>;
     prop_serializers[rttr::type::get<gfxm::vec3>()] = &ToJson<gfxm::vec3>;
     prop_serializers[rttr::type::get<gfxm::vec4>()] = &ToJson<gfxm::vec4>;
+    prop_serializers[rttr::type::get<gfxm::quat>()] = &ToJson<gfxm::quat>;
     prop_serializers[rttr::type::get<gfxm::mat3>()] = &ToJson<gfxm::mat3>;
     prop_serializers[rttr::type::get<gfxm::mat4>()] = &ToJson<gfxm::mat4>;
     prop_serializers[rttr::type::get<std::string>()] = &ToJson<std::string>;
-    prop_serializers[rttr::type::get<ResourceRef>()] = [this](nlohmann::json& j, rttr::variant& value)->bool {
-        ResourceRef& ref = value.get_value<ResourceRef>();
-        if(!ref) return false;
-        std::shared_ptr<Resource> res = ref.Get();
-        if(!res) return false;
-        j["storage"] = res->Storage();
-        j["name"] = res->Name();
-        if(res->Storage() == Resource::LOCAL) {
-            embedded_resources.insert(res);
+    prop_serializers[rttr::type::get<i_resource_ref>()] = [this](nlohmann::json& j, rttr::variant& value)->bool {
+        /*
+        if(!value.can_convert<std::shared_ptr<Resource>>()) {
+            std::cout << "Serializing property: Can't convert variant of type " << 
+                value.get_type().get_name().to_string() << " to " << rttr::type::get<std::shared_ptr<Resource>>().get_name().to_string() << std::endl;
+        }
+        */
+        i_resource_ref& ref = value.get_value<i_resource_ref>();
+        std::shared_ptr<Resource> res = ref.base_ptr();
+        if(!res) {
+            std::cout << "Serializing property: resource is null" << std::endl;
+            j["storage"] = Resource::LOCAL;
+            j["name"] = "";
+        }
+        else {
+            j["storage"] = res->Storage();
+            j["name"] = res->Name();
+            if(res->Storage() == Resource::LOCAL) {
+                embedded_resources.insert(res);
+            }
         }
         return true;
     };
-
     parsers = InitPropertyParsers();
 }
 
@@ -143,18 +156,44 @@ std::string SceneSerializer::SerializeComponentToJson(mz_zip_archive& archive, r
     using json = nlohmann::json;
 
     std::string result;
-    json j = json::object();
+    json jroot = json::object();
+    json& j = jroot["props"];
+    json& jext = jroot["ext"];
+
+    {
+        auto it = custom_component_writers.find(t);
+        if(it != custom_component_writers.end()) {
+            it->second(c, jext);
+        }
+    }
 
     auto props = t.get_properties();
     for(auto p : props)
     {
-        auto it = prop_serializers.find(p.get_type());
-        if(it == prop_serializers.end()) continue;
-        j[p.get_name().to_string()]["type"] = p.get_type().get_name().to_string();
-        it->second(j[p.get_name().to_string()]["value"], p.get_value(c));
+        serialize_prop_f serializer;
+        rttr::variant value;
+        rttr::type p_type = p.get_type();
+
+        if(p_type.is_derived_from<i_resource_ref>()) {
+            serializer = prop_serializers[rttr::type::get<i_resource_ref>()];
+            value = p.get_value(c);
+        } else {
+            auto it = prop_serializers.find(p.get_type());
+            if(it != prop_serializers.end()) {
+                serializer = it->second;
+                value = p.get_value(c);
+            }
+        }
+
+        if(serializer) {
+            j[p.get_name().to_string()]["type"] = p.get_type().get_name().to_string();
+            serializer(j[p.get_name().to_string()]["value"], value);
+        } else {
+            std::cout << "Can't serialize property '" << p.get_name().to_string() << "' of type " << p.get_type().get_name().to_string() << std::endl;
+        }
     }
 
-    result = j.dump();
+    result = jroot.dump();
 
     return result;
 }
@@ -245,25 +284,70 @@ bool SceneSerializer::DeserializeScene(unsigned char* data, size_t size, SceneOb
                 0
             );
 
-            nlohmann::json json;
+            nlohmann::json json_root;
             try
             {
-                json = nlohmann::json::parse(buf);
+                json_root = nlohmann::json::parse(buf);
             }
             catch(std::exception& ex)
             {
                 std::cout << t << " - invalid component json: " << ex.what() << std::endl;
                 return;
             }
+
+            {
+                auto it = custom_component_readers.find(type);
+                if(it != custom_component_readers.end()) {
+                    it->second(c, json_root["ext"]);
+                }
+            }
+
+            nlohmann::json json = json_root["props"];
             
             for(auto it = json.begin(); it != json.end(); ++it)
             {
                 if(!it.value().is_object()) continue;
-                // TODO:
                 rttr::property prop = type.get_property(it.key());
-                rttr::variant var = prop.get_value(c);
-                JsonPropertyToVariant(var, it.value());
-                prop.set_value(c, var);
+                rttr::type prop_type = prop.get_type();
+
+                if(prop.get_type().is_derived_from<i_resource_ref>()) {
+                    nlohmann::json j = it.value()["value"];
+                    std::cout << j.dump() << std::endl;
+                    Resource::STORAGE storage = 
+                        (Resource::STORAGE)j["storage"].get<int>();
+                    std::string name = 
+                        j["name"].get<std::string>();
+
+                    if(storage == Resource::LOCAL) {
+                        auto res_it = resources.find(name);
+                        if(res_it != resources.end()) {
+                            rttr::variant v = prop.get_value(c);
+                            v.get_value<i_resource_ref>().set_unsafe(res_it->second);
+                            prop.set_value(c, v);
+                        } else {
+                            std::cout << "Searching for " << name << " local data source" << std::endl;
+                            if(data_sources.count(name) == 0) {
+                                std::cout << "Local resource " << name << " doesn't exist" << std::endl;
+                                continue;
+                            }
+                            rttr::variant v = prop.get_value(c);
+                            std::shared_ptr<Resource> res = 
+                                v.get_value<i_resource_ref>().set_from_data(data_sources[name]);
+                            res->Name(name);
+                            prop.set_value(c, v);
+                            resources[name] = res;
+                        }
+                    } else if(storage == Resource::GLOBAL) {
+                        rttr::variant v = prop.get_value(c);
+                        v.get_value<i_resource_ref>().set_from_factory(GlobalResourceFactory(), name);
+                        prop.set_value(c, v);
+                    }
+                    continue;
+                } else {
+                    rttr::variant var = prop.get_value(c);
+                    JsonPropertyToVariant(var, it.value());
+                    prop.set_value(c, var);
+                }
             }
         };
         lambda_child = [&](
@@ -408,6 +492,7 @@ std::map<rttr::type, SceneSerializer::json_prop_parser_t> SceneSerializer::InitP
         m[3][3] = j[15].get<float>();
         v = m;
     };
+    /*
     parsers[rttr::type::get<ResourceRef>()] = [this](rttr::variant& v, nlohmann::json& j){
         if(!j.is_object()) return;
         if(!v.is_valid()) {
@@ -444,6 +529,12 @@ std::map<rttr::type, SceneSerializer::json_prop_parser_t> SceneSerializer::InitP
             ref.Set(name);
         }
     };
+    */
 
     return parsers;
+}
+
+template<typename T>
+void DeserializeResource(std::shared_ptr<T>& res) {
+
 }

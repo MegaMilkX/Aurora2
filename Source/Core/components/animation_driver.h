@@ -367,6 +367,17 @@ STATIC_RUN(AnimationDriver) {
         .constructor<>()(
             rttr::policy::ctor::as_raw_ptr
         );
+
+    GlobalSceneSerializer()
+        .CustomComponentWriter<AnimationDriver>([](SceneObject::Component* c, nlohmann::json&){
+            AnimationDriver* driver = (AnimationDriver*)c;
+            nlohmann::json janim_array = nlohmann::json::array();
+            
+        });
+    GlobalSceneSerializer()
+        .CustomComponentReader<AnimationDriver>([](SceneObject::Component* c, nlohmann::json&){
+            
+        });
 }
 
 inline AnimLayer::AnimLayer(AnimationDriver* driver)

@@ -10,7 +10,7 @@
 #include "../input.h"
 #include "../external/nativefiledialog/nfd.h"
 
-#include <scene_serializer.h>
+#include <global_objects.h>
 #include <external/scene_from_fbx.h>
 
 #include <components/animation_driver.h>
@@ -341,7 +341,7 @@ public:
 
                         std::cout << outPath << std::endl;
                         std::string filePath(outPath);
-                        SceneSerializer().Deserialize(filePath, *editedScene);
+                        GlobalSceneSerializer().Deserialize(filePath, *editedScene);
                         editorCamera->Reset(gfxm::vec3(0.0f,0.0f,0.0f));
                         currentSceneFile = filePath;
                         selectedObject = 0;
@@ -379,7 +379,7 @@ public:
 
                         std::cout << outPath << std::endl;
                         std::string filePath(outPath);
-                        SceneSerializer().Deserialize(filePath, *so);
+                        GlobalSceneSerializer().Deserialize(filePath, *so);
                     }
                 }
                 if(ImGui::MenuItem("Merge FBX..."))
@@ -403,7 +403,7 @@ public:
                         if(r == NFD_OKAY) {
                             std::cout << outPath << std::endl;
                             std::string filePath(outPath);
-                            if(SceneSerializer().Serialize(editedScene, filePath))
+                            if(GlobalSceneSerializer().Serialize(editedScene, filePath))
                             {
                                 std::cout << "Scene saved" << std::endl;
                                 currentSceneFile = filePath;
@@ -412,7 +412,7 @@ public:
                     }
                     else
                     {
-                        if(SceneSerializer().Serialize(editedScene, currentSceneFile))
+                        if(GlobalSceneSerializer().Serialize(editedScene, currentSceneFile))
                         {
                             std::cout << "Scene saved" << std::endl;
                         }
@@ -425,7 +425,7 @@ public:
                     if(r == NFD_OKAY) {
                         std::cout << outPath << std::endl;
                         std::string filePath(outPath);
-                        SceneSerializer().Serialize(editedScene, filePath);
+                        GlobalSceneSerializer().Serialize(editedScene, filePath);
                     }
                 }
                 if(ImGui::MenuItem("Exit")) {}

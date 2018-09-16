@@ -18,19 +18,31 @@
 
 #include "../external/json.hpp"
 
-#include "resource/resource.h"
+#include <resources/resource/resource_factory.h>
 
 class Material : public Resource
 {
+    RTTR_ENABLE(Resource)
 public:    
-    Material()
-    {
-        
-    }
+    Material() {}
+
+    std::shared_ptr<Texture2D> diffuseMap;
+    std::shared_ptr<Texture2D> normalMap;
+    std::shared_ptr<Texture2D> specularMap;
+    gfxm::vec3 tint = gfxm::vec3(1.0f, 1.0f, 1.0f);
+    float glossiness = 0.0f;
+    float emission = 0.0f;
     
     void Set(const std::string& key, const std::string& value)
     {
         strstr[key] = value;
+        if(key == "Diffuse" || key == "DiffuseMap") {
+            diffuseMap = GlobalResourceFactory().Get<Texture2D>(value);
+        } else if(key == "Normal" || key == "NormalMap") {
+            normalMap = GlobalResourceFactory().Get<Texture2D>(value);
+        } else if(key == "Specular" || key == "SpecularMap") {
+            specularMap = GlobalResourceFactory().Get<Texture2D>(value);
+        }
     }
 
     std::string GetString(const std::string& key) { return strstr[key]; }
@@ -65,7 +77,7 @@ public:
         return true;
     }
     virtual bool Serialize(std::vector<unsigned char>& data) {
-        throw std::exception("not implemented");
+        LOG("Material::Serialize - NOT IMPLEMENTED");
         return false;
     }
 private:

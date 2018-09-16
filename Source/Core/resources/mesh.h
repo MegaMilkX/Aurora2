@@ -24,6 +24,7 @@ struct GLAttribDesc
 
 class Mesh : public Resource
 {
+    RTTR_ENABLE(Resource)
 public:
     struct SubData
     {
@@ -44,11 +45,14 @@ public:
     std::vector<unsigned char>& GetAttribBytes();
     std::vector<unsigned char>& GetAttribBytesByName(const std::string& name);
     std::vector<unsigned>& GetIndices();
-    GLuint GetVao(const std::vector<GLAttribDesc>& vertexDesc);
+    GLuint GetVao();
     unsigned GetIndexCount();
     
-    std::vector<GLVertexArrayObject> vertexArrayObjects;
-    std::vector<bool> vaoDirty;
+    //std::vector<GLVertexArrayObject> vertexArrayObjects;
+    //std::vector<bool> vaoDirty;
+    GLVertexArrayObject vertexArrayObject;
+    bool vaoDirty = true;
+
     std::map<Au::AttribInfo, std::vector<unsigned char>> attribArrays;
     std::vector<uint32_t> indices;
     int vertexCount;
@@ -168,10 +172,9 @@ void Mesh::SetAttribArray(const std::vector<T>& data)
         (unsigned char*)data.data(), 
         (unsigned char*)data.data() + data.size() * sizeof(T)
     );
-    
     attribArrays[ATTR()] = bytes;
-    for(unsigned i = 0; i < vaoDirty.size(); ++i)
-        vaoDirty[i] = true;
+
+    vaoDirty = true;
 }
 
 template<typename T>

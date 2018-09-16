@@ -3,8 +3,7 @@
 void Mesh::SetIndices(const std::vector<unsigned>& data)
 { 
     indices = data;
-    for(unsigned i = 0; i < vaoDirty.size(); ++i)
-        vaoDirty[i] = true;
+    vaoDirty = true;
 }
 
 std::vector<unsigned char>& Mesh::GetAttribBytesByName(const std::string& name)
@@ -22,8 +21,36 @@ std::vector<unsigned>& Mesh::GetIndices()
     return indices;
 }
 
-GLuint Mesh::GetVao(const std::vector<GLAttribDesc>& vertexDesc)
+GLuint Mesh::GetVao(/*const std::vector<GLAttribDesc>& vertexDesc*/)
 {
+    if(vaoDirty) {
+        std::vector<GLAttribDesc> vertexDesc = {
+            { "Position", 3, GL_FLOAT, GL_FALSE },
+            { "UV", 2, GL_FLOAT, GL_FALSE },
+            { "Normal", 3, GL_FLOAT, GL_FALSE }
+        };
+        std::vector<GLVertexBufferDesc> desc;
+        for(const GLAttribDesc& d : vertexDesc)
+        {
+            desc.push_back({ 
+                d.name, 
+                d.elemCount, 
+                d.elemType, d.normalized, 
+                (GLsizei)(d.elemCount * glTypeSize(d.elemType)), 
+                GL_STATIC_DRAW 
+            });
+        }
+        vertexArrayObject.Init(desc);
+        for(const GLAttribDesc& d : vertexDesc) {
+            vertexArrayObject.FillArrayBuffer(d.name, GetAttribBytesByName(d.name));
+        }
+        vertexArrayObject.FillIndexBuffer(GetIndices());
+        vaoDirty = false;
+        return vertexArrayObject.GetGlName();
+    } else {
+        return vertexArrayObject.GetGlName();
+    }
+/*
     for(unsigned i = 0; i < vertexArrayObjects.size(); ++i)
     {
         if(_compareDesc(vertexDesc, vertexArrayObjects[i]))
@@ -62,7 +89,7 @@ GLuint Mesh::GetVao(const std::vector<GLAttribDesc>& vertexDesc)
     vertexArrayObjects.push_back(vao);
     vaoDirty.push_back(false);
     
-    return vao.GetGlName();
+    return vao.GetGlName();*/
 }
 
 unsigned Mesh::GetIndexCount() 

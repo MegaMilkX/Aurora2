@@ -68,13 +68,29 @@ private:
 
 class DataSourceFilesystem : public DataSource {
 public:
-    DataSourceFilesystem(const std::string& path) {
-
+    DataSourceFilesystem(const std::string& path)
+    : path(path) {}
+    virtual bool ReadAll(char* dest) {
+        std::ifstream in(path, std::ifstream::binary);
+        if(!in.is_open()) {
+            return false;
+        }
+        in.seekg(0, std::ios::end);
+        size_t sz = in.tellg();
+        in.seekg(0, std::ios::beg);
+        in.read(dest, sz);
+        return true; 
     }
-    virtual bool ReadAll(char* dest) { return false; }
-    virtual uint64_t Size() const { return 0; }
+    virtual uint64_t Size() const {
+        std::ifstream in(path, std::ifstream::binary);
+        in.seekg(0, std::ios::end);
+        if(!in.is_open()) {
+            return 0;
+        }
+        return in.tellg(); 
+    }
 private:
-
+    std::string path;
 };
 
 typedef std::shared_ptr<DataSource> DataSourceRef;

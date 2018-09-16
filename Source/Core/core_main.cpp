@@ -53,7 +53,7 @@ void InitArchiveResources()
 
 void InitFilesystemResources(const std::string& rootDir) {
     std::vector<std::string> files =
-        find_all_files(rootDir, "*.scn;*.geo;*.anim;*.mat");
+        find_all_files(rootDir, "*.scn;*.geo;*.anim;*.mat;*.png;*.jpg;*.jpeg");
     std::vector<std::string> resNames = files;
     for(auto& f : resNames) {
         f.erase(f.find_first_of(rootDir), rootDir.size());

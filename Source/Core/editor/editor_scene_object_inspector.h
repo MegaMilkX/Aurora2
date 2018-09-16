@@ -5,6 +5,7 @@
 #include <util/imgui_wrapper.h>
 #include <util/imgui_console.h>
 #include "editor_component_creator.h"
+#include "editor_data_pick.h"
 
 class EditorSceneObjectInspector
 {
@@ -15,6 +16,8 @@ public:
 
     void Draw(SceneObject* object, EditorComponentCreator& componentCreatorWindow)
     {
+        dataPick.Update();
+
         bool t = true;
         const float DISTANCE = 10.0f;
         const float DISTANCE_Y = 30.0f;
@@ -72,6 +75,30 @@ public:
                                     prop.set_value(comp, val);
                                 }
                             }
+                            else if(ptype.is_derived_from<i_resource_ref>()) {
+                                ImGui::Text(prop.get_name().to_string().c_str());
+                                rttr::variant var = prop.get_value(comp);
+                                i_resource_ref& ref = var.get_value<i_resource_ref>();
+                                ImVec4 buttonColor = ImColor(0.2f, 0.2f, 0.7f, 1.0f);
+                                std::string res_name;
+                                if(ref.base_ptr()) {
+                                    res_name = ref.base_ptr()->Name();
+                                    if(ref.base_ptr()->Storage() == Resource::LOCAL) {
+                                        buttonColor = ImColor(0.7f, 0.2f, 0.2f, 1.0f);
+                                    }
+                                }
+                                if(res_name.empty()) res_name = "[empty]";
+
+                                ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
+                                //ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(i/7.0f, 0.7f, 0.7f));
+                                //ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(i/7.0f, 0.8f, 0.8f));
+                                if(ImGui::Button(res_name.c_str())) {
+                                    dataPick.Show();
+                                    dataPick.SetTarget(prop, comp);
+                                }
+                                ImGui::PopStyleColor(1);
+                            }
+                            /* TODO
                             else if(ptype == rttr::type::get<ResourceRef>())
                             {
                                 ImGui::Text(prop.get_name().to_string().c_str());
@@ -80,7 +107,7 @@ public:
                                 if(ImGui::Button(res_name.c_str())){
 
                                 }
-                            }
+                            }*/
                         }
                         ImGui::TreePop();
                     }
@@ -92,6 +119,7 @@ public:
 
 private:
     std::map<rttr::type, std::function<void(SceneObject::Component*)>> componentGuiExtensions;
+    EditorDataPick dataPick;
 };
 
 #endif
