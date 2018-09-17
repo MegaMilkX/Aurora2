@@ -157,6 +157,15 @@ inline void ResourcesFromFbxScene(FbxScene& fbxScene, mesh_res_map_t& meshes, an
 */
         mz_zip_writer_end(&zip);
     }
+
+    for(size_t i = 0; i < fbxScene.Count<FbxMaterial>(); ++i) {
+        FbxMaterial* fbxMat = fbxScene.Get<FbxMaterial>(i);
+        LOG("Loading fbx material: " << fbxMat->Name());
+        FbxTexture* fbxTex = fbxMat->GetDiffuseTexture();
+        if(fbxTex) {
+            LOG("With diffuse texture: " << fbxTex->TextureName() << ", source: " << fbxTex->FileName());
+        }
+    }
 }
 
 inline void SceneFromFbxModel(FbxModel* fbxModel, FbxScene& fbxScene, SceneObject* sceneObject, mesh_res_map_t& meshes, anim_res_map_t& anims){

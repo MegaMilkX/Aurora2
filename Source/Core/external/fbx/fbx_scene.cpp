@@ -45,6 +45,15 @@ void FbxScene::_finalize()
             }
         }
     }
+
+/*
+    for(unsigned i = 0; i < rootNode.ChildCount("Texture"); ++i) {
+        GetByUid<FbxTexture>(rootNode.GetNode("Texture", i).GetProperty(0).GetInt64());
+    }*/
+    for(unsigned i = 0; i < rootNode.ChildCount("Material"); ++i) {
+        GetByUid<FbxMaterial>(rootNode.GetNode("Material", i).GetProperty(0).GetInt64());
+    }
+
 }
 
 void FbxScene::_makeGlobalSettings()

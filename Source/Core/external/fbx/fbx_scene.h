@@ -7,6 +7,8 @@
 #include "fbx_light.h"
 #include "fbx_geometry.h"
 #include "fbx_animation_stack.h"
+#include "fbx_material.h"
+#include "fbx_texture.h"
 #include "fbx_connections.h"
 #include "fbx_math.h"
 #include "fbx_type_index.h"
@@ -122,6 +124,7 @@ T* FbxScene::_make(FbxNode& node) {
     int64_t uid = node.GetProperty(0).GetInt64();
     T* o = new T();
     o->SetScene(this);
+    o->SetUid(uid);
     container.objects[uid].reset(o);
     container.uids.emplace_back(uid);
     if(!o->Make(node)) {
