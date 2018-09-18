@@ -4,6 +4,7 @@
 #include "editor_scene_hierarchy.h"
 #include "editor_scene_object_inspector.h"
 #include "editor_component_creator.h"
+#include "editor_animation_timeline.h"
 #include "../external/imguizmo/imguizmo.h"
 #include <camera.h>
 #include "../data_headers/blender_icons.png.h"
@@ -273,7 +274,7 @@ public:
         {
             if(selectedObject && selectedObject->FindComponent<Transform>())
             {
-                ImGuizmo::SetRect(0, 0, Common.frameSize.x, Common.frameSize.y);
+                ImGuizmo::SetRect((float)0, (float)0, (float)Common.frameSize.x, (float)Common.frameSize.y);
                 gfxm::mat4 proj = camera->Projection();
                 gfxm::mat4 view = gfxm::inverse(camera->Get<Transform>()->GetTransform());
                 gfxm::mat4 model = selectedObject->Get<Transform>()->GetTransform();
@@ -477,6 +478,9 @@ public:
         editorSceneObjectInspector.Draw(selectedObject, componentCreator);
         componentCreator.Update(selectedObject);
 
+        animTimeline.Show();
+        animTimeline.Update();
+
         if(ImGui::Begin("Resource Inspector", &t)) {
             for(size_t i = 0; i < GlobalDataRegistry().Count(); ++i) {
                 ImGui::Text(GlobalDataRegistry().GetNameById(i).c_str());
@@ -490,6 +494,8 @@ private:
     EditorSceneHierarchy editorSceneHierarchy;
     EditorSceneObjectInspector editorSceneObjectInspector;
     EditorComponentCreator componentCreator;
+
+    EditorAnimationTimeline animTimeline;
 
     SceneObject* selectedObject;
     std::string currentSceneFile;

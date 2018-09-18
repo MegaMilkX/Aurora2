@@ -6,22 +6,7 @@
 #include <util/imgui_console.h>
 #include <resources/resource/resource_ref.h>
 
-class EditorWindow {
-public:
-    virtual ~EditorWindow() {}
-
-    void Show() {
-        visible = true;
-    }
-    void Update() {
-        if(!visible) return;
-        Draw();
-    }
-
-    virtual void Draw() = 0;
-protected:
-    bool visible = false;
-};
+#include "editor_window.h"
 
 class EditorDataPick : public EditorWindow {
 public:
