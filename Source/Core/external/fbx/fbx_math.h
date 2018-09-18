@@ -5,6 +5,21 @@
 
 const double FbxPi = 3.14159265359;
 
+struct FbxVector2
+{
+    FbxVector2()
+    : FbxVector2(0.0f, 0.0f) {}
+    FbxVector2(float x, float y)
+    : x(x), y(y) {}
+    float operator[](int i) const {
+        return *((&x) + i);
+    }
+    float& operator[](int i) {
+        return *((&x) + i);
+    }
+    float x, y;
+};
+
 struct FbxVector3
 {
     FbxVector3()
@@ -99,6 +114,10 @@ inline float FbxLength(const FbxQuat& q) { return FbxSqrt(q.x*q.x + q.y*q.y + q.
 
 inline FbxVector4 operator+(const FbxVector4& a, const FbxVector4& b){
     return FbxVector4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
+}
+
+inline FbxVector3 operator*(const FbxVector3& a, float f){
+    return FbxVector3(a.x * f, a.y * f, a.z * f);
 }
 
 inline FbxVector4 operator*(const FbxVector4& a, float f){

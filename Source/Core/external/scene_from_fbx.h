@@ -17,24 +17,25 @@ inline void ResourcesFromFbxScene(FbxScene& fbxScene, mesh_res_map_t& meshes, an
     for(unsigned i = 0; i < fbxScene.Count<FbxGeometry>(); ++i)
     {
         FbxGeometry* geom = fbxScene.Get<FbxGeometry>(i);
+        FbxIndexedTriangleMesh fbxMesh = geom->MakeIndexedMesh();
         
         mz_zip_archive zip;
         memset(&zip, 0, sizeof(zip));
         mz_zip_writer_init_heap(&zip, 0, 0);
 
-        int32_t vertexCount = (int32_t)geom->VertexCount();
-        int32_t indexCount = (int32_t)geom->IndexCount();
+        int32_t vertexCount = (int32_t)fbxMesh.VertexCount();
+        int32_t indexCount = (int32_t)fbxMesh.IndexCount();
         mz_zip_writer_add_mem(&zip, "VertexCount", (void*)&vertexCount, sizeof(vertexCount), 0);
         mz_zip_writer_add_mem(&zip, "IndexCount", (void*)&indexCount, sizeof(indexCount), 0);
-        mz_zip_writer_add_mem(&zip, "Indices", (void*)geom->GetIndices().data(), indexCount * sizeof(uint32_t), 0);
-        mz_zip_writer_add_mem(&zip, "Vertices", (void*)geom->GetVertices().data(), vertexCount * 3 * sizeof(float), 0);
-        for(size_t j = 0; j < geom->NormalLayerCount(); ++j)
+        mz_zip_writer_add_mem(&zip, "Indices", (void*)fbxMesh.GetIndices().data(), indexCount * sizeof(uint32_t), 0);
+        mz_zip_writer_add_mem(&zip, "Vertices", (void*)fbxMesh.GetVertices().data(), vertexCount * 3 * sizeof(float), 0);
+        for(size_t j = 0; j < fbxMesh.NormalLayerCount(); ++j)
         {
-            mz_zip_writer_add_mem(&zip, MKSTR("Normals." << j).c_str(), (void*)geom->GetNormals(0).data(), vertexCount * 3 * sizeof(float), 0);
+            mz_zip_writer_add_mem(&zip, MKSTR("Normals." << j).c_str(), (void*)fbxMesh.GetNormals(0).data(), vertexCount * 3 * sizeof(float), 0);
         }
-        for(size_t j = 0; j < geom->UVLayerCount(); ++j)
+        for(size_t j = 0; j < fbxMesh.UVLayerCount(); ++j)
         {
-            mz_zip_writer_add_mem(&zip, MKSTR("UV." << j).c_str(), (void*)geom->GetUV(0).data(), vertexCount * 2 * sizeof(float), 0);
+            mz_zip_writer_add_mem(&zip, MKSTR("UV." << j).c_str(), (void*)fbxMesh.GetUV(0).data(), vertexCount * 2 * sizeof(float), 0);
         }
 
         void* bufptr;
@@ -197,8 +198,6 @@ inline void SceneFromFbxModel(FbxModel* fbxModel, FbxScene& fbxScene, SceneObjec
             MKSTR(fbxGeometry->GetUid() << fbxGeometry->GetName() << ".geo")
         );
         */
-        auto& vertices = fbxGeometry->GetVertices();
-        auto& indices = fbxGeometry->GetIndices();
     }
     else if(fbxModel->GetType() == "Light")
     {
