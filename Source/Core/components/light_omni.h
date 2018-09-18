@@ -21,19 +21,11 @@ public:
     gfxm::vec3 Color()
     { return color; }
     
-    void Direction(float x, float y, float z)
-    { direction = gfxm::vec3(x, y, z); }
-    void Direction(gfxm::vec3 dir)
-    { direction = dir; }
-    gfxm::vec3 Direction()
-    { return direction; }
-    
     void OnInit()
     {
     }
 private:
     gfxm::vec3 color;
-    gfxm::vec3 direction;
 };
 STATIC_RUN(LightDirect)
 {
@@ -43,11 +35,6 @@ STATIC_RUN(LightDirect)
             "color",
             rttr::select_overload<gfxm::vec3(void)>(&LightDirect::Color),
             rttr::select_overload<void(gfxm::vec3)>(&LightDirect::Color)
-        )
-        .property(
-            "direction",
-            rttr::select_overload<gfxm::vec3(void)>(&LightDirect::Direction),
-            rttr::select_overload<void(gfxm::vec3)>(&LightDirect::Direction)
         );
 }
 
