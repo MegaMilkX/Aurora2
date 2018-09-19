@@ -7,12 +7,20 @@
 #include <scene_object.h>
 
 #include <animation_driver.h>
+#include <skin.h>
 //#include <skeleton_animator.h>
 
 typedef std::map<int64_t, std::shared_ptr<Mesh>> mesh_res_map_t;
 typedef std::map<int64_t, std::shared_ptr<Animation>> anim_res_map_t;
+typedef std::map<int64_t, std::shared_ptr<Skeleton>> skel_res_map_t;
 
-inline void ResourcesFromFbxScene(FbxScene& fbxScene, mesh_res_map_t& meshes, anim_res_map_t& anims)
+struct FbxImportResources {
+    mesh_res_map_t meshes;
+    anim_res_map_t anims;
+    skel_res_map_t skeletons;
+};
+
+inline void ResourcesFromFbxScene(FbxScene& fbxScene, FbxImportResources& resources)
 {
     for(unsigned i = 0; i < fbxScene.Count<FbxGeometry>(); ++i)
     {
@@ -38,6 +46,27 @@ inline void ResourcesFromFbxScene(FbxScene& fbxScene, mesh_res_map_t& meshes, an
             mz_zip_writer_add_mem(&zip, MKSTR("UV." << j).c_str(), (void*)fbxMesh.GetUV(0).data(), vertexCount * 2 * sizeof(float), 0);
         }
 
+        // TODO: Skin data load
+        std::vector<int32_t> boneIndices4 = fbxMesh.GetBoneIndices4();
+        std::vector<float> boneWeights4 = fbxMesh.GetBoneWeights4();
+        if(!boneIndices4.empty() && !boneWeights4.empty()) {
+            mz_zip_writer_add_mem(&zip, "BoneIndices4", (void*)boneIndices4.data(), boneIndices4.size() * sizeof(int32_t), 0);
+            mz_zip_writer_add_mem(&zip, "BoneWeights4", (void*)boneWeights4.data(), boneWeights4.size() * sizeof(float), 0);
+        }
+
+        FbxSkin* skin = geom->GetSkin();
+        if(skin) {
+            std::shared_ptr<Skeleton> skeleton(new Skeleton());
+            skeleton->Name(skin->Name());
+            skeleton->Storage(Resource::LOCAL);
+            for(size_t j = 0; j < skin->DeformerCount(); ++j) {
+                FbxDeformer* deformer = skin->GetDeformer(j);
+                skeleton->AddBone(deformer->name, *(gfxm::mat4*)&deformer->transform);
+            }
+            resources.skeletons[skin->GetUid()] = skeleton;
+        }
+        
+
         void* bufptr;
         size_t sz;
         mz_zip_writer_finalize_heap_archive(&zip, &bufptr, &sz);
@@ -47,7 +76,7 @@ inline void ResourcesFromFbxScene(FbxScene& fbxScene, mesh_res_map_t& meshes, an
         mesh_ref->Build(data_ref);
         mesh_ref->Name(MKSTR(geom->GetUid() << geom->GetName() << ".geo"));
         mesh_ref->Storage(Resource::LOCAL);
-        meshes[geom->GetUid()] = mesh_ref;
+        resources.meshes[geom->GetUid()] = mesh_ref;
 
         /*
         GlobalDataRegistry().Add(
@@ -149,7 +178,7 @@ inline void ResourcesFromFbxScene(FbxScene& fbxScene, mesh_res_map_t& meshes, an
         anim_ref->Build(data_ref);
         anim_ref->Name(MKSTR(stack->Name() << ".anim"));
         anim_ref->Storage(Resource::LOCAL);
-        anims[stack->GetUid()] = anim_ref;
+        resources.anims[stack->GetUid()] = anim_ref;
         /*
         GlobalDataRegistry().Add(
             MKSTR(stack->Name() << ".anim"),
@@ -169,13 +198,13 @@ inline void ResourcesFromFbxScene(FbxScene& fbxScene, mesh_res_map_t& meshes, an
     }
 }
 
-inline void SceneFromFbxModel(FbxModel* fbxModel, FbxScene& fbxScene, SceneObject* sceneObject, mesh_res_map_t& meshes, anim_res_map_t& anims){
+inline void SceneFromFbxModel(FbxModel* fbxModel, FbxScene& fbxScene, SceneObject* sceneObject, FbxImportResources& resources){
     for(unsigned i = 0; i < fbxModel->ChildCount(); ++i)
     {
         SceneObject* child = sceneObject->CreateObject();
         sceneObject->Get<Transform>()->Attach(child->Get<Transform>());
 
-        SceneFromFbxModel(fbxModel->GetChild(i, fbxScene), fbxScene, child, meshes, anims);
+        SceneFromFbxModel(fbxModel->GetChild(i, fbxScene), fbxScene, child, resources);
     }
 
     sceneObject->Name(fbxModel->GetName());
@@ -188,9 +217,17 @@ inline void SceneFromFbxModel(FbxModel* fbxModel, FbxScene& fbxScene, SceneObjec
         FbxMesh* fbxMesh = fbxScene.GetByUid<FbxMesh>(fbxModel->GetUid());
         FbxGeometry* fbxGeometry = fbxScene.GetByUid<FbxGeometry>(fbxMesh->GetGeometryUid());
         
-        if(meshes.count(fbxMesh->GetGeometryUid())) {
-            auto mesh_ref = meshes[fbxMesh->GetGeometryUid()];
+        if(resources.meshes.count(fbxMesh->GetGeometryUid())) {
+            auto mesh_ref = resources.meshes[fbxMesh->GetGeometryUid()];
             sceneObject->Get<Model>()->mesh = mesh_ref;
+        }
+
+        FbxSkin* fbxSkin = fbxGeometry->GetSkin();
+        if(fbxSkin) {
+            auto skel = resources.skeletons[fbxSkin->GetUid()];
+            resource_ref<Skeleton> skel_res_ref;
+            skel_res_ref = skel;
+            sceneObject->Get<Skin>()->SetSkeleton(skel_res_ref);
         }
         
         /*
@@ -214,19 +251,19 @@ inline void SceneFromFbxModel(FbxModel* fbxModel, FbxScene& fbxScene, SceneObjec
     }
 }
 
-inline void SceneFromFbx(FbxScene& fbxScene, SceneObject* scene, mesh_res_map_t& meshes, anim_res_map_t& anims){
+inline void SceneFromFbx(FbxScene& fbxScene, SceneObject* scene, FbxImportResources& resources){
     for(unsigned i = 0; i < fbxScene.RootModelCount(); ++i)
     {
         SceneObject* child = scene->CreateObject();
         scene->Get<Transform>()->Attach(child->Get<Transform>());
-        SceneFromFbxModel(fbxScene.GetRootModel(i), fbxScene, child, meshes, anims);
+        SceneFromFbxModel(fbxScene.GetRootModel(i), fbxScene, child, resources);
     }
 
     for(size_t i = 0; i < fbxScene.Count<FbxAnimationStack>(); ++i) {
         //auto animDriver = scene->Get<SkeletonAnimator>();
         auto animDriver = scene->Get<AnimationDriver>();
         auto stack = fbxScene.Get<FbxAnimationStack>(i);
-        animDriver->AddAnim(stack->Name(), anims[stack->GetUid()]);
+        animDriver->AddAnim(stack->Name(), resources.anims[stack->GetUid()]);
         //animDriver->AddAnim(stack->Name(), MKSTR(stack->Name() << ".anim"));
     }
 }
@@ -236,10 +273,9 @@ inline bool SceneFromFbx(const char* data, size_t size, SceneObject* scene)
     FbxScene* fbxScene = FbxScene::Create();
     if(!FbxReadMem(*fbxScene, data, size))
         return false;
-    mesh_res_map_t meshes;
-    anim_res_map_t anims;
-    ResourcesFromFbxScene(*fbxScene, meshes, anims);
-    SceneFromFbx(*fbxScene, scene, meshes, anims);
+    FbxImportResources resources;
+    ResourcesFromFbxScene(*fbxScene, resources);
+    SceneFromFbx(*fbxScene, scene, resources);
     fbxScene->Destroy();
     return true;
 }
@@ -249,10 +285,9 @@ inline bool SceneFromFbx(const std::string& filename, SceneObject* scene)
     FbxScene* fbxScene = FbxScene::Create();
     if(!FbxReadFile(*fbxScene, filename))
         return false;
-    mesh_res_map_t meshes;
-    anim_res_map_t anims;
-    ResourcesFromFbxScene(*fbxScene, meshes, anims);
-    SceneFromFbx(*fbxScene, scene, meshes, anims);
+    FbxImportResources resources;
+    ResourcesFromFbxScene(*fbxScene, resources);
+    SceneFromFbx(*fbxScene, scene, resources);
     fbxScene->_dumpFile(filename);
     fbxScene->Destroy();
     return true;

@@ -3,6 +3,7 @@
 
 #include <aurora/gfx.h>
 #include "components/model.h"
+#include "components/skin.h"
 #include "components/transform.h"
 #include "components/camera.h"
 #include <map>
@@ -21,6 +22,7 @@ struct Renderable
     //int indexCount;
     //std::shared_ptr<Texture2D> texDiffuse;
     Model* model;
+    Skin* skin = 0;
 };
 
 struct StaticDrawData
@@ -235,6 +237,14 @@ public:
             )
         );
 
+        texture_white_px.reset(new Texture2D());
+        unsigned char wht[3] = { 255, 255, 255 };
+        texture_white_px->Data(wht, 1, 1, 3);
+
+        texture_black_px.reset(new Texture2D());
+        unsigned char blk[3] = { 0, 0, 0};
+        texture_black_px->Data(blk, 1, 1, 3);
+
         return true;
     }
 
@@ -258,30 +268,8 @@ public:
 
     void _addRenderable(Model* m, SceneObject* so)
     {
-        /*
-        std::shared_ptr<Mesh> mesh = m->mesh;
-        if(!mesh) {
-            LOG("No mesh specified");
-            return;
-        }*/
-        //Material* mat = m->material.Get<Material>();
-        //std::shared_ptr<Texture2D> tex = 0;
-        //if(mat) tex = GlobalResourceFactory().Get<Texture2D>(mat->GetString("Diffuse"));
-        //if(!tex) tex = test_texture;
-
-        renderables[so] = Renderable{
-            so->Get<Transform>(),
-            m
-            /*
-            m->mesh.Get<Mesh>()->GetVao({
-                { "Position", 3, GL_FLOAT, GL_FALSE },
-                { "UV", 2, GL_FLOAT, GL_FALSE },
-                { "Normal", 3, GL_FLOAT, GL_FALSE }
-            }),
-            (int)m->mesh.Get<Mesh>()->GetIndexCount(),
-            tex
-            */
-        };
+        renderables[so].transform = so->Get<Transform>();
+        renderables[so].model = m;
 
         LOG("Renderable added " << so);
     }
@@ -291,6 +279,9 @@ public:
         if(type == rttr::type::get<Model>()) {
             Model* m = (Model*)c;            
             _addRenderable(m, so);
+        }
+        else if(type == rttr::type::get<Skin>()) {
+            renderables[so].skin = (Skin*)c;
         }
         else if(type == rttr::type::get<Camera>()) {
             SetCamera((Camera*)c);
@@ -311,6 +302,11 @@ public:
         if(type == rttr::type::get<Model>()) {
             renderables.erase(so);
             LOG("Renderable removed " << so);
+        }
+        else if(type == rttr::type::get<Skin>()) {
+            if(renderables.count(so)) {
+                renderables[so].skin = 0;
+            }
         }
         else if(type == rttr::type::get<Camera>()) {
             if(camera == (Camera*)c) SetCamera(0);
@@ -351,12 +347,24 @@ private:
             );
             
             glActiveTexture(GL_TEXTURE0);
-            if(unit.model->material && unit.model->material->diffuseMap) {
-                glBindTexture(GL_TEXTURE_2D, unit.model->material->diffuseMap->GetGlName());
+            if(unit.skin) {
+                // TODO: Upload bone data
+                // (Inverse bind, Current transforms)
+                // Also need to use another shader program earlier
+                if(unit.model->material && unit.model->material->diffuseMap) {
+                    glBindTexture(GL_TEXTURE_2D, unit.model->material->diffuseMap->GetGlName());
+                } else {
+                    glBindTexture(GL_TEXTURE_2D, test_texture->GetGlName());
+                }
+                glBindVertexArray(unit.model->mesh->GetSkinVao());
             } else {
-                glBindTexture(GL_TEXTURE_2D, test_texture->GetGlName());
+                if(unit.model->material && unit.model->material->diffuseMap) {
+                    glBindTexture(GL_TEXTURE_2D, unit.model->material->diffuseMap->GetGlName());
+                } else {
+                    glBindTexture(GL_TEXTURE_2D, texture_white_px->GetGlName());
+                }
+                glBindVertexArray(unit.model->mesh->GetVao());
             }
-            glBindVertexArray(unit.model->mesh->GetVao());
             glDrawElements(GL_TRIANGLES, unit.model->mesh->GetIndexCount(), GL_UNSIGNED_INT, (void*)0);
         }
         // ==========
@@ -518,6 +526,8 @@ private:
 
     //
     std::shared_ptr<Texture2D> test_texture;
+    std::shared_ptr<Texture2D> texture_white_px;
+    std::shared_ptr<Texture2D> texture_black_px;
 };
 
 #endif

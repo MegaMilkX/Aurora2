@@ -8,6 +8,7 @@
 #include <vector>
 #include <iostream>
 #include "fbx_indexed_triangle_mesh.h"
+#include "fbx_skin.h"
 
 inline bool FbxTriangulate(std::vector<uint32_t>& out, std::vector<int32_t>& polygons)
 {
@@ -47,12 +48,6 @@ struct FbxVertex {
     
     int32_t controlPoint;
     std::vector<int32_t> attribs[4];
-    /*
-    std::vector<int32_t> normalLayers;
-    std::vector<int32_t> uvLayers;
-    std::vector<int32_t> rgbLayers;
-    std::vector<int32_t> materialLayers;
-    */
 };
 
 class FbxPolygon {
@@ -151,22 +146,8 @@ public:
     const std::string& GetName() const { return name; }
 
     FbxIndexedTriangleMesh MakeIndexedMesh();
-
-    /*
-    size_t VertexCount() const { return vertexCount; }
-    size_t IndexCount() const { return indexCount; }
-
-    const std::vector<float>& GetVertices() const { return vertices; }
-    const std::vector<uint32_t>& GetIndices() const { return indices; }
-
-    size_t NormalLayerCount() const { return normal_layers.size(); }
-    size_t UVLayerCount() const { return uv_layers.size(); }
-    size_t RGBLayerCount() const { return rgb_layers.size(); }
-
-    const std::vector<float>& GetNormals(int layer = 0) const { return normal_layers[layer]; }
-    const std::vector<float>& GetUV(int layer = 0) const { return uv_layers[layer]; }
-    const std::vector<float>& GetRGB(int layer = 0) const { return rgb_layers[layer]; }
-*/
+    bool HasSkin() { return skin != 0; }
+    FbxSkin* GetSkin();
 private:
     std::string name;
 
@@ -178,15 +159,8 @@ private:
     std::vector<FbxGeometryLayerElement<double>> uvLayers;
     std::vector<FbxGeometryLayerElement<double>> rgbLayers;
     std::vector<FbxGeometryLayerElement<int32_t>> materialLayers;
-    /*
-    std::vector<float> vertices;
-    std::vector<uint32_t> indices;
-    std::vector<std::vector<float>> normal_layers;
-    std::vector<std::vector<float>> uv_layers;
-    std::vector<std::vector<float>> rgb_layers;
-    size_t vertexCount;
-    size_t indexCount;
-    */
+
+    int64_t skin = 0;
 };
 
 #endif

@@ -46,12 +46,15 @@ public:
     std::vector<unsigned char>& GetAttribBytesByName(const std::string& name);
     std::vector<unsigned>& GetIndices();
     GLuint GetVao();
+    GLuint GetSkinVao();
     unsigned GetIndexCount();
     
     //std::vector<GLVertexArrayObject> vertexArrayObjects;
     //std::vector<bool> vaoDirty;
     GLVertexArrayObject vertexArrayObject;
     bool vaoDirty = true;
+    GLVertexArrayObject vertexArrayObjectSkin;
+    bool vaoSkinDirty = true;
 
     std::map<Au::AttribInfo, std::vector<unsigned char>> attribArrays;
     std::vector<uint32_t> indices;
@@ -103,8 +106,8 @@ public:
         std::vector<float> normals;
         std::vector<float> uv;
         std::vector<uint32_t> indices;
-        std::vector<gfxm::vec4> boneIndices;
-        std::vector<gfxm::vec4> boneWeights;
+        std::vector<int32_t> boneIndices4;
+        std::vector<float> boneWeights4;
         unsigned int indexOffset = 0;
 
         int index = 0;
@@ -132,9 +135,23 @@ public:
         uv.resize((size_t)file_stat.m_uncomp_size / sizeof(float));
         mz_zip_reader_extract_file_to_mem(&zip, "UV.0", (void*)uv.data(), (size_t)file_stat.m_uncomp_size, 0);
 
+        index = mz_zip_reader_locate_file(&zip, "BoneIndices4", "", 0);
+        if(mz_zip_reader_file_stat(&zip, index, &file_stat) == MZ_TRUE) {
+            boneIndices4.resize((size_t)file_stat.m_uncomp_size / sizeof(int32_t));
+            mz_zip_reader_extract_file_to_mem(&zip, "BoneIndices4", (void*)boneIndices4.data(), (size_t)file_stat.m_uncomp_size, 0);
+        }
+
+        index = mz_zip_reader_locate_file(&zip, "BoneWeights4", "", 0);
+        if(mz_zip_reader_file_stat(&zip, index, &file_stat) == MZ_TRUE) {
+            boneWeights4.resize((size_t)file_stat.m_uncomp_size / sizeof(float));
+            mz_zip_reader_extract_file_to_mem(&zip, "BoneWeights4", (void*)boneWeights4.data(), (size_t)file_stat.m_uncomp_size, 0);
+        }
+
         SetAttribArray<Au::Position>(vertices);
         SetAttribArray<Au::Normal>(normals);
         SetAttribArray<Au::UV>(uv);
+        SetAttribArray<Au::BoneIndex4>(boneIndices4);
+        SetAttribArray<Au::BoneWeight4>(boneWeights4);
         SetIndices(indices);
 
         mz_zip_reader_end(&zip);
@@ -155,6 +172,11 @@ public:
         mz_zip_writer_add_mem(&zip, "Vertices", (void*)GetAttribBytes<Au::Position>().data(), vertexCount * 3 * sizeof(float), 0);
         mz_zip_writer_add_mem(&zip, MKSTR("Normals." << 0).c_str(), (void*)GetAttribBytes<Au::Normal>().data(), vertexCount * 3 * sizeof(float), 0);
         mz_zip_writer_add_mem(&zip, MKSTR("UV." << 0).c_str(), (void*)GetAttribBytes<Au::UV>().data(), vertexCount * 2 * sizeof(float), 0);
+        
+        if(!GetAttribBytes<Au::BoneIndex4>().empty() && !GetAttribBytes<Au::BoneWeight4>().empty()) {
+            mz_zip_writer_add_mem(&zip, "BoneIndices4", (void*)GetAttribBytes<Au::BoneIndex4>().data(), vertexCount * 4 * sizeof(int32_t), 0);
+            mz_zip_writer_add_mem(&zip, "BoneWeights4", (void*)GetAttribBytes<Au::BoneWeight4>().data(), vertexCount * 4 * sizeof(float), 0);
+        }
 
         void* bufptr;
         size_t sz;

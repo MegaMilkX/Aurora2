@@ -475,8 +475,8 @@ public:
         editorSceneObjectInspector.Draw(selectedObject, componentCreator);
         componentCreator.Update(selectedObject);
 
-        animTimeline.Show();
-        animTimeline.Update();
+        //animTimeline.Show();
+        //animTimeline.Update();
 
         if(ImGui::Begin("Resource Inspector", &t)) {
             for(size_t i = 0; i < GlobalDataRegistry().Count(); ++i) {

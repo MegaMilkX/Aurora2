@@ -4,6 +4,8 @@
 #include <vector>
 #include <stdint.h>
 
+#include "fbx_skin.h"
+
 class FbxGeometry;
 class FbxIndexedTriangleMesh {
     friend FbxGeometry;
@@ -21,12 +23,18 @@ public:
     const std::vector<float>& GetNormals(int layer = 0) const { return normal_layers[layer]; }
     const std::vector<float>& GetUV(int layer = 0) const { return uv_layers[layer]; }
     const std::vector<float>& GetRGB(int layer = 0) const { return rgb_layers[layer]; }
+
+    const std::vector<int32_t>& GetBoneIndices4() const { return boneIndices4; }
+    const std::vector<float>& GetBoneWeights4() const { return boneWeights4; }
 private:
     std::vector<float> vertices;
     std::vector<uint32_t> indices;
     std::vector<std::vector<float>> normal_layers;
     std::vector<std::vector<float>> uv_layers;
     std::vector<std::vector<float>> rgb_layers;
+    
+    std::vector<int32_t> boneIndices4;
+    std::vector<float> boneWeights4;
 };
 
 #endif
