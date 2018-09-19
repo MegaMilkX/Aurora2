@@ -15,6 +15,7 @@
   - BUG: Light data is still present in shaders when light sources get deleted from scene
   
   - Skinning
+  - Default diffuse, normal and specular maps (1pixel color)
   - ImGui Curve control
   - Timeline tool
   - Animation events
