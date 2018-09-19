@@ -34,7 +34,6 @@ public:
         lo->Intensity(1.0f);
 
         lightDirect = c->Get<LightDirect>();
-        lightDirect->Direction(gfxm::vec3(0.0f, -1.0f, 0.0f));
         lightDirect->Color(gfxm::vec3(1.0f, 1.0f, 1.0f));
 
         camPivot = CreateObject()->Get<Transform>();
@@ -267,8 +266,6 @@ public:
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_BLEND);
         glDisable(GL_DEPTH_TEST);
-
-        editorCamera->lightDirect->Direction(editorCamera->Get<Transform>()->Forward());
 
         if(camera)
         {

@@ -146,7 +146,7 @@ public:
         _state.Bind<LightOmni, SceneObject*>(&LightOmni::GetObject, "GetObject");
         
         _state.Bind<LightDirect, void, float, float, float>(&LightDirect::Color, "Color");
-        _state.Bind<LightDirect, void, float, float, float>(&LightDirect::Direction, "Direction");
+        //_state.Bind<LightDirect, void, float, float, float>(&LightDirect::Direction, "Direction");
         _state.Bind<LightDirect, SceneObject*>(&LightDirect::GetObject, "GetObject");
         
         _state.Bind(&Model::mesh, "mesh");

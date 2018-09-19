@@ -35,7 +35,7 @@ void main()
         {
             vec3 lightRef = normalize(reflect(LightDirect[i], NormalModel));
             float s = pow(max(dot(lightRef, ViewDir), 0.0), 16.0);
-            SpecDirect += vec4(LightOmniRGB [ i ] * s, 1.0);
+            SpecDirect += vec4(LightDirectRGB [ i ] * s, 1.0);
         }
     }
 

@@ -381,7 +381,7 @@ private:
         int lightId = 0;
         for(auto& l : lightsDirect)
         {
-            auto dir = l->Direction();
+            auto dir = l->Get<Transform>()->Forward();
             glUniform3f(
                 lightPassProg->GetUniform("LightDirect[" + std::to_string(lightId) + "]"), 
                 dir.x, dir.y, dir.z
