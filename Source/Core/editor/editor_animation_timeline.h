@@ -8,8 +8,6 @@
 
 #include "editor_window.h"
 
-#include "imgui_curve_editor.h"
-
 class EditorAnimationTimeline : public EditorWindow {
 public:
     virtual void Draw() {
@@ -28,8 +26,6 @@ public:
 
         static float arr[] = { 0.6f, 0.1f, 1.0f, 0.5f, 0.92f, 0.1f, 0.2f };
         int new_count = 7;
-        ImGui::CurveEditor("Curve", arr, new_count, ImVec2(300, 300), 0, &new_count);
-
         ImGui::End();
       }
     }

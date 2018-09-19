@@ -247,7 +247,7 @@ public:
         if(!camera) return;
         gfxm::mat4 projection = camera->Projection();
         gfxm::mat4 view = camera->InverseTransform();
-        gfxm::vec3 viewPos = camera->Get<Transform>()->Position();
+        gfxm::vec3 viewPos = camera->Get<Transform>()->WorldPosition();
 
         _drawGBuffer(projection, view, viewPos);
         _lightPass(viewPos);
