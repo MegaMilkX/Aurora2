@@ -13,3 +13,16 @@
   
 ## General
   - BUG: Light data is still present in shaders when light sources get deleted from scene
+  
+  - Skinning
+  - ImGui Curve control
+  - Timeline tool
+  - Animation events
+  - FbxIndexedTriangleMesh BONE WEIGHTS AND INDICES
+  - Submeshes, or subpolysets for different materials. Sort polygons by materials on fbx import
+  - Create materials on fbx import
+  - NormalMaps, SpecularMaps, shininess, tint, selfillumination
+  - AmbientLight
+  - AnimationDriver serialization
+  - Collision system and components
+  - Animation state system
