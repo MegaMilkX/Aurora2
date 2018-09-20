@@ -98,10 +98,11 @@ public:
                                 }
                                 ImGui::PopStyleColor(1);
                             }
-                            else if(ptype == rttr::type::get<SceneObject*>()) {
+                            else if(ptype == rttr::type::get<std::weak_ptr<SceneObject>>()) {
                                 ImGui::Text(prop.get_name().to_string().c_str());
                                 rttr::variant var = prop.get_value(comp);
-                                SceneObject* so = var.get_value<SceneObject*>();
+                                std::weak_ptr<SceneObject> weak_so = var.get_value<std::weak_ptr<SceneObject>>();
+                                auto so = weak_so.lock();
                                 std::string tgt_name = "[empty]";
                                 if(so) {
                                     tgt_name = so->Name();

@@ -363,6 +363,11 @@ private:
             
             if(unit.skin) {
                 // TODO: Use skin program, upload bone data
+                //unit.skin->GetSkeleton()->bindPose
+                auto& skin_transforms = unit.skin->Update();
+
+                // TODO: Upload bone data
+
             } else {
                 // TODO: Use static geometry program
             }

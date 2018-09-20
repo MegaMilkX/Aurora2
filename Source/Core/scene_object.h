@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <map>
+#include <memory>
 
 #include "typeindex.h"
 
@@ -26,7 +27,7 @@ class UnserializableComponentToken {};
 
 class SceneController;
 
-class SceneObject
+class SceneObject : public std::enable_shared_from_this<SceneObject>
 {
 public:
     class Component
@@ -62,6 +63,11 @@ public:
         SceneObject* object;
     };
     
+    static std::shared_ptr<SceneObject> Create() {
+        return std::shared_ptr<SceneObject>(new SceneObject());
+    }
+
+private:
     SceneObject() 
     : parentObject(0),
     name(MKSTR(this)),
@@ -72,6 +78,7 @@ public:
     name(MKSTR(this)),
     controller(0) {}
 
+public:
     ~SceneObject();
     
     SceneObject* Root()
@@ -94,18 +101,19 @@ public:
     
     SceneObject* CreateObject()
     {
-        SceneObject* o = new SceneObject(this);
-        o->SetController(controller);
-        objects.push_back(o);
-        return o;
+        // TODO
+        //SceneObject* o = new SceneObject(this);
+        std::shared_ptr<SceneObject> obj(new SceneObject(this));
+        obj->SetController(controller);
+        objects.push_back(obj);
+        return obj.get();
     }
     void Erase(SceneObject* child)
     {
         for(unsigned i = 0; i < objects.size(); ++i)
         {
-            if(objects[i] == child)
+            if(objects[i].get() == child)
             {
-                delete child;
                 objects.erase(objects.begin() + i);
                 break;
             }
@@ -200,7 +208,7 @@ public:
         {
             if(objects[i]->Name() == name)
             {
-                o = objects[i];
+                o = objects[i].get();
                 break;
             }
             else if(o = objects[i]->FindObject(name))
@@ -217,7 +225,7 @@ public:
         {
             if(so->Name() == name)
             {
-                return so;
+                return so.get();
             }
         }
         return 0;
@@ -231,7 +239,7 @@ public:
         new_object->Name(from->Name());
         for(auto so : from->objects)
         {
-            new_object->CreateFrom(so);
+            new_object->CreateFrom(so.get());
         }
         for(auto kv : from->components)
         {
@@ -247,7 +255,7 @@ public:
     }
 
     unsigned int ChildCount() const { return objects.size(); }
-    SceneObject* GetChild(unsigned int i) const { return objects[i]; }
+    SceneObject* GetChild(unsigned int i) const { return objects[i].get(); }
     unsigned int ComponentCount() const { return components.size(); }
     Component* GetComponent(unsigned int id) const 
     {
@@ -268,6 +276,10 @@ public:
             o->SetController(con);
         }
     }
+
+    std::weak_ptr<SceneObject> WeakPtr() {
+        return shared_from_this();
+    }
 private:
     void AddComponent(Component* c, rttr::type t);
 
@@ -282,7 +294,7 @@ private:
     
     std::string name;
     SceneObject* parentObject;
-    std::vector<SceneObject*> objects;
+    std::vector<std::shared_ptr<SceneObject>> objects;
     std::map<rttr::type, Component*> components;
     SceneController* controller;
 };

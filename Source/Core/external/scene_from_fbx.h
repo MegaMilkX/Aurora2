@@ -228,6 +228,9 @@ inline void SceneFromFbxModel(FbxModel* fbxModel, FbxScene& fbxScene, SceneObjec
             resource_ref<Skeleton> skel_res_ref;
             skel_res_ref = skel;
             sceneObject->Get<Skin>()->SetSkeleton(skel_res_ref);
+            sceneObject->Get<Skin>()->SetArmatureRoot(
+                sceneObject->Root()->FindObject(fbxSkin->Name())->WeakPtr()
+            );
         }
         
         /*

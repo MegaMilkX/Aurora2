@@ -135,7 +135,7 @@ public:
     TRANSFORM_GIZMO_STATE gizmoState = TRANSLATE;
 
     std::shared_ptr<Texture2D> icon_texture;
-    SceneObject editorScene;
+    std::shared_ptr<SceneObject> editorScene;
     SceneObject* editedScene;
     EditorCamera* editorCamera = 0;
 
@@ -144,8 +144,9 @@ public:
         char* outPath;
         auto r = NFD_OpenDialog(NULL, NULL, &outPath);
 
-        editorCamera = editorScene.CreateObject()->Get<EditorCamera>();
-        editedScene = editorScene.CreateObject();
+        editorScene = SceneObject::Create();
+        editorCamera = editorScene->CreateObject()->Get<EditorCamera>();
+        editedScene = editorScene->CreateObject();
         editedScene->Name("Root");
 
         icon_texture.reset(new Texture2D());
@@ -252,7 +253,7 @@ public:
         );
     }
 
-    SceneObject* GetScene() { return &editorScene; }
+    SceneObject* GetScene() { return editorScene.get(); }
 
     void OnObjectSelect(SceneObject* o)
     {
@@ -321,8 +322,8 @@ public:
             {
                 if(ImGui::MenuItem("New")) 
                 {
-                    editorScene.Erase(editedScene);
-                    editedScene = editorScene.CreateObject();
+                    editorScene->Erase(editedScene);
+                    editedScene = editorScene->CreateObject();
                     editedScene->Name("Root");
                     editorCamera->Reset(gfxm::vec3(0.0f,0.0f,0.0f));
                     currentSceneFile.clear();
@@ -333,8 +334,8 @@ public:
                     char* outPath;
                     auto r = NFD_OpenDialog("scn", NULL, &outPath);
                     if(r == NFD_OKAY) {
-                        editorScene.Erase(editedScene);
-                        editedScene = editorScene.CreateObject();
+                        editorScene->Erase(editedScene);
+                        editedScene = editorScene->CreateObject();
                         editedScene->Name("Root");
 
                         std::cout << outPath << std::endl;
@@ -356,8 +357,8 @@ public:
                     char* outPath;
                     auto r = NFD_OpenDialog("fbx", NULL, &outPath);
                     if(r == NFD_OKAY) {
-                        editorScene.Erase(editedScene);
-                        editedScene = editorScene.CreateObject();
+                        editorScene->Erase(editedScene);
+                        editedScene = editorScene->CreateObject();
                         editedScene->Name("Root");
 
                         std::cout << outPath << std::endl;

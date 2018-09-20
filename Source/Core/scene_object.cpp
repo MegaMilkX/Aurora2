@@ -3,8 +3,8 @@
 
 SceneObject::~SceneObject()
 {
-    for(unsigned i = 0; i < objects.size(); ++i)
-        delete objects[i];
+    //for(unsigned i = 0; i < objects.size(); ++i)
+    //    delete objects[i];
     for(auto& kv : components)
     {
         if(controller)
