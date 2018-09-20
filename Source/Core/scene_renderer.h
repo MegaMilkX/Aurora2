@@ -5,6 +5,7 @@
 #include "components/model.h"
 #include "components/skin.h"
 #include "components/transform.h"
+#include "components/bone.h"
 #include "components/camera.h"
 #include <map>
 #include <set>
@@ -295,6 +296,18 @@ public:
         else if(type == rttr::type::get<Transform>()) {
             transforms.insert((Transform*)c);
         }
+        else if(type == rttr::type::get<Bone>()) {
+            bones.insert((Bone*)c);
+            for(auto it = bones.begin(); it != bones.end();) {
+                SceneObject* parent = (*it)->Object()->Parent();
+                if(parent && parent->FindComponent<Bone>()) {
+                    bones.erase(it++);
+                }
+                else {
+                    ++it;
+                }
+            }
+        }
     }
 
     void _onRemoveComponent(rttr::type type, SceneObject::Component* c, SceneObject* so)
@@ -320,6 +333,18 @@ public:
         else if(type == rttr::type::get<Transform>()) {
             transforms.erase((Transform*)c);
         }
+        else if(type == rttr::type::get<Bone>()) {
+            bones.erase((Bone*)c);
+            for(auto it = bones.begin(); it != bones.end();) {
+                SceneObject* parent = (*it)->Object()->Parent();
+                if(parent && parent->FindComponent<Bone>()) {
+                    bones.erase(it++);
+                }
+                else {
+                    ++it;
+                }
+            }
+        }
     }
 private:
     void _drawGBuffer(gfxm::mat4& projection, gfxm::mat4& view, gfxm::vec3& viewPos)
@@ -330,17 +355,23 @@ private:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         auto& in = staticDrawData;
-        in.program->Use();
-        glUniformMatrix4fv(in.uProjection, 1, GL_FALSE, (float*)&projection);
-        glUniformMatrix4fv(in.uView, 1, GL_FALSE, (float*)&view);
-        glUniform3f(in.program->GetUniform("ViewPos"), viewPos.x, viewPos.y, viewPos.z);
-        glUniform3f(in.uAmbientColor, 0.1f, 0.15f, 0.25f);   
 
         for(auto& kv : renderables)
         {
             Renderable& unit = kv.second;
             if(!unit.model->mesh) continue;
             
+            if(unit.skin) {
+                // TODO: Use skin program, upload bone data
+            } else {
+                // TODO: Use static geometry program
+            }
+            in.program->Use();
+            glUniformMatrix4fv(in.uProjection, 1, GL_FALSE, (float*)&projection);
+            glUniformMatrix4fv(in.uView, 1, GL_FALSE, (float*)&view);
+            glUniform3f(in.program->GetUniform("ViewPos"), viewPos.x, viewPos.y, viewPos.z);
+            glUniform3f(in.uAmbientColor, 0.1f, 0.15f, 0.25f);   
+
             glUniformMatrix4fv(
                 in.uModel, 1, GL_FALSE,
                 (float*)&unit.transform->GetTransform()
@@ -498,9 +529,9 @@ private:
 
     void _drawDebugElements(const gfxm::mat4& p, const gfxm::mat4& v)
     {
-        float color[3] = { 0.3f, 0.3f, 0.3f };
-        dd::xzSquareGrid(-10.0f, 10.0f, 0.0f, 0.5f, color);
-
+        //float color[3] = { 0.3f, 0.3f, 0.3f };
+        //dd::xzSquareGrid(-10.0f, 10.0f, 0.0f, 0.5f, color);
+/*
         for(auto t : transforms)
         {
             gfxm::mat4 m = t->GetTransform();
@@ -510,6 +541,31 @@ private:
             m[3] = pos;
             dd::axisTriad((float*)&m, 0.01f, 0.1f, 0, false);
         }
+*/
+        auto draw_line_between_bones = [](Bone* a, Bone* b) {
+            float bone_color[3] = { 1.0f, 0.6833f, 0.0f };
+            dd::line(
+                (float*)&a->Get<Transform>()->WorldPosition(),
+                (float*)&b->Get<Transform>()->WorldPosition(),
+                bone_color, 0, false
+            );
+        };
+
+        std::function<void(Bone*)> draw_lines_to_children_bones;
+        draw_lines_to_children_bones = [&draw_line_between_bones, &draw_lines_to_children_bones](Bone* b) {
+            SceneObject* so = b->Object();
+            for(unsigned i = 0; i < so->ChildCount(); ++i) {
+                Bone* child_b = so->GetChild(i)->FindComponent<Bone>();
+                if(child_b) {
+                    draw_line_between_bones(b, child_b);
+                    draw_lines_to_children_bones(child_b);
+                }
+            }
+        };
+
+        for(auto b : bones) {
+            draw_lines_to_children_bones(b);
+        }
 
         DebugDraw::Draw(p * v);
     }
@@ -518,6 +574,7 @@ private:
     std::set<LightDirect*> lightsDirect;
     std::set<LightOmni*> lightsOmni;
     std::set<Transform*> transforms;
+    std::set<Bone*> bones;
 
     StaticDrawData staticDrawData;
     gl::ShaderProgram* lightPassProg;

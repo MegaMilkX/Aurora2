@@ -98,6 +98,18 @@ public:
                                 }
                                 ImGui::PopStyleColor(1);
                             }
+                            else if(ptype == rttr::type::get<SceneObject*>()) {
+                                ImGui::Text(prop.get_name().to_string().c_str());
+                                rttr::variant var = prop.get_value(comp);
+                                SceneObject* so = var.get_value<SceneObject*>();
+                                std::string tgt_name = "[empty]";
+                                if(so) {
+                                    tgt_name = so->Name();
+                                }
+                                if(ImGui::Button(tgt_name.c_str())) {
+                                    // TODO: Open scene object picker
+                                }
+                            }
                             /* TODO
                             else if(ptype == rttr::type::get<ResourceRef>())
                             {

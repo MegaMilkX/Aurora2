@@ -8,6 +8,7 @@
 
 #include <animation_driver.h>
 #include <skin.h>
+#include <bone.h>
 //#include <skeleton_animator.h>
 
 typedef std::map<int64_t, std::shared_ptr<Mesh>> mesh_res_map_t;
@@ -212,8 +213,7 @@ inline void SceneFromFbxModel(FbxModel* fbxModel, FbxScene& fbxScene, SceneObjec
     //LOG("Type: " << fbxModel->GetType());
 
     sceneObject->Get<Transform>()->SetTransform(*(gfxm::mat4*)&fbxModel->GetTransform());
-    if(fbxModel->GetType() == "Mesh")
-    {
+    if(fbxModel->GetType() == "Mesh") {
         FbxMesh* fbxMesh = fbxScene.GetByUid<FbxMesh>(fbxModel->GetUid());
         FbxGeometry* fbxGeometry = fbxScene.GetByUid<FbxGeometry>(fbxMesh->GetGeometryUid());
         
@@ -236,8 +236,11 @@ inline void SceneFromFbxModel(FbxModel* fbxModel, FbxScene& fbxScene, SceneObjec
         );
         */
     }
-    else if(fbxModel->GetType() == "Light")
-    {
+    else if(fbxModel->GetType() == "LimbNode") {
+        sceneObject->Get<Bone>();
+        // TODO:
+    }
+    else if(fbxModel->GetType() == "Light") {
         LightOmni* o = sceneObject->Get<LightOmni>();
         o->Color(
             1.0f,
