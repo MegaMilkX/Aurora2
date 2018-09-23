@@ -82,6 +82,7 @@ public:
     gfxm::mat4 GetLocalTransform() const;
     gfxm::mat4 GetParentTransform();
     gfxm::mat4 GetTransform();
+    gfxm::mat4 GetTransformForRoot(Transform* root);
 
     void ToWorldPosition(gfxm::vec3& pos)
     {

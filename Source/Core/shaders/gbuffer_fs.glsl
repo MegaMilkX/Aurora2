@@ -4,6 +4,7 @@ R"(#version 450
     in vec2 UVFrag;
     in vec3 NormalModel;
     in vec3 FragPosWorld;
+    in vec4 DiffuseColor;
 
     out vec4 outAlbedo;
     out vec4 outPosition;
@@ -73,7 +74,7 @@ R"(#version 450
             LightOmniLambert + 
             SpecOmni +
             SpecDirect; 
-        outAlbedo = texture ( DiffuseTexture , UVFrag ) ;
+        outAlbedo = DiffuseColor * texture ( DiffuseTexture , UVFrag ) ;
         outPosition = vec4(FragPosWorld, 1.0);
         outNormal = vec4(NormalModel, 1.0);
         outSpecular = vec4(0.0,0.0,0.0,1.0);

@@ -59,7 +59,7 @@ GLuint Mesh::GetSkinVao()
             { "Position", 3, GL_FLOAT, GL_FALSE },
             { "UV", 2, GL_FLOAT, GL_FALSE },
             { "Normal", 3, GL_FLOAT, GL_FALSE },
-            { "BoneIndex4", 4, GL_INT, GL_FALSE },
+            { "BoneIndex4", 4, GL_FLOAT, GL_FALSE },
             { "BoneWeight4", 4, GL_FLOAT, GL_FALSE }
         };
         std::vector<GLVertexBufferDesc> desc;

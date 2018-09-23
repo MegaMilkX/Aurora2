@@ -9,10 +9,21 @@
 class Skeleton : public Resource {
     RTTR_ENABLE(Resource)
 public:
+    struct BonePose {
+        std::string name;
+        gfxm::mat4 pose;
+        bool operator<(const BonePose& b) const {
+            return name < b.name;
+        }
+    };
+
     void AddBone(const std::string& name, const gfxm::mat4& bindTransform) {
-        bones.emplace_back(name);
-        bindPose[name] = bindTransform;
-        std::sort(bones.begin(), bones.end());
+        //bones.emplace_back(name);
+        //bindPose[name] = bindTransform;
+        bonePoses.emplace_back(
+            BonePose{name, bindTransform}
+        );
+        std::sort(bonePoses.begin(), bonePoses.end());
     }
 
     virtual bool Build(DataSourceRef r) {
@@ -59,8 +70,8 @@ public:
         mz_zip_writer_init_heap(&zip, 0, 0);
 
         // TODO Write skeleton
-        for(auto& boneName : bones) {
-            mz_zip_writer_add_mem(&zip, boneName.c_str(), (void*)&bindPose[boneName], sizeof(gfxm::mat4), 0);
+        for(auto& bonePose : bonePoses) {
+            mz_zip_writer_add_mem(&zip, bonePose.name.c_str(), (void*)&bonePose.pose, sizeof(gfxm::mat4), 0);
         }
 
         void* bufptr;
@@ -71,8 +82,10 @@ public:
         return true;
     }
 
-    std::vector<std::string> bones;
-    std::map<std::string, gfxm::mat4> bindPose;
+    std::vector<BonePose> bonePoses;
+
+    //std::vector<std::string> bones;
+    //std::map<std::string, gfxm::mat4> bindPose;
 };
 
 #endif

@@ -25,6 +25,13 @@ bool FbxDeformer::Make(FbxNode& node) {
         for(size_t i = 0; i < 16; ++i) {
             ((float*)&transform)[i] = (float)t[i];
         }
+        transform[3] = 
+            FbxVector4(
+                transform[3].x * (float)scene->Settings().scaleFactor,
+                transform[3].y * (float)scene->Settings().scaleFactor,
+                transform[3].z * (float)scene->Settings().scaleFactor,
+                1.0f
+            );
     }
     if(node.ChildCount("TransformAssociateModel")) {
         FbxNode& nodeTransformAssociateModel = node.GetNode("TransformAssociateModel", 0);
@@ -32,6 +39,13 @@ bool FbxDeformer::Make(FbxNode& node) {
         for(size_t i = 0; i < 16; ++i) {
             ((float*)&transformAssociateModel)[i] = (float)t[i];
         }
+        transformAssociateModel[3] = 
+            FbxVector4(
+                transformAssociateModel[3].x * (float)scene->Settings().scaleFactor,
+                transformAssociateModel[3].y * (float)scene->Settings().scaleFactor,
+                transformAssociateModel[3].z * (float)scene->Settings().scaleFactor,
+                1.0f
+            );
     }
     if(node.ChildCount("TransformLink")) {
         FbxNode& nodeTransformLink = node.GetNode("TransformLink", 0);
@@ -39,7 +53,24 @@ bool FbxDeformer::Make(FbxNode& node) {
         for(size_t i = 0; i < 16; ++i) {
             ((float*)&transformLink)[i] = (float)t[i];
         }
+        transformLink[3] = 
+            FbxVector4(
+                transformLink[3].x * (float)scene->Settings().scaleFactor,
+                transformLink[3].y * (float)scene->Settings().scaleFactor,
+                transformLink[3].z * (float)scene->Settings().scaleFactor,
+                1.0f
+            );
     }
+
+    size_t oo_child_count = scene->Connections().CountChildren(FBX_OBJECT_OBJECT, GetUid());
+    for(size_t i = 0; i < oo_child_count; ++i) {
+        int64_t child = scene->Connections().GetChild(FBX_OBJECT_OBJECT, GetUid(), i);
+        FbxModel* model = scene->GetByUid<FbxModel>(child);
+        if(!model) continue;
+        targetModel = model->GetUid();
+        break;
+    }
+
     return true;
 }
 
@@ -70,6 +101,7 @@ bool FbxSkin::Make(FbxNode& node) {
             return da->name < db->name;
         }
     );
+    
     for(size_t i = 0; i < deformers.size(); ++i) {
         FbxDeformer* deformer = scene->GetByUid<FbxDeformer>(deformers[i]);
         for(size_t j = 0; j < deformer->indices.size() && j < deformer->weights.size(); ++j) {

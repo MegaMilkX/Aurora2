@@ -49,20 +49,27 @@ inline void ResourcesFromFbxScene(FbxScene& fbxScene, FbxImportResources& resour
 
         // TODO: Skin data load
         std::vector<int32_t> boneIndices4 = fbxMesh.GetBoneIndices4();
+        std::vector<float> boneIndices4f;
+        for(auto i : boneIndices4) {
+            boneIndices4f.emplace_back((float)i);
+        }
         std::vector<float> boneWeights4 = fbxMesh.GetBoneWeights4();
         if(!boneIndices4.empty() && !boneWeights4.empty()) {
-            mz_zip_writer_add_mem(&zip, "BoneIndices4", (void*)boneIndices4.data(), boneIndices4.size() * sizeof(int32_t), 0);
+            mz_zip_writer_add_mem(&zip, "BoneIndices4", (void*)boneIndices4f.data(), boneIndices4f.size() * sizeof(float), 0);
             mz_zip_writer_add_mem(&zip, "BoneWeights4", (void*)boneWeights4.data(), boneWeights4.size() * sizeof(float), 0);
         }
 
         FbxSkin* skin = geom->GetSkin();
-        if(skin) {
+        FbxPose* pose = fbxScene.GetBindPose();
+        if(skin && pose) {
             std::shared_ptr<Skeleton> skeleton(new Skeleton());
             skeleton->Name(skin->Name());
             skeleton->Storage(Resource::LOCAL);
             for(size_t j = 0; j < skin->DeformerCount(); ++j) {
                 FbxDeformer* deformer = skin->GetDeformer(j);
-                skeleton->AddBone(deformer->name, *(gfxm::mat4*)&deformer->transform);
+                FbxModel* mdl = fbxScene.GetByUid<FbxModel>(deformer->targetModel);
+                FbxMatrix4 mat = pose->transforms[mdl->GetUid()];
+                skeleton->AddBone(mdl->GetName(), *(gfxm::mat4*)&deformer->transformLink);
             }
             resources.skeletons[skin->GetUid()] = skeleton;
         }
@@ -228,9 +235,14 @@ inline void SceneFromFbxModel(FbxModel* fbxModel, FbxScene& fbxScene, SceneObjec
             resource_ref<Skeleton> skel_res_ref;
             skel_res_ref = skel;
             sceneObject->Get<Skin>()->SetSkeleton(skel_res_ref);
-            sceneObject->Get<Skin>()->SetArmatureRoot(
-                sceneObject->Root()->FindObject(fbxSkin->Name())->WeakPtr()
-            );
+            SceneObject* armatureRoot = sceneObject->Root()->FindObject(fbxSkin->Name());
+            if(armatureRoot) {
+                sceneObject->Get<Skin>()->SetArmatureRoot(
+                    armatureRoot->WeakPtr()
+                );
+            } else {
+                std::cout << "Failed to find armature root" << std::endl;
+            }
         }
         
         /*

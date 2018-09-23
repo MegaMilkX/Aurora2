@@ -6,6 +6,7 @@ R"(#version 450
     out vec2 UVFrag;
     out vec3 NormalModel;
     out vec3 FragPosWorld;
+    out vec4 DiffuseColor;
 
     uniform mat4 MatrixModel;
     uniform mat4 MatrixView;
@@ -21,6 +22,7 @@ R"(#version 450
         NormalModel = normalize ( ( MatrixModel * vec4 ( Normal , 0.0 ) ) . xyz ) ; 
         UVFrag = UV ;  
         PositionScreen = MatrixProjection * MatrixView * MatrixModel * PositionModel ; 
+        DiffuseColor = vec4(1.0, 1.0, 1.0, 1.0);
         gl_Position = PositionScreen ; 
     }
 )"

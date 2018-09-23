@@ -106,7 +106,7 @@ public:
         std::vector<float> normals;
         std::vector<float> uv;
         std::vector<uint32_t> indices;
-        std::vector<int32_t> boneIndices4;
+        std::vector<float> boneIndices4;
         std::vector<float> boneWeights4;
         unsigned int indexOffset = 0;
 
@@ -174,7 +174,7 @@ public:
         mz_zip_writer_add_mem(&zip, MKSTR("UV." << 0).c_str(), (void*)GetAttribBytes<Au::UV>().data(), vertexCount * 2 * sizeof(float), 0);
         
         if(!GetAttribBytes<Au::BoneIndex4>().empty() && !GetAttribBytes<Au::BoneWeight4>().empty()) {
-            mz_zip_writer_add_mem(&zip, "BoneIndices4", (void*)GetAttribBytes<Au::BoneIndex4>().data(), vertexCount * 4 * sizeof(int32_t), 0);
+            mz_zip_writer_add_mem(&zip, "BoneIndices4", (void*)GetAttribBytes<Au::BoneIndex4>().data(), vertexCount * 4 * sizeof(float), 0);
             mz_zip_writer_add_mem(&zip, "BoneWeights4", (void*)GetAttribBytes<Au::BoneWeight4>().data(), vertexCount * 4 * sizeof(float), 0);
         }
 

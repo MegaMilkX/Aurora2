@@ -1,7 +1,7 @@
 #ifndef SCENE_RENDERER_H
 #define SCENE_RENDERER_H
 
-#include <aurora/gfx.h>
+
 #include "components/model.h"
 #include "components/skin.h"
 #include "components/transform.h"
@@ -26,98 +26,8 @@ struct Renderable
     Skin* skin = 0;
 };
 
-struct StaticDrawData
-{
-    resource<gl::ShaderProgram> program;
-    GLuint uProjection;
-    GLuint uView;
-    GLuint uModel;
-    GLuint uAmbientColor;
-};
-
-class GBuffer
-{
-public:
-    GBuffer()
-    : fbo(0), albedo(0), position(0), normal(0), specular(0)
-    {}
-    void Init(unsigned width, unsigned height)
-    {
-        glGenFramebuffers(1, &fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-        ResizeBuffers(width, height);  
-    }
-    void Cleanup()
-    {
-        glDeleteFramebuffers(1, &fbo);
-    }
-
-    void ResizeBuffers(unsigned width, unsigned height)
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-        _createBuffer(albedo, GL_RGB, GL_UNSIGNED_BYTE, width, height, 0);
-        _createBuffer(position, GL_RGB16F, GL_FLOAT, width, height, 1);
-        _createBuffer(normal, GL_RGB16F, GL_FLOAT, width, height, 2);
-        _createBuffer(specular, GL_RED, GL_UNSIGNED_BYTE, width, height, 3);
-
-        if(depth) glDeleteTextures(1, &depth);
-        glGenTextures(1, &depth);
-        glBindTexture(GL_TEXTURE_2D, depth);
-        glTexImage2D(
-            GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
-            (GLsizei)width, (GLsizei)height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0
-        );
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depth, 0);
-
-        GLenum a[4] = { 
-            GL_COLOR_ATTACHMENT0,
-            GL_COLOR_ATTACHMENT1,
-            GL_COLOR_ATTACHMENT2,
-            GL_COLOR_ATTACHMENT3
-        };
-        glDrawBuffers(4, a);
-
-        if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        {
-            LOG_ERR("G-Buffer is incomplete!");
-        }
-    }
-
-    void Bind()
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-    }
-    void Unbind()
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
-
-    void _createBuffer(GLuint& t, GLint internalFormat, GLenum type, unsigned width, unsigned height, int attachment)
-    {
-        if(t) glDeleteTextures(1, &t);
-        glGenTextures(1, &t);
-        glBindTexture(GL_TEXTURE_2D, t);
-        glTexImage2D(
-            GL_TEXTURE_2D, 0, internalFormat, 
-            (GLsizei)width, (GLsizei)height, 0, GL_RGB, type, 0
-        );
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + attachment, t, 0);
-    }
-    GLuint fbo;
-    GLuint albedo;
-    GLuint position;
-    GLuint normal;
-    GLuint specular;
-    GLuint depth;
-};
+#include "rendering/gbuffer.h"
+#include "rendering/skin_shader_program.h"
 
 
 inline gl::ShaderProgram* CreateScreenQuadShader()
@@ -222,9 +132,20 @@ inline void DrawQuad()
 class SceneRenderer
 {
 public:
+    BasicShaderProgram basicProg;
+    SkinShaderProgram skinProg;
     bool Init()
     {
-        _initStaticProgram();
+        //_initStaticProgram();
+        if(!basicProg.Init()) {
+            LOG("Failed to init basic shader program");
+            return false;
+        }
+        if(!skinProg.Init()) {
+            LOG("Failed to init skin shader program");
+            return false;
+        }
+        
         _initLightPassProg();
         gBuffer.Init(1280, 720);
 
@@ -354,7 +275,8 @@ private:
         glViewport(0, 0, Common.frameSize.x, Common.frameSize.y);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        auto& in = staticDrawData;
+        //auto& in = staticDrawData;
+        BasicShaderProgram* prog = 0;
 
         for(auto& kv : renderables)
         {
@@ -362,23 +284,39 @@ private:
             if(!unit.model->mesh) continue;
             
             if(unit.skin) {
-                // TODO: Use skin program, upload bone data
-                //unit.skin->GetSkeleton()->bindPose
+                prog = &skinProg;
+                skinProg.program->Use();
+                
+                auto& inverse_bind_transforms = unit.skin->GetInverseBindTransforms();
                 auto& skin_transforms = unit.skin->Update();
 
-                // TODO: Upload bone data
-
+                GLuint loc = skinProg.program->GetUniform("BoneInverseBindTransforms[0]");
+                glUniformMatrix4fv(
+                    loc, 
+                    (std::min)((unsigned)64, (unsigned)inverse_bind_transforms.size()), 
+                    GL_FALSE, 
+                    (GLfloat*)inverse_bind_transforms.data()
+                );
+                
+                loc = skinProg.program->GetUniform("BoneTransforms[0]");
+                glUniformMatrix4fv(
+                    loc, 
+                    (std::min)((unsigned)64, (unsigned)skin_transforms.size()), 
+                    GL_FALSE, 
+                    (GLfloat*)skin_transforms.data()
+                );
             } else {
-                // TODO: Use static geometry program
+                prog = &basicProg;
+                basicProg.program->Use();
             }
-            in.program->Use();
-            glUniformMatrix4fv(in.uProjection, 1, GL_FALSE, (float*)&projection);
-            glUniformMatrix4fv(in.uView, 1, GL_FALSE, (float*)&view);
-            glUniform3f(in.program->GetUniform("ViewPos"), viewPos.x, viewPos.y, viewPos.z);
-            glUniform3f(in.uAmbientColor, 0.1f, 0.15f, 0.25f);   
+
+            glUniformMatrix4fv(prog->uProjection, 1, GL_FALSE, (float*)&projection);
+            glUniformMatrix4fv(prog->uView, 1, GL_FALSE, (float*)&view);
+            glUniform3f(prog->program->GetUniform("ViewPos"), viewPos.x, viewPos.y, viewPos.z);
+            glUniform3f(prog->uAmbientColor, 0.1f, 0.15f, 0.25f);   
 
             glUniformMatrix4fv(
-                in.uModel, 1, GL_FALSE,
+                prog->uModel, 1, GL_FALSE,
                 (float*)&unit.transform->GetTransform()
             );
             
@@ -459,48 +397,6 @@ private:
         DrawQuad();
     }
 
-    void _initStaticProgram()
-    {
-        LOG("Initializing static shader program...");
-        staticDrawData.program = resource<gl::ShaderProgram>::get("solid_shader");
-        resource<gl::ShaderProgram> p = staticDrawData.program;
-        gl::Shader vs;
-        gl::Shader fs;
-        vs.Init(GL_VERTEX_SHADER);
-        vs.Source(
-            #include "shaders/gbuffer_vs.glsl"
-        );
-        vs.Compile();
-
-        fs.Init(GL_FRAGMENT_SHADER);
-        fs.Source(
-            #include "shaders/gbuffer_fs.glsl"
-        );
-        fs.Compile();
-
-        p->AttachShader(&vs);
-        p->AttachShader(&fs);
-        p->BindAttrib(0, "Position");
-        p->BindAttrib(1, "UV");
-        p->BindAttrib(2, "Normal");
-        p->BindFragData(0, "outAlbedo");
-        p->BindFragData(1, "outPosition");
-        p->BindFragData(2, "outNormal");
-        p->BindFragData(3, "outSpecular");
-        p->Link();
-
-        p->Use();
-        glUniform1i(p->GetUniform("DiffuseTexture"), 0);
-
-        staticDrawData.program = p;
-        staticDrawData.uAmbientColor = p->GetUniform("AmbientColor");
-        staticDrawData.uModel = p->GetUniform("MatrixModel");
-        staticDrawData.uProjection = p->GetUniform("MatrixProjection");
-        staticDrawData.uView = p->GetUniform("MatrixView");
-
-        LOG("Done");
-    }
-
     void _initLightPassProg()
     {
         lightPassProg = new gl::ShaderProgram();
@@ -547,6 +443,7 @@ private:
             dd::axisTriad((float*)&m, 0.01f, 0.1f, 0, false);
         }
 */
+/*
         auto draw_line_between_bones = [](Bone* a, Bone* b) {
             float bone_color[3] = { 1.0f, 0.6833f, 0.0f };
             dd::line(
@@ -571,7 +468,7 @@ private:
         for(auto b : bones) {
             draw_lines_to_children_bones(b);
         }
-
+*/
         DebugDraw::Draw(p * v);
     }
     Camera* camera;
@@ -581,7 +478,6 @@ private:
     std::set<Transform*> transforms;
     std::set<Bone*> bones;
 
-    StaticDrawData staticDrawData;
     gl::ShaderProgram* lightPassProg;
 
     GBuffer gBuffer;

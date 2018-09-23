@@ -9,6 +9,7 @@
 #include "fbx_animation_stack.h"
 #include "fbx_material.h"
 #include "fbx_texture.h"
+#include "fbx_pose.h"
 #include "fbx_connections.h"
 #include "fbx_math.h"
 #include "fbx_type_index.h"
@@ -67,6 +68,20 @@ public:
 
     size_t RootModelCount() const { return rootModels.size(); }
     FbxModel* GetRootModel(size_t i) { return GetByUid<FbxModel>(rootModels[i]); }
+    FbxPose* GetBindPose() {
+        if(Count<FbxPose>() == 0) {
+            for(unsigned i = 0; i < rootNode.ChildCount("Pose"); ++i) {
+                GetByUid<FbxPose>(rootNode.GetNode("Pose", i).GetProperty(0).GetInt64());
+            }
+        }
+
+        for(size_t i = 0; i < Count<FbxPose>(); ++i) {
+            FbxPose* pose = Get<FbxPose>(i);
+            if(pose->subtype == "BindPose") 
+                return pose;
+        }
+        return 0;
+    }
 
     void _dumpFile(const std::string& filename);
     /* Don't use this */

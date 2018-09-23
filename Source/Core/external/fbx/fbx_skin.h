@@ -19,6 +19,7 @@ public:
     std::vector<int32_t> indices;
     std::vector<double> weights;
     std::string name;
+    int64_t targetModel;
 };
 
 class FbxSkin : public FbxObject {

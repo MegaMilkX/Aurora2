@@ -28,26 +28,41 @@ public:
         return armatureRoot;
     }
 
+    const std::vector<gfxm::mat4>& GetInverseBindTransforms() {
+        if(!skeleton) return inverseBind;
+        std::shared_ptr<SceneObject> armatureRoot_s = armatureRoot.lock();
+
+        for(size_t i = 0; i < skeleton->bonePoses.size() && inverseBind.size(); ++i) {
+            inverseBind[i] = gfxm::inverse(skeleton->bonePoses[i].pose);
+        }
+        return inverseBind;
+    }
+
     const std::vector<gfxm::mat4>& Update() {
+        std::shared_ptr<SceneObject> armatureRoot_s = armatureRoot.lock();
         if(skeletonDirty) {
             if(skeleton) {
                 transformObjects.clear();
-                transforms.clear(); 
-                for(auto& b : skeleton.bones) {
-                    SceneObject* so = Object()->FindObject(b);
+                transforms.clear();
+                inverseBind.clear();
+                
+                for(auto& b : skeleton->bonePoses) {
+                    SceneObject* so = armatureRoot_s->FindObject(b.name);
                     if(so) {
                         transformObjects.emplace_back(so->Get<Transform>());
                     } else {
                         transformObjects.emplace_back(Get<Transform>());
                     }
                     transforms.emplace_back(gfxm::mat4(1.0f));
+                    inverseBind.emplace_back(gfxm::mat4(1.0f));
                 }
             }
             skeletonDirty = false;
         }
 
         for(size_t i = 0; i < transformObjects.size(); ++i) {
-            transforms[i] = transformObjects[i]->GetTransform();
+            transforms[i] = /*gfxm::inverse(armatureRoot_s->Get<Transform>()->GetTransform()) * */
+                transformObjects[i]->GetTransform();
         }
 
         return transforms;
@@ -60,6 +75,7 @@ private:
     std::weak_ptr<SceneObject> armatureRoot;
     std::vector<Transform*> transformObjects;
     std::vector<gfxm::mat4> transforms;
+    std::vector<gfxm::mat4> inverseBind;
     bool skeletonDirty = true;
 };
 STATIC_RUN(Skin)

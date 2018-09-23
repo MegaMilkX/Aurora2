@@ -15,9 +15,7 @@ public:
     FbxModel(){}
 
     virtual const char* Type() const { return "Model"; }
-    virtual bool Make(FbxNode& node) {
-        return true;
-    }
+    virtual bool Make(FbxNode& node);
 
     unsigned ChildCount() const;
     FbxModel* GetChild(unsigned i, FbxScene& scene);
@@ -38,11 +36,15 @@ public:
     FbxVector3 GetPreRotation() { return preRotation; }
     FbxVector3 GetPostRotation() { return postRotation; }
 
+    FbxMatrix4 GetWorldBindPose() { return worldBindPose; }
+    FbxMatrix4 GetLocalBindPose() { return lclBindPose; }
+
     void SetTransform(const FbxMatrix4& t) { lclTransform = t; }
     FbxMatrix4 GetTransform() { return lclTransform; }
 
     void _addChild(int64_t uid);
 private:
+    int64_t parent_uid;
     std::vector<int64_t> children;
     std::string name;
     std::string type;
@@ -53,6 +55,8 @@ private:
     FbxVector3 lclScaling;
 
     FbxMatrix4 lclTransform;
+    FbxMatrix4 worldBindPose;
+    FbxMatrix4 lclBindPose;
 };
 
 #endif
