@@ -14,12 +14,12 @@
 ## General
   - BUG: Light data is still present in shaders when light sources get deleted from scene
   
-  - Skinning
+  - Change on load object reference search so it will consider only loaded objects
+  - Separate bind transform for skin mesh instead of current world transform 
   - Default diffuse, normal and specular maps (1pixel color)
   - ImGui Curve control
   - Timeline tool
   - Animation events
-  - FbxIndexedTriangleMesh BONE WEIGHTS AND INDICES
   - Submeshes, or subpolysets for different materials. Sort polygons by materials on fbx import
   - Create materials on fbx import
   - NormalMaps, SpecularMaps, shininess, tint, selfillumination
