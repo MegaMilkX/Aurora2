@@ -24,7 +24,6 @@ bool FbxModel::Make(FbxNode& node) {
             FbxModel* parent = scene->GetByUid<FbxModel>(parent_uid);
             if(parent) {
                 lclBindPose = parent->GetWorldBindPose() * FbxInverse(worldBindPose);
-                std::cout << "Yes parent and pose " << std::endl;
             } else {
                 lclBindPose = worldBindPose;
             }
