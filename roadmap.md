@@ -16,6 +16,7 @@
   
   - Change on load object reference search so it will consider only loaded objects
   - Separate bind transform for skin mesh instead of current world transform 
+  - Refine fbx skin data loading, investigate crashes on some files
   - Default diffuse, normal and specular maps (1pixel color)
   - ImGui Curve control
   - Timeline tool
