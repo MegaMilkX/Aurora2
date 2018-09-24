@@ -28,3 +28,4 @@
   - AnimationDriver serialization
   - Collision system and components
   - Animation state system
+  - Fix editor transform gizmos
