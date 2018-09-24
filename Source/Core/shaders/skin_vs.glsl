@@ -48,7 +48,7 @@ void main()
 
     PositionScreen = MatrixProjection * MatrixView * MatrixModel * inverse(SkinBindPose) * PositionModel ; 
 
-    FragPosWorld = vec3 ( PositionModel ) ; 
+    FragPosWorld = (MatrixModel * inverse(SkinBindPose) * PositionModel).xyz; 
     NormalModel = normalize(MatrixModel * inverse(SkinBindPose) * vec4(NormalSkinned, 0.0)).xyz ; 
     UVFrag = UV ; 
     DiffuseColor = vec4(1.0, 1.0, 1.0, 1.0);
