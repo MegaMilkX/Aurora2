@@ -10,6 +10,8 @@ class LightDirect : public SceneObject::Component
     CLONEABLE(LightDirect)
     RTTR_ENABLE(SceneObject::Component)
 public:
+    LightDirect()
+    : color(1.0f, 1.0f, 1.0f) {}
     ~LightDirect()
     {
     }
@@ -43,6 +45,8 @@ class LightOmni : public SceneObject::Component
     CLONEABLE(LightOmni)
     RTTR_ENABLE(SceneObject::Component)
 public:
+    LightOmni()
+    : color(1.0f, 1.0f, 1.0f), intensity(1.0f) {}
     ~LightOmni()
     {
     }
