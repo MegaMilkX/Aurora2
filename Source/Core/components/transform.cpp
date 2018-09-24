@@ -335,10 +335,10 @@ gfxm::mat4 Transform::GetTransform()
 }
 
 gfxm::mat4 Transform::GetTransformForRoot(Transform* root) {
-    gfxm::mat4 localTransform = GetLocalTransform();           
-    if(_parent && _parent != root)
-        _transform = _parent->GetTransformForRoot(root) * localTransform;
-    else
-        _transform = localTransform;
-    return _transform;
+    gfxm::mat4 tr = GetTransform();
+    if(root->_parent) {
+        return gfxm::inverse(root->_parent->GetTransform()) * tr;
+    } else {
+        return GetTransform();
+    }
 }

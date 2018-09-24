@@ -289,8 +289,12 @@ private:
                 
                 auto& inverse_bind_transforms = unit.skin->GetInverseBindTransforms();
                 auto& skin_transforms = unit.skin->Update();
+                gfxm::mat4 bindTransform = unit.skin->GetBindTransform();
 
-                GLuint loc = skinProg.program->GetUniform("BoneInverseBindTransforms[0]");
+                GLuint loc = skinProg.program->GetUniform("SkinBindPose");
+                glUniformMatrix4fv(loc, 1, GL_FALSE, (GLfloat*)&bindTransform);
+
+                loc = skinProg.program->GetUniform("BoneInverseBindTransforms[0]");
                 glUniformMatrix4fv(
                     loc, 
                     (std::min)((unsigned)64, (unsigned)inverse_bind_transforms.size()), 

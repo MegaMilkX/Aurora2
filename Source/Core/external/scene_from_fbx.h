@@ -69,7 +69,7 @@ inline void ResourcesFromFbxScene(FbxScene& fbxScene, FbxImportResources& resour
                 FbxDeformer* deformer = skin->GetDeformer(j);
                 FbxModel* mdl = fbxScene.GetByUid<FbxModel>(deformer->targetModel);
                 FbxMatrix4 mat = pose->transforms[mdl->GetUid()];
-                skeleton->AddBone(mdl->GetName(), *(gfxm::mat4*)&deformer->transformLink);
+                skeleton->AddBone(mdl->GetName(), *(gfxm::mat4*)&mat);
             }
             resources.skeletons[skin->GetUid()] = skeleton;
         }
@@ -235,6 +235,10 @@ inline void SceneFromFbxModel(FbxModel* fbxModel, FbxScene& fbxScene, SceneObjec
             resource_ref<Skeleton> skel_res_ref;
             skel_res_ref = skel;
             sceneObject->Get<Skin>()->SetSkeleton(skel_res_ref);
+            FbxPose* bindPose = fbxScene.GetBindPose();
+            if(bindPose) {
+                sceneObject->Get<Skin>()->SetBindTransform(*(gfxm::mat4*)&bindPose->GetPose(fbxModel->GetUid()));
+            }
             SceneObject* armatureRoot = sceneObject->Root()->FindObject(fbxSkin->Name());
             if(armatureRoot) {
                 sceneObject->Get<Skin>()->SetArmatureRoot(

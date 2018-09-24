@@ -14,6 +14,8 @@ out vec4 DiffuseColor;
 uniform mat4 MatrixModel;
 uniform mat4 MatrixView;
 uniform mat4 MatrixProjection;
+
+uniform mat4 SkinBindPose;
 uniform mat4 BoneInverseBindTransforms[MAX_BONE_COUNT];
 uniform mat4 BoneTransforms[MAX_BONE_COUNT];
 
@@ -28,8 +30,8 @@ void main()
     int bi2 = int ( BoneIndex4 . z ) ; 
     int bi3 = int ( BoneIndex4 . w ) ; 
 
-    vec3 Pos = (MatrixModel * vec4(Position, 1.0)).xyz;
-    vec3 Norm = (MatrixModel * vec4(Normal, 0.0)).xyz;
+    vec3 Pos = (SkinBindPose * vec4(Position, 1.0)).xyz;
+    vec3 Norm = (SkinBindPose * vec4(Normal, 0.0)).xyz;
 
     PositionModel = (
         (BoneTransforms[bi0] * BoneInverseBindTransforms[bi0]) * vec4(Pos, 1.0) * BoneWeight4.x +
@@ -44,10 +46,10 @@ void main()
         (BoneTransforms[bi3] * BoneInverseBindTransforms[bi3]) * vec4 ( Norm , 0.0 ) * BoneWeight4.w 
     ).xyz;
 
-    PositionScreen = MatrixProjection * MatrixView * PositionModel ; 
+    PositionScreen = MatrixProjection * MatrixView * MatrixModel * inverse(SkinBindPose) * PositionModel ; 
 
     FragPosWorld = vec3 ( PositionModel ) ; 
-    NormalModel = normalize(NormalSkinned) ; 
+    NormalModel = normalize(MatrixModel * inverse(SkinBindPose) * vec4(NormalSkinned, 0.0)).xyz ; 
     UVFrag = UV ; 
     DiffuseColor = vec4(1.0, 1.0, 1.0, 1.0);
 

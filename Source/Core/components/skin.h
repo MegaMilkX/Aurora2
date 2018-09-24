@@ -13,6 +13,13 @@ public:
 
     }
 
+    void SetBindTransform(const gfxm::mat4& t) {
+        bindTransform = t;
+    }
+    gfxm::mat4 GetBindTransform() {
+        return bindTransform;
+    }
+
     void SetSkeleton(resource_ref<Skeleton>& skel) { 
         skeleton = skel;
         skeletonDirty = true;
@@ -62,7 +69,7 @@ public:
 
         for(size_t i = 0; i < transformObjects.size(); ++i) {
             transforms[i] = /*gfxm::inverse(armatureRoot_s->Get<Transform>()->GetTransform()) * */
-                transformObjects[i]->GetTransform();
+                transformObjects[i]->GetTransformForRoot(armatureRoot_s.get()->Get<Transform>());
         }
 
         return transforms;
@@ -76,6 +83,7 @@ private:
     std::vector<Transform*> transformObjects;
     std::vector<gfxm::mat4> transforms;
     std::vector<gfxm::mat4> inverseBind;
+    gfxm::mat4 bindTransform;
     bool skeletonDirty = true;
 };
 STATIC_RUN(Skin)
