@@ -36,7 +36,7 @@ public:
     friend SceneObject;
     public:
         Component()
-        : type(rttr::type::get(UnserializableComponentToken()))
+        : type(rttr::type::get<void>())
         {}
         virtual ~Component() {}
 
@@ -69,217 +69,50 @@ public:
 
 private:
     SceneObject() 
-    : parentObject(0),
-    name(MKSTR(this)),
-    controller(0) {}
+    : SceneObject(0) {}
 
     SceneObject(SceneObject* parent) 
     : parentObject(parent),
     name(MKSTR(this)),
-    controller(0) {}
+    controller(0) {
+        static int64_t next_uid = 0;
+        uid = ++next_uid;
+    }
 
 public:
-    ~SceneObject();
+                            ~SceneObject();
     
-    SceneObject* Root()
-    {
-        if(!parentObject)
-            return this;
-        else
-            return parentObject->Root();
-    }
-    
-    SceneObject* Parent()
-    {
-        return parentObject;
-    }
-
-    bool IsRoot()
-    {
-        return this == Root();
-    }
-    
-    SceneObject* CreateObject()
-    {
-        // TODO
-        //SceneObject* o = new SceneObject(this);
-        std::shared_ptr<SceneObject> obj(new SceneObject(this));
-        obj->SetController(controller);
-        objects.push_back(obj);
-        return obj.get();
-    }
-    void Erase(SceneObject* child)
-    {
-        for(unsigned i = 0; i < objects.size(); ++i)
-        {
-            if(objects[i].get() == child)
-            {
-                objects.erase(objects.begin() + i);
-                break;
-            }
-        }
-    }
+    SceneObject*            Root();
+    SceneObject*            Parent();
+    bool                    IsRoot();
+    SceneObject*            CreateObject();
+    void                    Erase(SceneObject* child);
     template<typename T>
-    T* RootGet() { return Root()->GetComponent<T>(); }
+    T*                      RootGet();
     template<typename T>
-    T* Get() { return GetComponent<T>(); }
+    T*                      Get();
     template<typename T>
-    T* GetComponent()
-    {
-        T* c = FindComponent<T>();
-        if (!c)
-        {
-            c = new T();
-            c->type = rttr::type::get<T>();
-            AddComponent(c, rttr::type::get<T>());
-            return c;
-        }
-        else
-            return c;
-    }
-    Component* Get(const std::string& component)
-    {
-        rttr::type type = rttr::type::get_by_name(component);
-        if(!type.is_valid())
-        {
-            std::cout << component << " is not a valid type" << std::endl;
-            return 0;
-        }
-        Component* c = FindComponent(type);
-        if(!c)
-        {
-            rttr::variant v = type.create();
-            if(!v.get_type().is_pointer())
-            {
-                std::cout << component << " - invalid component type" << std::endl;
-                return 0;
-            }
-            c = v.get_value<Component*>();
-            if(!c) return 0;
-            c->type = type;
-            AddComponent(c, type);
-            return c;
-        }
-        else
-            return c;
-    }
-    
+    T*                      GetComponent();
+    Component*              Get(const std::string& component);
     template<typename T>
-    T* FindComponent()
-    {
-        return (T*)FindComponent(rttr::type::get<T>());
-    }
-
-    Component* FindComponent(rttr::type t)
-    {
-        std::map<rttr::type, Component*>::iterator it;
-        it = components.find(t);
-        if(it == components.end())
-            return 0;
-        else
-            return it->second;
-    }
-    
+    T*                      FindComponent();
+    Component*              FindComponent(rttr::type t);
     template<typename T>
-    std::vector<T*> FindAllOf()
-    {
-        std::vector<T*> result;
-        T* c = FindComponent<T>();
-        if(c) result.push_back(c);
-        for(unsigned i = 0; i < objects.size(); ++i)
-        {
-            std::vector<T*> r = objects[i]->FindAllOf<T>();
-            result.insert(result.end(), r.begin(), r.end());
-        }
-        return result;
-    }
+    std::vector<T*>         FindAllOf();
+    void                    Name(const std::string& name);
+    std::string             Name() const;
+    SceneObject*            FindObject(const std::string& name);
+    SceneObject*            FindChild(const std::string& name);
+    SceneObject*            CreateFrom(SceneObject* from);
     
-    void Name(const std::string& name) 
-    { 
-        this->name = name;
-        if(this->name.empty()) this->name = MKSTR(this);
-    }
-    std::string Name() const { return name; }
-    
-    SceneObject* FindObject(const std::string& name)
-    {
-        SceneObject* o = 0;
-        for(unsigned i = 0; i < objects.size(); ++i)
-        {
-            if(objects[i]->Name() == name)
-            {
-                o = objects[i].get();
-                break;
-            }
-            else if(o = objects[i]->FindObject(name))
-            {
-                break;
-            }
-        }
-        return o;
-    }
+    unsigned int            ChildCount() const;
+    SceneObject*            GetChild(unsigned int i) const;
+    unsigned int            ComponentCount() const;
+    Component*              GetComponent(unsigned int id) const ;
 
-    SceneObject* FindChild(const std::string& name)
-    {
-        for(auto so : objects)
-        {
-            if(so->Name() == name)
-            {
-                return so.get();
-            }
-        }
-        return 0;
-    }
+    void                    SetController(SceneController* con);
 
-    SceneObject* CreateFrom(SceneObject* from)
-    {
-        if(!from) return 0;
-        SceneObject* new_object = CreateObject();
-        new_object->SetController(controller);
-        new_object->Name(from->Name());
-        for(auto so : from->objects)
-        {
-            new_object->CreateFrom(so.get());
-        }
-        for(auto kv : from->components)
-        {
-            Component* c = kv.second->clone();
-            if(!c) continue;
-            components.insert(
-                std::make_pair(
-                    kv.first, 
-                    c
-                )
-            );
-        }
-    }
-
-    unsigned int ChildCount() const { return objects.size(); }
-    SceneObject* GetChild(unsigned int i) const { return objects[i].get(); }
-    unsigned int ComponentCount() const { return components.size(); }
-    Component* GetComponent(unsigned int id) const 
-    {
-        Component* c = 0;
-        auto it = components.begin();
-        for(unsigned i = 0; i < id; ++i)
-        {
-            it++;
-        }
-        return it->second;
-    }
-
-    void SetController(SceneController* con)
-    {
-        controller = con;
-        for(auto& o : objects)
-        {
-            o->SetController(con);
-        }
-    }
-
-    std::weak_ptr<SceneObject> WeakPtr() {
-        return shared_from_this();
-    }
+    std::weak_ptr<SceneObject> WeakPtr();
 private:
     void AddComponent(Component* c, rttr::type t);
 
@@ -292,12 +125,52 @@ private:
         static std::map<typeindex, std::string> compTypeIndexToName;
     };
     
+    int64_t uid;
     std::string name;
     SceneObject* parentObject;
     std::vector<std::shared_ptr<SceneObject>> objects;
     std::map<rttr::type, Component*> components;
     SceneController* controller;
 };
+
+template<typename T>
+T* SceneObject::RootGet() { 
+    return Root()->GetComponent<T>(); 
+}
+template<typename T>
+T* SceneObject::Get() { 
+    return GetComponent<T>(); 
+}
+template<typename T>
+T* SceneObject::GetComponent() {
+    T* c = FindComponent<T>();
+    if (!c)
+    {
+        c = new T();
+        c->type = rttr::type::get<T>();
+        AddComponent(c, rttr::type::get<T>());
+        return c;
+    }
+    else
+        return c;
+}
+template<typename T>
+T* SceneObject::FindComponent() {
+    return (T*)FindComponent(rttr::type::get<T>());
+}
+
+template<typename T>
+std::vector<T*> SceneObject::FindAllOf() {
+    std::vector<T*> result;
+    T* c = FindComponent<T>();
+    if(c) result.push_back(c);
+    for(unsigned i = 0; i < objects.size(); ++i)
+    {
+        std::vector<T*> r = objects[i]->FindAllOf<T>();
+        result.insert(result.end(), r.begin(), r.end());
+    }
+    return result;
+}
 
 template<typename T>
 std::map<std::string, SceneObject::FuncGetComponent_t> SceneObject::headerStaticWrap<T>::compAllocFuncs;
