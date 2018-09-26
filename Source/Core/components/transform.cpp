@@ -336,8 +336,8 @@ gfxm::mat4 Transform::GetTransform()
 
 gfxm::mat4 Transform::GetTransformForRoot(Transform* root) {
     gfxm::mat4 tr = GetTransform();
-    if(root->_parent) {
-        return gfxm::inverse(root->_parent->GetTransform()) * tr;
+    if(root) {
+        return gfxm::inverse(root->GetTransform()) * tr;
     } else {
         return GetTransform();
     }

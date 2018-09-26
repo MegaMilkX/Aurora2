@@ -20,6 +20,15 @@ SceneSerializer::SceneSerializer() {
     prop_serializers[rttr::type::get<gfxm::mat3>()] = &ToJson<gfxm::mat3>;
     prop_serializers[rttr::type::get<gfxm::mat4>()] = &ToJson<gfxm::mat4>;
     prop_serializers[rttr::type::get<std::string>()] = &ToJson<std::string>;
+    prop_serializers[rttr::type::get<SceneObject*>()] = [this](nlohmann::json& j, rttr::variant& value)->bool {
+        SceneObject* so = value.get_value<SceneObject*>();
+        if(so == 0) {
+            j = 0;
+        } else {
+            j = so->Uid();
+        }
+        return true;
+    };
     prop_serializers[rttr::type::get<i_resource_ref>()] = [this](nlohmann::json& j, rttr::variant& value)->bool {
         /*
         if(!value.can_convert<std::shared_ptr<Resource>>()) {
@@ -194,6 +203,13 @@ std::string SceneSerializer::SerializeComponentToJson(mz_zip_archive& archive, r
         if(p_type.is_derived_from<i_resource_ref>()) {
             serializer = prop_serializers[rttr::type::get<i_resource_ref>()];
             value = p.get_value(c);
+        } else if(p_type.is_wrapper()) {
+            auto it = prop_serializers.find(p.get_type().get_wrapped_type());
+            if(it != prop_serializers.end()) {
+                serializer = it->second;
+                value = p.get_value(c);
+                value = value.extract_wrapped_value();
+            }
         } else {
             auto it = prop_serializers.find(p.get_type());
             if(it != prop_serializers.end()) {
@@ -540,6 +556,22 @@ std::map<rttr::type, SceneSerializer::json_prop_parser_t> SceneSerializer::InitP
         m[3][2] = j[14].get<float>();
         m[3][3] = j[15].get<float>();
         v = m;
+    };
+    parsers[rttr::type::get<SceneObject*>()] = [this](rttr::variant& v, nlohmann::json& j) {
+        if(!j.is_number_integer()) return;
+        int64_t uid = j.get<int64_t>();
+        if(uid == 0) return;
+        SceneObject* so = importData.GetObjectByImportUid(uid);
+        if(!so) return;
+        v = so;
+    };
+    parsers[rttr::type::get<std::weak_ptr<SceneObject>>()] = [this](rttr::variant& v, nlohmann::json& j) {
+        if(!j.is_number_integer()) return;
+        int64_t uid = j.get<int64_t>();
+        if(uid == 0) return;
+        SceneObject* so = importData.GetObjectByImportUid(uid);
+        if(!so) return;
+        v = so->WeakPtr();
     };
     /*
     parsers[rttr::type::get<ResourceRef>()] = [this](rttr::variant& v, nlohmann::json& j){

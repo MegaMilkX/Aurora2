@@ -36,7 +36,11 @@ struct FbxImportData {
         if(it == fbxUidToObject.end()) return 0;
         return it->second;
     }
+
+    void Root(SceneObject* so) { root = so; }
+    SceneObject* Root() { return root; }
 private:
+    SceneObject* root;
     std::vector<SceneObject*> loadedObjects;
     std::map<int64_t, SceneObject*> fbxUidToObject;
 };
@@ -261,7 +265,7 @@ inline void SceneFromFbxModel(FbxModel* fbxModel, FbxScene& fbxScene, SceneObjec
             if(bindPose) {
                 sceneObject->Get<Skin>()->SetBindTransform(*(gfxm::mat4*)&bindPose->GetPose(fbxModel->GetUid()));
             }
-            SceneObject* armatureRoot = sceneObject->Root()->FindObject(fbxSkin->Name());
+            SceneObject* armatureRoot = importData.Root();
             if(armatureRoot) {
                 sceneObject->Get<Skin>()->SetArmatureRoot(
                     armatureRoot->WeakPtr()
@@ -310,6 +314,8 @@ inline bool SceneFromFbx(const char* data, size_t size, SceneObject* scene)
     if(!FbxReadMem(*fbxScene, data, size))
         return false;
     FbxImportData importData;
+    importData.Root(scene);
+
     ResourcesFromFbxScene(*fbxScene, importData);
     SceneFromFbx(*fbxScene, scene, importData);
     fbxScene->Destroy();
@@ -322,6 +328,8 @@ inline bool SceneFromFbx(const std::string& filename, SceneObject* scene)
     if(!FbxReadFile(*fbxScene, filename))
         return false;
     FbxImportData importData;
+    importData.Root(scene);
+
     ResourcesFromFbxScene(*fbxScene, importData);
     SceneFromFbx(*fbxScene, scene, importData);
     fbxScene->_dumpFile(filename);
