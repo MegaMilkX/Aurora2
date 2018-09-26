@@ -14,6 +14,7 @@
 ## General
   - BUG: Light data is still present in shaders when light sources get deleted from scene
   
+  - SCENE IMPORT: Deferred component load
   - FBX: Only create animation curves for objects that are actually animated
   - Change on load object reference search so it will consider only loaded objects
   - Separate bind transform for skin mesh instead of current world transform 
