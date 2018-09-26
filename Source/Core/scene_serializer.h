@@ -5,7 +5,7 @@
 #include <rttr/type>
 #include <external/json.hpp>
 #include <util/gfxm.h>
-#include <scene_object.h>
+#include <component.h>
 #define MINIZ_HEADER_FILE_ONLY
 #include <lib/miniz.c>
 #include <functional>
@@ -57,10 +57,29 @@ template<> inline bool ToJson<gfxm::mat4>(nlohmann::json& j, rttr::variant& valu
 
 class SceneSerializer {
 public:
+    class ImportData {
+    public:
+        void AddObject(int64_t imported_uid, SceneObject* so) {
+            oldUidToObject[imported_uid] = so;
+        }
+        SceneObject* GetObjectByImportUid(int64_t uid) {
+            auto it = oldUidToObject.find(uid);
+            if(it == oldUidToObject.end()) return 0;
+            return it->second;
+        }
+    private:
+        std::map<int64_t, SceneObject*> oldUidToObject;
+    };
+
+    class ExportData {
+    public:
+    private:
+    };
+
     typedef std::function<bool(nlohmann::json&, rttr::variant&)> serialize_prop_f;
     typedef std::function<void(rttr::variant&, nlohmann::json&)> json_prop_parser_t;
-    typedef std::function<void(SceneObject::Component*, nlohmann::json&)> custom_component_writer_f;
-    typedef std::function<void(SceneObject::Component*, nlohmann::json&)> custom_component_reader_f;
+    typedef std::function<void(Component*, nlohmann::json&)> custom_component_writer_f;
+    typedef std::function<void(Component*, nlohmann::json&)> custom_component_reader_f;
 
     SceneSerializer();
 
@@ -78,12 +97,15 @@ private:
     std::map<std::string, DataSourceRef> data_sources;
     std::map<std::string, std::shared_ptr<Resource>> resources;
 
+    ImportData importData;
+    ExportData exportData;
+
     std::map<rttr::type, custom_component_writer_f> custom_component_writers;
     std::map<rttr::type, custom_component_reader_f> custom_component_readers;
 
     bool SerializeEmbeddedResources(mz_zip_archive& archive);
     bool SerializeScene_(const SceneObject* scene, mz_zip_archive& archive, std::string& file_prefix);
-    std::string SerializeComponentToJson(mz_zip_archive& archive, rttr::type t, SceneObject::Component* c);
+    std::string SerializeComponentToJson(mz_zip_archive& archive, rttr::type t, Component* c);
 
     bool DeserializeScene(unsigned char* data, size_t size, SceneObject& scene);
     rttr::variant JsonPropertyToVariant(rttr::variant& var, nlohmann::json& j);

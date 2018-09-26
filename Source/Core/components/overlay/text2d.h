@@ -3,7 +3,7 @@
 
 #undef GetObject
 
-#include <scene_object.h>
+#include <component.h>
 #include <texture2d.h>
 #include <mesh.h>
 
@@ -13,10 +13,10 @@
 #include "../../util/gfx_text.h"
 
 class OverlayRoot;
-class Text2d : public SceneObject::Component
+class Text2d : public Component
 {
     CLONEABLE(Text2d)
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     Text2d()
     {

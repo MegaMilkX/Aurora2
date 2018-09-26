@@ -1,7 +1,7 @@
 #ifndef JSON_PROPERTY_PARSERS_H
 #define JSON_PROPERTY_PARSERS_H
 
-#include <scene_object.h>
+#include <component.h>
 #include <util/gfxm.h>
 #include <util/static_run.h>
 #include <resources/resource/resource_factory.h>

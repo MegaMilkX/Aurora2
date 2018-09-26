@@ -1,16 +1,16 @@
 #ifndef QUAD_H
 #define QUAD_H
 
-#include <scene_object.h>
+#include <component.h>
 #include "../../util/gfx_quad.h"
 
 #include <mutex>
 
 class OverlayRoot;
-class Quad : public SceneObject::Component
+class Quad : public Component
 {
     CLONEABLE(Quad)
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     GfxQuad quad;
 

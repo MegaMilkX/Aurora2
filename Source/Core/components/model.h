@@ -1,7 +1,7 @@
 #ifndef COMPONENT_MODEL_H
 #define COMPONENT_MODEL_H
 
-#include "../scene_object.h"
+#include "../component.h"
 #include "transform.h"
 #include <material.h>
 
@@ -19,10 +19,10 @@
 
 #undef GetObject
 
-class Model : public SceneObject::Component
+class Model : public Component
 {
     CLONEABLE(Model)
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     Model();    
     ~Model();

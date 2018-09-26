@@ -1,14 +1,14 @@
 #ifndef GUI_LAYOUT_H
 #define GUI_LAYOUT_H
 
-#include <scene_object.h>
+#include <component.h>
 #include <overlay/quad.h>
 
 #include <functional>
 
-class GuiLayout : public SceneObject::Component
+class GuiLayout : public Component
 {
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     enum DOCKING
     {

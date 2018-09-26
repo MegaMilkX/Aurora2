@@ -1,7 +1,7 @@
 #ifndef EDITOR_ANIMATION_TIMELINE_H
 #define EDITOR_ANIMATION_TIMELINE_H
 
-#include <scene_object.h>
+#include <component.h>
 #include <util/imgui_wrapper.h>
 #include <util/imgui_console.h>
 #include <resources/resource/resource_ref.h>

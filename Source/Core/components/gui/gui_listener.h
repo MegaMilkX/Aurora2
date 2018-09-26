@@ -1,12 +1,12 @@
 #ifndef GUI_LISTENER_H
 #define GUI_LISTENER_H
 
-#include <scene_object.h>
+#include <component.h>
 #include "gui_root.h"
 
-class GuiListener : public SceneObject::Component
+class GuiListener : public Component
 {
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     void OnInit()
     {

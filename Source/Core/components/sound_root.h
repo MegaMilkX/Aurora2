@@ -1,14 +1,14 @@
 #ifndef SOUND_ROOT_H
 #define SOUND_ROOT_H
 
-#include "../scene_object.h"
+#include "../component.h"
 
 class SoundEmitter;
 class SoundListener;
-class SoundRoot : public SceneObject::Component
+class SoundRoot : public Component
 {
     CLONEABLE(SoundRoot)
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     void Update();
     void OnInit();

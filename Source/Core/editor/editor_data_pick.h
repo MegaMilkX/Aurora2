@@ -1,7 +1,7 @@
 #ifndef EDITOR_DATA_PICK_H
 #define EDITOR_DATA_PICK_H
 
-#include <scene_object.h>
+#include <component.h>
 #include <util/imgui_wrapper.h>
 #include <util/imgui_console.h>
 #include <resources/resource/resource_ref.h>
@@ -14,7 +14,7 @@ public:
     : prop(rttr::type::get<void>().get_property("")) {
 
     }
-    void SetTarget(rttr::property prop, SceneObject::Component* comp) { 
+    void SetTarget(rttr::property prop, Component* comp) { 
         this->prop = prop;
         this->comp = comp;
     }
@@ -43,7 +43,7 @@ public:
 private:
     //i_resource_ref* tgt_resource_ref;
     rttr::property prop;
-    SceneObject::Component* comp = 0;
+    Component* comp = 0;
     std::string selected_name;
 };
 

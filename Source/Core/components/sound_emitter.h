@@ -1,16 +1,16 @@
 #ifndef SOUND_EMITTER_H
 #define SOUND_EMITTER_H
 
-#include "../scene_object.h"
+#include "../component.h"
 #include "sound_root.h"
 #include <sound_clip.h>
 
 #undef GetObject
 
-class SoundEmitter : public SceneObject::Component
+class SoundEmitter : public Component
 {
     CLONEABLE(SoundEmitter)
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     SoundEmitter()
     {}
@@ -35,10 +35,10 @@ protected:
     AudioEmitter* emitter;
 };
 
-class SoundListener : public SceneObject::Component
+class SoundListener : public Component
 {
     CLONEABLE(SoundListener)
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     void OnInit()
     {

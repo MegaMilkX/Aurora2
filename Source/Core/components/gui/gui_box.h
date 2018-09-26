@@ -5,9 +5,9 @@
 #include "gui_layout.h"
 #include "../overlay/quad.h"
 
-class GuiBox : public SceneObject::Component
+class GuiBox : public Component
 {
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     void OnResize(const GuiLayout* layout)
     {

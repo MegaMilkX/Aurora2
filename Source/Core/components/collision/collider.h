@@ -7,10 +7,10 @@
 
 #undef GetObject
 
-class Collider : public SceneObject::Component
+class Collider : public Component
 {
     CLONEABLE(Collider)
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 friend Collision;
 public:
     Collider()

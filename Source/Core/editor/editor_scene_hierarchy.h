@@ -1,7 +1,7 @@
 #ifndef EDITOR_SCENE_HIERARCHY_H
 #define EDITOR_SCENE_HIERARCHY_H
 
-#include <scene_object.h>
+#include <component.h>
 #include <util/imgui_wrapper.h>
 #include <util/imgui_console.h>
 #include <functional>
@@ -43,21 +43,25 @@ private:
     {
         if(scene->ChildCount() == 0)
         {
-            if (ImGui::Selectable(scene->Name().c_str(), selectedObject == scene ? true : false))
+            if (ImGui::Selectable(MKSTR(scene->Name() << "##X" << scene).c_str(), selectedObject == scene ? true : false))
             {
                 SetSelected(scene);
             }
             if (ImGui::BeginPopupContextItem()) // When used after an item that has an ID (here the Button), we can skip providing an ID to BeginPopupContextItem().
             {
                 ImGui::Selectable("Export...");
-                ImGui::Selectable("Delete");
+                if(ImGui::Selectable("Delete")) {
+                    if(scene->Parent()) {
+                        scene->Parent()->Erase(scene);
+                    }
+                }
                 ImGui::EndPopup();
             }
         }
         else
         {
             bool node_open = ImGui::TreeNodeEx(
-                (void*)scene, selectedObject == scene ? ImGuiTreeNodeFlags_Selected : 0, scene->Name().c_str());
+                (void*)scene, selectedObject == scene ? ImGuiTreeNodeFlags_Selected : 0, MKSTR(scene->Name()).c_str());
             if (ImGui::BeginPopupContextItem()) // When used after an item that has an ID (here the Button), we can skip providing an ID to BeginPopupContextItem().
             {
                 ImGui::Selectable("Export...");

@@ -3,7 +3,7 @@
 
 #include <util/frame_graph.h>
 #include <rttr/type>
-#include "scene_object.h"
+#include "component.h"
 
 #include "scene_renderer.h"
 
@@ -24,8 +24,8 @@ public:
 
     void Update();
 
-    void _onAddComponent(rttr::type type, SceneObject::Component* c, SceneObject* so);
-    void _onRemoveComponent(rttr::type type, SceneObject::Component* c, SceneObject* so);
+    void _onAddComponent(rttr::type type, Component* c, SceneObject* so);
+    void _onRemoveComponent(rttr::type type, Component* c, SceneObject* so);
 private:
     void _firstTimeSceneProcess(SceneObject* s);
     SceneObject* scene;

@@ -4,7 +4,7 @@
 #include "fbx/fbx_read.h"
 #define MINIZ_HEADER_FILE_ONLY
 #include "../../lib/miniz.c"
-#include <scene_object.h>
+#include <component.h>
 
 #include <animation_driver.h>
 #include <skin.h>

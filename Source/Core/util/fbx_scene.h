@@ -1,7 +1,7 @@
 #ifndef UTIL_FBX_SCENE_H
 #define UTIL_FBX_SCENE_H
 
-#include <scene_object.h>
+#include <component.h>
 #include <aurora/media/fbx.h>
 
 inline void LoadSceneFromFbx(SceneObject* scene, const std::string& filename)

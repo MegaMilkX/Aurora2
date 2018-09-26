@@ -1,5 +1,5 @@
 #include <game_state.h>
-#include <scene_object.h>
+#include <component.h>
 
 #include <transform.h>
 #include <camera.h>

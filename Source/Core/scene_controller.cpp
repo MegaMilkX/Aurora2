@@ -28,7 +28,7 @@ void SceneController::Update(){
 
 void SceneController::_onAddComponent(
     rttr::type type, 
-    SceneObject::Component* c, 
+    Component* c, 
     SceneObject* so)
 {
     if(type.is_derived_from<Updatable>()) {
@@ -40,7 +40,7 @@ void SceneController::_onAddComponent(
 
 void SceneController::_onRemoveComponent(
     rttr::type type, 
-    SceneObject::Component* c, 
+    Component* c, 
     SceneObject* so)
 {
     if(type.is_derived_from<Updatable>()) {
@@ -57,7 +57,7 @@ void SceneController::_firstTimeSceneProcess(SceneObject* s) {
         _firstTimeSceneProcess(child);
     }
     for(unsigned i = 0; i < s->ComponentCount(); ++i) {
-        SceneObject::Component* c = s->GetComponent(i);
+        Component* c = s->GetComponent(i);
         _onAddComponent(c->GetType(), c, s);
     }
 }

@@ -3,16 +3,16 @@
 
 #include <util/gfxm.h>
 
-#include "../scene_object.h"
+#include "../component.h"
 
 #include <global_objects.h>
 
 #undef GetObject
 
-class Transform : public SceneObject::Component
+class Transform : public Component
 {
     CLONEABLE(Transform)
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     Transform()
     : Transform(0) {}
@@ -172,10 +172,10 @@ STATIC_RUN(Transform)
         );
 
     GlobalSceneSerializer()
-        .CustomComponentWriter<Transform>([](SceneObject::Component*, nlohmann::json&){
+        .CustomComponentWriter<Transform>([](Component*, nlohmann::json&){
         });
     GlobalSceneSerializer()
-        .CustomComponentReader<Transform>([](SceneObject::Component* c, nlohmann::json&){
+        .CustomComponentReader<Transform>([](Component* c, nlohmann::json&){
             SceneObject* parent = c->Object()->Parent();
             if(!parent) return;
             Transform* t = parent->FindComponent<Transform>();

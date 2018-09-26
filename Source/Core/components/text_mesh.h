@@ -1,7 +1,7 @@
 #ifndef TEXT_MESH_H
 #define TEXT_MESH_H
 
-#include "../scene_object.h"
+#include "../component.h"
 
 #include <font_data.h>
 #include "../lib/nimbusmono_bold.otf.h"
@@ -15,10 +15,10 @@ struct TextVertex
     float r, g, b;
 };
 
-class TextMesh : public SceneObject::Component
+class TextMesh : public Component
 {
     CLONEABLE(TextMesh)
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     TextMesh()
     {

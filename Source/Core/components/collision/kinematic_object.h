@@ -10,10 +10,10 @@
 typedef gfxm::vec3 vec3;
 typedef gfxm::mat4 mat4;
 
-class KinematicObject : public SceneObject::Component
+class KinematicObject : public Component
 {
     CLONEABLE(KinematicObject)
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     ~KinematicObject()
     {

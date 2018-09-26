@@ -8,7 +8,7 @@
 class AnimMotorVec3 {
 public:
     AnimMotorVec3() : prop(rttr::type::get<AnimMotorVec3>().get_property("INVALID")) {}
-    AnimMotorVec3(SceneObject::Component* c, rttr::property prop, curve* x, curve* y, curve* z)
+    AnimMotorVec3(Component* c, rttr::property prop, curve* x, curve* y, curve* z)
     : comp(c), prop(prop), curves{x, y, z} {
 
     }
@@ -49,7 +49,7 @@ public:
         prop.set_value(comp, before + delta);
     }
 private:
-    SceneObject::Component* comp;
+    Component* comp;
     rttr::property prop;
     curve* curves[3];
 };
@@ -57,7 +57,7 @@ private:
 class AnimMotorRotation {
 public:
     AnimMotorRotation() : prop(rttr::type::get<AnimMotorRotation>().get_property("INVALID")) {}
-    AnimMotorRotation(SceneObject::Component* c, rttr::property prop, curve* x, curve* y, curve* z)
+    AnimMotorRotation(Component* c, rttr::property prop, curve* x, curve* y, curve* z)
     : comp(c), prop(prop), curves{x, y, z} { }
     void Overwrite(float cursor) {
         gfxm::vec3 evaluated(
@@ -99,7 +99,7 @@ public:
         prop.set_value(comp, gfxm::to_euler(fin));
     }
 private:
-    SceneObject::Component* comp;
+    Component* comp;
     rttr::property prop;
     curve* curves[3];
 };
@@ -116,7 +116,7 @@ public:
 template<typename T>
 class AnimPropMotor : public AnimPropMotorBase {
 public:
-    AnimPropMotor(SceneObject::Component* c, rttr::property p, curve<T>* cu)
+    AnimPropMotor(Component* c, rttr::property p, curve<T>* cu)
     : comp(c), prop(p), curv(cu) { }
     void Overwrite(float cursor) {
         prop.set_value(comp, curv->at(cursor));
@@ -134,7 +134,7 @@ public:
         prop.set_value(comp, AddValues(before, delta));
     }
 private:
-    SceneObject::Component* comp;
+    Component* comp;
     rttr::property prop;
     curve<T>* curv;
 
@@ -172,7 +172,7 @@ public:
         this->anim = anim;
     }
     template<typename T>
-    void Add(SceneObject::Component* c, rttr::property p, curve<T>* cu) {
+    void Add(Component* c, rttr::property p, curve<T>* cu) {
         motors.emplace_back(
             std::shared_ptr<AnimPropMotorBase>(
                 new AnimPropMotor<T>(c, p, cu)
@@ -277,7 +277,7 @@ public:
     }
 
     template<typename T>
-    bool AddMotor(AnimMotor& motor, SceneObject::Component* comp, rttr::property prop, AnimationNode& animNode) {
+    bool AddMotor(AnimMotor& motor, Component* comp, rttr::property prop, AnimationNode& animNode) {
         rttr::type prop_type = prop.get_type();
         if(prop_type != rttr::type::get<T>()) {
             return false;
@@ -304,7 +304,7 @@ public:
             if(!so) continue;
             for(auto& comp_node : target->children) {
                 rttr::type comp_type = rttr::type::get_by_name(comp_node.second.name);
-                SceneObject::Component* comp = so->Get(comp_node.second.name);
+                Component* comp = so->Get(comp_node.second.name);
                 if(!comp) continue;
                 for(auto& prop_node : comp_node.second.children) {
                     rttr::property prop = comp_type.get_property(prop_node.second.name);
@@ -369,13 +369,13 @@ STATIC_RUN(AnimationDriver) {
         );
 
     GlobalSceneSerializer()
-        .CustomComponentWriter<AnimationDriver>([](SceneObject::Component* c, nlohmann::json&){
+        .CustomComponentWriter<AnimationDriver>([](Component* c, nlohmann::json&){
             AnimationDriver* driver = (AnimationDriver*)c;
             nlohmann::json janim_array = nlohmann::json::array();
             
         });
     GlobalSceneSerializer()
-        .CustomComponentReader<AnimationDriver>([](SceneObject::Component* c, nlohmann::json&){
+        .CustomComponentReader<AnimationDriver>([](Component* c, nlohmann::json&){
             
         });
 }

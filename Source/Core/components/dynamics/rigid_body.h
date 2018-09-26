@@ -2,16 +2,16 @@
 #define COM_RIGID_BODY_H
 
 #include <util/gfxm.h>
-#include "../../scene_object.h"
+#include "../../component.h"
 
 #include "dynamics.h"
 
 #include <transform.h>
 
-class RigidBody : public SceneObject::Component
+class RigidBody : public Component
 {
     CLONEABLE(RigidBody)
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 friend Dynamics;
 public:
     RigidBody(){}

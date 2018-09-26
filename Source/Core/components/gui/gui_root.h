@@ -1,7 +1,7 @@
 #ifndef GUI_ROOT_H
 #define GUI_ROOT_H
 
-#include <scene_object.h>
+#include <component.h>
 #include <lib/event.h>
 #include <game_state.h>
 #include <transform.h>
@@ -9,9 +9,9 @@
 
 #include "gui_layout.h"
 
-class GuiListenerBase : public SceneObject::Component
+class GuiListenerBase : public Component
 {
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     GuiListenerBase()
     : bbox(0, 0, 100, 100), 
@@ -72,7 +72,7 @@ class GuiViewBase
 
 };
 
-class GuiRoot : public SceneObject::Component
+class GuiRoot : public Component
 {
 public:
     void Update()

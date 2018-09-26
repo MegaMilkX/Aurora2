@@ -1,7 +1,7 @@
 #ifndef COMPONENT_LUA_SCRIPT_H
 #define COMPONENT_LUA_SCRIPT_H
 
-#include "../scene_object.h"
+#include "../component.h"
 #include <resource.h>
 
 #include "transform.h"
@@ -50,10 +50,10 @@ inline gfxm::vec3 Vec3Create(float x, float y, float z) { return gfxm::vec3(x, y
 inline gfxm::vec3 Vec3Add(const gfxm::vec3& a, const gfxm::vec3& b) { return a + b; }
 inline gfxm::vec3 Vec3MultScalar(const gfxm::vec3& v, float s) { return v * s; }
 
-class LuaScript : public SceneObject::Component
+class LuaScript : public Component
 {
     CLONEABLE(LuaScript)
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     LuaScript()
     : _next(0) {}

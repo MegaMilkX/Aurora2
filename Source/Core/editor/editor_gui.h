@@ -18,9 +18,9 @@
 
 #include "editor_config.h"
 
-class EditorCamera : public SceneObject::Component
+class EditorCamera : public Component
 {
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     LightDirect* lightDirect;
     void OnInit()
@@ -29,12 +29,9 @@ public:
         c->Get<Transform>()->Translate(0.0f, 0.0f, 5.0f);
 
         c->Perspective(1.0f, 16.0f/9.0f, 0.1f, 100.0f);
-        auto lo = c->Get<LightOmni>();
-        lo->Color(1.0f, 1.0f, 1.0f);
-        lo->Intensity(1.0f);
 
         lightDirect = c->Get<LightDirect>();
-        lightDirect->Color(gfxm::vec3(1.0f, 1.0f, 1.0f));
+        lightDirect->Color(gfxm::vec3(0.3f, 0.3f, 0.3f));
 
         camPivot = CreateObject()->Get<Transform>();
         camPivot->Attach(c->Get<Transform>());
@@ -157,7 +154,7 @@ public:
 
         editorSceneObjectInspector.AddComponentGuiExtension(
             rttr::type::get<AnimationDriver>(),
-            [](SceneObject::Component* c){
+            [](Component* c){
                 AnimationDriver* driver = (AnimationDriver*)c;
                 bool preview = true;
                 if(ImGui::Checkbox("Preview", &preview)) {}

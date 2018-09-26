@@ -7,9 +7,9 @@
 #include "../overlay/text2d.h"
 #include <functional>
 
-class GuiWindow : public SceneObject::Component
+class GuiWindow : public Component
 {
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     void OnMouseEnter()
     {

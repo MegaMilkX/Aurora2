@@ -7,62 +7,28 @@
 
 #include "typeindex.h"
 
-#include "external/json.hpp"
-
 #include "../general/util.h"
-
 #include <rttr/registration>
 #include <rttr/registration_friend>
 #include <rttr/type>
 #include <util/static_run.h>
+
+#include "external/json.hpp"
 
 #undef GetObject
 
 class UnserializableComponentToken {};
 
 #define CLONEABLE(TYPE) \
-    SceneObject::Component* clone() { \
+    Component* clone() { \
         return new TYPE(*this); \
     }
 
 class SceneController;
-
+class Component;
 class SceneObject : public std::enable_shared_from_this<SceneObject>
 {
-public:
-    class Component
-    {
-        RTTR_ENABLE()
-    friend SceneObject;
-    public:
-        Component()
-        : type(rttr::type::get<void>())
-        {}
-        virtual ~Component() {}
-
-        virtual Component* clone() { return 0; }
-
-        SceneObject* Object() { return object; }
-        SceneObject* GetObject() { return object; }
-        template<typename T>
-        T* GetComponent()
-        { return GetObject()->GetComponent<T>(); }
-        template<typename T>
-        T* Get() { return GetObject()->GetComponent<T>(); }
-        template<typename T>
-        T* RootGet() { return Object()->Root()->GetComponent<T>(); }
-
-        SceneObject* CreateObject() { return GetObject()->CreateObject(); }
-        
-        rttr::type GetType() const { return type; }
-
-        virtual void OnInit() {}
-    protected:
-        rttr::type type;
-    private:
-        SceneObject* object;
-    };
-    
+public:    
     static std::shared_ptr<SceneObject> Create() {
         return std::shared_ptr<SceneObject>(new SceneObject());
     }
@@ -73,14 +39,14 @@ private:
 
     SceneObject(SceneObject* parent) 
     : parentObject(parent),
-    name(MKSTR(this)),
+    name("New Object"),
     controller(0) {
         static int64_t next_uid = 0;
         uid = ++next_uid;
     }
 
 public:
-                            ~SceneObject();
+    ~SceneObject();
     
     SceneObject*            Root();
     SceneObject*            Parent();
@@ -99,6 +65,7 @@ public:
     Component*              FindComponent(rttr::type t);
     template<typename T>
     std::vector<T*>         FindAllOf();
+    int64_t                 Uid() const;
     void                    Name(const std::string& name);
     std::string             Name() const;
     SceneObject*            FindObject(const std::string& name);

@@ -196,7 +196,7 @@ public:
         LOG("Renderable added " << so);
     }
 
-    void _onAddComponent(rttr::type type, SceneObject::Component* c, SceneObject* so)
+    void _onAddComponent(rttr::type type, Component* c, SceneObject* so)
     {
         if(type == rttr::type::get<Model>()) {
             Model* m = (Model*)c;            
@@ -231,7 +231,7 @@ public:
         }
     }
 
-    void _onRemoveComponent(rttr::type type, SceneObject::Component* c, SceneObject* so)
+    void _onRemoveComponent(rttr::type type, Component* c, SceneObject* so)
     {
         if(type == rttr::type::get<Model>()) {
             renderables.erase(so);

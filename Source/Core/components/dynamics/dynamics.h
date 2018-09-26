@@ -3,15 +3,15 @@
 
 #include <vector>
 #include <util/gfxm.h>
-#include "../../scene_object.h"
+#include "../../component.h"
 
 #include <btBulletDynamicsCommon.h>
 
 class RigidBody;
-class Dynamics : public SceneObject::Component
+class Dynamics : public Component
 {
     CLONEABLE(Dynamics)
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     Dynamics(){}
     ~Dynamics(){}

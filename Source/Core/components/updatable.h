@@ -1,11 +1,11 @@
 #ifndef UPDATABLE_H
 #define UPDATABLE_H
 
-#include "../scene_object.h"
+#include "../component.h"
 
-class Updatable : public SceneObject::Component
+class Updatable : public Component
 {
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     ~Updatable()
     {

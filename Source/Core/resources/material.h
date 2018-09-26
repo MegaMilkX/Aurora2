@@ -10,7 +10,7 @@
 #include <aurora/glslstitch.h>
 #include <aurora/lua.h>
 
-#include "../scene_object.h"
+#include "../component.h"
 
 #include <resource.h>
 

@@ -3,11 +3,11 @@
 
 #include <skeleton.h>
 #include <transform.h>
-#include <scene_object.h>
+#include <component.h>
 
-class Skin : public SceneObject::Component {
+class Skin : public Component {
     CLONEABLE(Skin)
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     Skin() {
 

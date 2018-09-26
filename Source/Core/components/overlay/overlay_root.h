@@ -7,7 +7,7 @@
 
 #include <transform.h>
 #include <renderer.h>
-#include <scene_object.h>
+#include <component.h>
 #include <asset.h>
 #include <util/gl_render_state.h>
 #include <mesh.h>
@@ -76,10 +76,10 @@ inline void fg_GuiDraw(const FrameCommon& frame, const GuiDrawData& in)
     }
 }
 
-class OverlayRoot : public SceneObject::Component
+class OverlayRoot : public Component
 {
     CLONEABLE(OverlayRoot)
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     void OnInit()
     {

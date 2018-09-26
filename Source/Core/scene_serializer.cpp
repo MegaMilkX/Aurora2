@@ -111,10 +111,27 @@ bool SceneSerializer::SerializeScene_(
     mz_zip_archive& archive,
     std::string& file_prefix
 ){
+    {
+        using json = nlohmann::json;
+        json jroot = json::object();
+        jroot["uid"] = scene->Uid();
+        jroot["name"] = scene->Name();
+        std::string jobject_info = jroot.dump();
+        if(!mz_zip_writer_add_mem(
+            &archive, 
+            (file_prefix + "object_info.json").c_str(), 
+            jobject_info.c_str(), 
+            jobject_info.size(), 
+            0
+        )){
+            LOG_ERR("Failed to mz_zip_writer_add_mem() ");
+        }
+    }
+
     int comp_count = scene->ComponentCount();
     for(int i = 0; i < comp_count; ++i)
     {
-        SceneObject::Component* comp = 
+        Component* comp = 
             scene->GetComponent(i);
 
         rttr::type type = comp->GetType();
@@ -151,7 +168,7 @@ bool SceneSerializer::SerializeScene_(
     return true;
 }
 
-std::string SceneSerializer::SerializeComponentToJson(mz_zip_archive& archive, rttr::type t, SceneObject::Component* c)
+std::string SceneSerializer::SerializeComponentToJson(mz_zip_archive& archive, rttr::type t, Component* c)
 {
     using json = nlohmann::json;
 
@@ -264,12 +281,45 @@ bool SceneSerializer::DeserializeScene(unsigned char* data, size_t size, SceneOb
         ){
             if(t == "objects") current_state = lambda_child;
             else if(t == "components") current_state = lambda_component;
+            else if(t == "object_info.json") {
+                std::vector<char> buf;
+                buf.resize((size_t)file_stat.m_uncomp_size);
+                mz_zip_reader_extract_file_to_mem(
+                    &archive, 
+                    file_stat.m_filename,
+                    buf.data(),
+                    buf.size(),
+                    0
+                );
+
+                nlohmann::json json;
+                try {
+                    json = nlohmann::json::parse(buf);
+                }
+                catch(std::exception& ex) {
+                    std::cout << t << " - invalid object_info json: " << ex.what() << std::endl;
+                    return;
+                }
+
+                nlohmann::json juid = json["uid"];
+                nlohmann::json jname = json["name"];
+                if(!juid.is_number_integer()) {
+                    std::cout << "object_info: uid is not an integer" << std::endl;
+                    return;
+                }
+                if(!jname.is_string()) {
+                    std::cout << "object_info: name is not a string" << std::endl;
+                    return;
+                }
+                s->Name(jname.get<std::string>());
+                importData.AddObject(juid.get<int64_t>(), s);
+            }
         };
         lambda_component = [&](
             const std::string& t, 
             SceneObject*& s
         ){
-            SceneObject::Component* c = s->Get(t);
+            Component* c = s->Get(t);
             if(!c) return;
             rttr::type type = rttr::type::get_by_name(t);
             if(!type.is_valid()) return;
@@ -358,7 +408,6 @@ bool SceneSerializer::DeserializeScene(unsigned char* data, size_t size, SceneOb
             if(!child)
             {
                 child = s->CreateObject();
-                child->Name(t);
             }
             if(child) s = child;
 

@@ -4,7 +4,7 @@
 #include <string>
 #include <aurora/lua.h>
 #include <util/gfxm.h>
-#include <scene_object.h>
+#include <component.h>
 #include <animator.h>
 
 inline void PrintTest(const std::string& v)
@@ -12,10 +12,10 @@ inline void PrintTest(const std::string& v)
     std::cout << v << std::endl;
 }
 
-class MotionScript : public SceneObject::Component
+class MotionScript : public Component
 {
     CLONEABLE(MotionScript)
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     MotionScript()
     {

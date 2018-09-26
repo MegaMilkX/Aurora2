@@ -3,7 +3,7 @@
 
 #include <util/gfxm.h>
 #include <aurora/gfx.h>
-#include "../../scene_object.h"
+#include "../../component.h"
 
 #include <btBulletDynamicsCommon.h>
 #include <BulletCollision/CollisionDispatch/btGhostObject.h>
@@ -51,10 +51,10 @@ class GhostCollider;
 class ConvexCollider;
 class ConvexGhostCollider;
 class KinematicObject;
-class Collision : public SceneObject::Component
+class Collision : public Component
 {
     CLONEABLE(Collision)
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     struct RayHit
     {

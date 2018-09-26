@@ -2,11 +2,11 @@
 #define GUI_ELEMENT_H
 
 #include <util/gfxm.h>
-#include <scene_object.h>
+#include <component.h>
 
-class GuiElement : public SceneObject::Component
+class GuiElement : public Component
 {
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     gfxm::vec2 dimensions;
     gfxm::vec2 center;

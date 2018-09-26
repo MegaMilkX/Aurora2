@@ -4,14 +4,14 @@
 #include <aurora/gfx.h>
 
 #include "transform.h"
-#include "../scene_object.h"
+#include "../component.h"
 
 #undef GetObject
 
-class Camera : public SceneObject::Component
+class Camera : public Component
 {
     CLONEABLE(Camera)
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     Camera()
     : fov(1.6f), aspect(16.0f/9.0f), zNear(0.1f), zFar(100.0f)

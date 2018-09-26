@@ -1,12 +1,12 @@
 #ifndef BONE_H
 #define BONE_H
 
-#include <scene_object.h>
+#include <component.h>
 #include <transform.h>
 
-class Bone : public SceneObject::Component {
+class Bone : public Component {
   CLONEABLE(Bone)
-  RTTR_ENABLE(SceneObject::Component)
+  RTTR_ENABLE(Component)
 public:
   
   virtual void OnInit() {}

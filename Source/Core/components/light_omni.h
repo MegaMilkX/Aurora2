@@ -1,14 +1,14 @@
 #ifndef COMPONENT_LIGHT_OMNI_H
 #define COMPONENT_LIGHT_OMNI_H
 
-#include "../scene_object.h"
+#include "../component.h"
 
 #include <util/gfxm.h>
 
-class LightDirect : public SceneObject::Component
+class LightDirect : public Component
 {
     CLONEABLE(LightDirect)
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     LightDirect()
     : color(1.0f, 1.0f, 1.0f) {}
@@ -40,10 +40,10 @@ STATIC_RUN(LightDirect)
         );
 }
 
-class LightOmni : public SceneObject::Component
+class LightOmni : public Component
 {
     CLONEABLE(LightOmni)
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     LightOmni()
     : color(1.0f, 1.0f, 1.0f), intensity(1.0f) {}

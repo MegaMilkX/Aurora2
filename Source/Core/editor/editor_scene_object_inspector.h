@@ -1,7 +1,7 @@
 #ifndef EDITOR_SCENE_OBJECT_INSPECTOR_H
 #define EDITOR_SCENE_OBJECT_INSPECTOR_H
 
-#include <scene_object.h>
+#include <component.h>
 #include <util/imgui_wrapper.h>
 #include <util/imgui_console.h>
 #include "editor_component_creator.h"
@@ -10,7 +10,7 @@
 class EditorSceneObjectInspector
 {
 public:
-    void AddComponentGuiExtension(rttr::type component_type, std::function<void(SceneObject::Component*)> func) {
+    void AddComponentGuiExtension(rttr::type component_type, std::function<void(Component*)> func) {
         componentGuiExtensions[component_type] = func;
     }
 
@@ -41,13 +41,14 @@ public:
                 {
                     object->Name(buf);
                 }
+                ImGui::Text(MKSTR("UID: " << object->Uid()).c_str());
                 if(ImGui::Button("Add component...")) {
                     componentCreatorWindow.Show();
                 }
                 ImGui::Separator();
                 for(unsigned i = 0; i < object->ComponentCount(); ++i)
                 {
-                    SceneObject::Component* comp = object->GetComponent(i);
+                    Component* comp = object->GetComponent(i);
                     rttr::type type = comp->GetType();
                     if (ImGui::TreeNode(type.get_name().to_string().c_str()))
                     {
@@ -131,7 +132,7 @@ public:
     }
 
 private:
-    std::map<rttr::type, std::function<void(SceneObject::Component*)>> componentGuiExtensions;
+    std::map<rttr::type, std::function<void(Component*)>> componentGuiExtensions;
     EditorDataPick dataPick;
 };
 

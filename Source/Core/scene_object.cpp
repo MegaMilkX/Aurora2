@@ -1,6 +1,8 @@
 #include "scene_object.h"
 #include "scene_controller.h"
 
+#include "component.h"
+
 SceneObject::~SceneObject()
 {
     //for(unsigned i = 0; i < objects.size(); ++i)
@@ -48,14 +50,14 @@ void SceneObject::Erase(SceneObject* child) {
     }
 }
 
-SceneObject::Component* SceneObject::Get(const std::string& component) {
+Component* SceneObject::Get(const std::string& component) {
     rttr::type type = rttr::type::get_by_name(component);
     if(!type.is_valid())
     {
         std::cout << component << " is not a valid type" << std::endl;
         return 0;
     }
-    SceneObject::Component* c = FindComponent(type);
+    Component* c = FindComponent(type);
     if(!c)
     {
         rttr::variant v = type.create();
@@ -64,7 +66,7 @@ SceneObject::Component* SceneObject::Get(const std::string& component) {
             std::cout << component << " - invalid component type" << std::endl;
             return 0;
         }
-        c = v.get_value<SceneObject::Component*>();
+        c = v.get_value<Component*>();
         if(!c) return 0;
         c->type = type;
         AddComponent(c, type);
@@ -74,13 +76,17 @@ SceneObject::Component* SceneObject::Get(const std::string& component) {
         return c;
 }
 
-SceneObject::Component* SceneObject::FindComponent(rttr::type t) {
-    std::map<rttr::type, SceneObject::Component*>::iterator it;
+Component* SceneObject::FindComponent(rttr::type t) {
+    std::map<rttr::type, Component*>::iterator it;
     it = components.find(t);
     if(it == components.end())
         return 0;
     else
         return it->second;
+}
+
+int64_t SceneObject::Uid() const {
+    return uid;
 }
 
 void SceneObject::Name(const std::string& name) { 
@@ -131,7 +137,7 @@ SceneObject* SceneObject::CreateFrom(SceneObject* from) {
     }
     for(auto kv : from->components)
     {
-        SceneObject::Component* c = kv.second->clone();
+        Component* c = kv.second->clone();
         if(!c) continue;
         components.insert(
             std::make_pair(
@@ -154,8 +160,8 @@ unsigned int SceneObject::ComponentCount() const {
     return components.size(); 
 }
 
-SceneObject::Component* SceneObject::GetComponent(unsigned int id) const {
-    SceneObject::Component* c = 0;
+Component* SceneObject::GetComponent(unsigned int id) const {
+    Component* c = 0;
     auto it = components.begin();
     for(unsigned i = 0; i < id; ++i)
     {
@@ -176,7 +182,7 @@ std::weak_ptr<SceneObject> SceneObject::WeakPtr() {
     return shared_from_this();
 }
 
-void SceneObject::AddComponent(SceneObject::Component* c, rttr::type t) {
+void SceneObject::AddComponent(Component* c, rttr::type t) {
     c->object = this;
     components.insert(std::make_pair(t, c));
     c->OnInit();

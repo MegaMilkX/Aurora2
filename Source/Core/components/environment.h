@@ -1,13 +1,13 @@
 #ifndef ENVIRONMENT_H
 #define ENVIRONMENT_H
 
-#include <scene_object.h>
+#include <component.h>
 #include "../util/gfxm.h"
 
-class Environment : public SceneObject::Component
+class Environment : public Component
 {
     CLONEABLE(Environment)
-    RTTR_ENABLE(SceneObject::Component)
+    RTTR_ENABLE(Component)
 public:
     gfxm::vec3 ambientColor;
     gfxm::vec3 rimLightColor;
