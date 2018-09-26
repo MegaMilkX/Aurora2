@@ -9,6 +9,7 @@ uniform sampler2D inPosition;
 uniform sampler2D inNormal;
 uniform sampler2D inSpecular;
 
+uniform vec3 AmbientColor;
 uniform vec3 ViewPos;
 
 uniform vec3 LightDirectRGB[LIGHT_DIRECT_COUNT];
@@ -55,7 +56,8 @@ void main()
         }
     } 
 
-    vec4 Light = LightDirectLambert 
+    vec4 Light = vec4(AmbientColor, 1.0) 
+        + LightDirectLambert 
         + LightOmniLambert
         + SpecDirect
         + SpecOmni;

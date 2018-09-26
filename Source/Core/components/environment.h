@@ -9,7 +9,7 @@ class Environment : public Component
     CLONEABLE(Environment)
     RTTR_ENABLE(Component)
 public:
-    gfxm::vec3 ambientColor;
+    gfxm::vec3 ambientColor = gfxm::vec3(0.5f, 0.5f, 0.5f);
     gfxm::vec3 rimLightColor;
 
     void AmbientColor(float r, float g, float b)
@@ -25,7 +25,8 @@ public:
 STATIC_RUN(Environment)
 {
     rttr::registration::class_<Environment>("Environment")
-        .constructor<>()(rttr::policy::ctor::as_raw_ptr);
+        .constructor<>()(rttr::policy::ctor::as_raw_ptr)
+        .property("AmbientColor", &Environment::ambientColor);
 }
 
 #endif

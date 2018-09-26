@@ -30,7 +30,8 @@ public:
         else
         {
             if(ImGui::Button("Create Object")) {
-                scene->CreateObject();
+                SceneObject* o = scene->CreateObject();
+                SetSelected(o);
             }
             ImGui::Separator();
             SceneHierarchyViewNode(scene);
@@ -43,7 +44,7 @@ private:
     {
         if(scene->ChildCount() == 0)
         {
-            if (ImGui::Selectable(MKSTR(scene->Name() << "##X" << scene).c_str(), selectedObject == scene ? true : false))
+            if (ImGui::Selectable(MKSTR(scene->Name() << "##" << scene).c_str(), selectedObject == scene ? true : false))
             {
                 SetSelected(scene);
             }

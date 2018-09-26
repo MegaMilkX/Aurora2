@@ -22,16 +22,12 @@ class EditorCamera : public Component
 {
     RTTR_ENABLE(Component)
 public:
-    LightDirect* lightDirect;
     void OnInit()
     {
         c = Get<Camera>();
         c->Get<Transform>()->Translate(0.0f, 0.0f, 5.0f);
 
         c->Perspective(1.0f, 16.0f/9.0f, 0.1f, 100.0f);
-
-        lightDirect = c->Get<LightDirect>();
-        lightDirect->Color(gfxm::vec3(0.3f, 0.3f, 0.3f));
 
         camPivot = CreateObject()->Get<Transform>();
         camPivot->Attach(c->Get<Transform>());

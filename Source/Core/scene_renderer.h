@@ -7,6 +7,7 @@
 #include "components/transform.h"
 #include "components/bone.h"
 #include "components/camera.h"
+#include "components/environment.h"
 #include <map>
 #include <set>
 #include "debug_draw.h"
@@ -198,7 +199,10 @@ public:
 
     void _onAddComponent(rttr::type type, Component* c, SceneObject* so)
     {
-        if(type == rttr::type::get<Model>()) {
+        if(type == rttr::type::get<Environment>()) {
+            environment = (Environment*)c;
+        }
+        else if(type == rttr::type::get<Model>()) {
             Model* m = (Model*)c;            
             _addRenderable(m, so);
         }
@@ -233,7 +237,12 @@ public:
 
     void _onRemoveComponent(rttr::type type, Component* c, SceneObject* so)
     {
-        if(type == rttr::type::get<Model>()) {
+        if(type == rttr::type::get<Environment>()) {
+            if(environment == (Environment*)c) {
+                environment = 0;
+            }
+        }
+        else if(type == rttr::type::get<Model>()) {
             renderables.erase(so);
             LOG("Renderable removed " << so);
         }
@@ -273,6 +282,13 @@ private:
         gBuffer.Bind();
         glEnable(GL_DEPTH_TEST);
         glViewport(0, 0, Common.frameSize.x, Common.frameSize.y);
+
+        gfxm::vec3 ambientColor(0.5f, 0.5f, 0.5f);
+        if(environment) {
+            ambientColor = environment->ambientColor;
+        }
+
+        glClearColor(ambientColor.x, ambientColor.y, ambientColor.z, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         //auto& in = staticDrawData;
@@ -281,10 +297,12 @@ private:
         for(auto& kv : renderables)
         {
             Renderable& unit = kv.second;
+            GLuint vao;
             if(!unit.model->mesh) continue;
             
             if(unit.skin) {
                 prog = &skinProg;
+                vao = unit.model->mesh->GetSkinVao();
                 skinProg.program->Use();
                 
                 auto& inverse_bind_transforms = unit.skin->GetInverseBindTransforms();
@@ -311,6 +329,7 @@ private:
                 );
             } else {
                 prog = &basicProg;
+                vao = unit.model->mesh->GetVao();
                 basicProg.program->Use();
             }
 
@@ -325,24 +344,12 @@ private:
             );
             
             glActiveTexture(GL_TEXTURE0);
-            if(unit.skin) {
-                // TODO: Upload bone data
-                // (Inverse bind, Current transforms)
-                // Also need to use another shader program earlier
-                if(unit.model->material && unit.model->material->diffuseMap) {
-                    glBindTexture(GL_TEXTURE_2D, unit.model->material->diffuseMap->GetGlName());
-                } else {
-                    glBindTexture(GL_TEXTURE_2D, test_texture->GetGlName());
-                }
-                glBindVertexArray(unit.model->mesh->GetSkinVao());
+            if(unit.model->material && unit.model->material->diffuseMap) {
+                glBindTexture(GL_TEXTURE_2D, unit.model->material->diffuseMap->GetGlName());
             } else {
-                if(unit.model->material && unit.model->material->diffuseMap) {
-                    glBindTexture(GL_TEXTURE_2D, unit.model->material->diffuseMap->GetGlName());
-                } else {
-                    glBindTexture(GL_TEXTURE_2D, texture_white_px->GetGlName());
-                }
-                glBindVertexArray(unit.model->mesh->GetVao());
+                glBindTexture(GL_TEXTURE_2D, texture_white_px->GetGlName());
             }
+            glBindVertexArray(vao);
             glDrawElements(GL_TRIANGLES, unit.model->mesh->GetIndexCount(), GL_UNSIGNED_INT, (void*)0);
         }
         // ==========
@@ -362,6 +369,13 @@ private:
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        gfxm::vec3 ambientColor(0.5f, 0.5f, 0.5f);
+
+        if(environment) {
+            ambientColor = environment->ambientColor;
+        }
+        
+        glUniform3f(lightPassProg->GetUniform("AmbientColor"), ambientColor.x, ambientColor.y, ambientColor.z);
         glUniform3f(lightPassProg->GetUniform("ViewPos"), viewPos.x, viewPos.y, viewPos.z);
 
         int lightId = 0;
@@ -447,7 +461,7 @@ private:
             dd::axisTriad((float*)&m, 0.01f, 0.1f, 0, false);
         }
 */
-/*
+
         auto draw_line_between_bones = [](Bone* a, Bone* b) {
             float bone_color[3] = { 1.0f, 0.6833f, 0.0f };
             dd::line(
@@ -472,7 +486,7 @@ private:
         for(auto b : bones) {
             draw_lines_to_children_bones(b);
         }
-*/
+
         DebugDraw::Draw(p * v);
     }
     Camera* camera;
@@ -481,6 +495,8 @@ private:
     std::set<LightOmni*> lightsOmni;
     std::set<Transform*> transforms;
     std::set<Bone*> bones;
+
+    Environment* environment = 0;
 
     gl::ShaderProgram* lightPassProg;
 
