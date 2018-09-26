@@ -417,7 +417,11 @@ public:
                     if(r == NFD_OKAY) {
                         std::cout << outPath << std::endl;
                         std::string filePath(outPath);
-                        GlobalSceneSerializer().Serialize(editedScene, filePath);
+                        if(GlobalSceneSerializer().Serialize(editedScene, filePath))
+                        {
+                            std::cout << "Scene saved" << std::endl;
+                            currentSceneFile = filePath;
+                        }
                     }
                 }
                 if(ImGui::MenuItem("Exit")) {}
