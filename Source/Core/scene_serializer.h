@@ -10,6 +10,7 @@
 #include <lib/miniz.c>
 #include <functional>
 #include <resources/resource/resource_factory.h>
+#include "../general/util.h"
 
 template<typename T>
 void ToJsonArray(nlohmann::json& j, T* data, int count)
@@ -73,6 +74,7 @@ public:
         }
 
         std::map<std::string, DataSourceRef> data_sources;
+        std::vector<std::function<void()>> deferred_tasks;
     private:
         std::map<int64_t, SceneObject*> oldUidToObject;
     };

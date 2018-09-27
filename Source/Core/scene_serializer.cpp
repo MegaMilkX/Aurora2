@@ -94,6 +94,9 @@ bool SceneSerializer::Deserialize(const std::string& filename, SceneObject& scen
 
     importData.Clear();
     DeserializeScene((unsigned char*)buffer.data(), buffer.size(), scene);
+    for(auto& task : importData.deferred_tasks) {
+        task();
+    }
 
     f.close();
     return true;
@@ -379,7 +382,90 @@ bool SceneSerializer::DeserializeScene(unsigned char* data, size_t size, SceneOb
                 LOG("Failed to extract file '" << z_filename << "'");
                 continue;
             }
+            std::vector<std::string> tokens = split(z_filename, '.');
+            if(tokens.size() != 2) {
+                LOG("Invalid component file name: " << z_filename);
+                continue;
+            }
+            std::string component_name = tokens[0];
+            Component* c = scene.Get(component_name);
+            if(!c) {
+                LOG("Failed to create component '" << component_name << "'");
+                continue;
+            }
+            rttr::type type = rttr::type::get_by_name(component_name);
+            if(!type.is_valid()) {
+                LOG("Unidentified component type '" << component_name << "'");
+                continue;
+            }
 
+            nlohmann::json json_root;
+            try
+            {
+                json_root = nlohmann::json::parse(buf);
+            }
+            catch(std::exception& ex)
+            {
+                std::cout << component_name << " - invalid component json: " << ex.what() << std::endl;
+                continue;
+            }
+
+            importData.deferred_tasks.emplace_back([this, json_root, type, c]() mutable {
+                {
+                    auto it = custom_component_readers.find(type);
+                    if(it != custom_component_readers.end()) {
+                        it->second(c, json_root["ext"]);
+                    }
+                }
+
+                nlohmann::json json = json_root["props"];
+                
+                for(auto it = json.begin(); it != json.end(); ++it)
+                {
+                    if(!it.value().is_object()) continue;
+                    rttr::property prop = type.get_property(it.key());
+                    rttr::type prop_type = prop.get_type();
+
+                    if(prop.get_type().is_derived_from<i_resource_ref>()) {
+                        nlohmann::json j = it.value()["value"];
+                        std::cout << j.dump() << std::endl;
+                        Resource::STORAGE storage = 
+                            (Resource::STORAGE)j["storage"].get<int>();
+                        std::string name = 
+                            j["name"].get<std::string>();
+
+                        if(storage == Resource::LOCAL) {
+                            auto res_it = resources.find(name);
+                            if(res_it != resources.end()) {
+                                rttr::variant v = prop.get_value(c);
+                                v.get_value<i_resource_ref>().set_unsafe(res_it->second);
+                                prop.set_value(c, v);
+                            } else {
+                                std::cout << "Searching for " << name << " local data source" << std::endl;
+                                if(importData.data_sources.count(name) == 0) {
+                                    std::cout << "Local resource " << name << " doesn't exist" << std::endl;
+                                    continue;
+                                }
+                                rttr::variant v = prop.get_value(c);
+                                std::shared_ptr<Resource> res = 
+                                    v.get_value<i_resource_ref>().set_from_data(importData.data_sources[name]);
+                                res->Name(name);
+                                prop.set_value(c, v);
+                                resources[name] = res;
+                            }
+                        } else if(storage == Resource::GLOBAL) {
+                            rttr::variant v = prop.get_value(c);
+                            v.get_value<i_resource_ref>().set_from_factory(GlobalResourceFactory(), name);
+                            prop.set_value(c, v);
+                        }
+                        continue;
+                    } else {
+                        rttr::variant var = prop.get_value(c);
+                        JsonPropertyToVariant(var, it.value());
+                        prop.set_value(c, var);
+                    }
+                }
+            });
         }
         // TODO:
     }
