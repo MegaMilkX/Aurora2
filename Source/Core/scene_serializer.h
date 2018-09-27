@@ -59,6 +59,10 @@ class SceneSerializer {
 public:
     class ImportData {
     public:
+        void Clear() {
+            oldUidToObject.clear();
+        }
+
         void AddObject(int64_t imported_uid, SceneObject* so) {
             oldUidToObject[imported_uid] = so;
         }
@@ -67,6 +71,8 @@ public:
             if(it == oldUidToObject.end()) return 0;
             return it->second;
         }
+
+        std::map<std::string, DataSourceRef> data_sources;
     private:
         std::map<int64_t, SceneObject*> oldUidToObject;
     };
@@ -94,7 +100,6 @@ private:
     std::map<rttr::type, serialize_prop_f> prop_serializers;
     std::map<rttr::type, json_prop_parser_t> parsers;
     std::set<std::shared_ptr<Resource>> embedded_resources;
-    std::map<std::string, DataSourceRef> data_sources;
     std::map<std::string, std::shared_ptr<Resource>> resources;
 
     ImportData importData;
@@ -104,7 +109,7 @@ private:
     std::map<rttr::type, custom_component_reader_f> custom_component_readers;
 
     bool SerializeEmbeddedResources(mz_zip_archive& archive);
-    bool SerializeScene_(const SceneObject* scene, mz_zip_archive& archive, std::string& file_prefix);
+    bool SerializeScene_(const SceneObject* scene, mz_zip_archive& archive);
     std::string SerializeComponentToJson(mz_zip_archive& archive, rttr::type t, Component* c);
 
     bool DeserializeScene(unsigned char* data, size_t size, SceneObject& scene);

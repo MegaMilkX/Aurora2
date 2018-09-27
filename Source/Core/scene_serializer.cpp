@@ -64,8 +64,7 @@ bool SceneSerializer::Serialize(const SceneObject* scene, const std::string& fil
         return false;
     }
 
-    std::string file_prefix;
-    SerializeScene_(scene, archive, file_prefix);
+    SerializeScene_(scene, archive);
 
     SerializeEmbeddedResources(archive);
 
@@ -93,6 +92,7 @@ bool SceneSerializer::Deserialize(const std::string& filename, SceneObject& scen
         return false;
     }
 
+    importData.Clear();
     DeserializeScene((unsigned char*)buffer.data(), buffer.size(), scene);
 
     f.close();
@@ -115,6 +115,68 @@ bool SceneSerializer::SerializeEmbeddedResources(mz_zip_archive& archive) {
     return true;
 }
 
+bool SceneSerializer::SerializeScene_(
+    const SceneObject* scene,
+    mz_zip_archive& archive
+) {
+    int64_t uid = scene->Uid();
+    std::string name = scene->Name();
+
+    mz_zip_writer_add_mem(
+        &archive, MKSTR("UID").c_str(), (void*)&uid, sizeof(scene->Uid()), 0
+    );
+    mz_zip_writer_add_mem(
+        &archive, MKSTR("Name").c_str(), name.c_str(), name.size(), 0
+    );    
+
+    int child_count = scene->ChildCount();
+    for(int i = 0; i < child_count; ++i) {
+        mz_zip_archive zip_object;
+        memset(&zip_object, 0, sizeof(zip_object));
+        if(!mz_zip_writer_init_heap(&zip_object, 0, 65537)) {
+            LOG("Failed to create archive file in memory");
+            return false;
+        }
+        
+        SerializeScene_(scene->GetChild(i), zip_object);
+        
+        void* buf = 0;
+        size_t sz = 0;
+        mz_zip_writer_finalize_heap_archive(&zip_object, &buf, &sz);
+        mz_zip_writer_add_mem(
+            &archive, 
+            MKSTR(scene->GetChild(i)->Name() << "_" << scene->GetChild(i)->Uid() << ".scn").c_str(), 
+            buf,
+            sz, 0
+        );
+        mz_zip_writer_end(&zip_object);
+    }
+
+    int comp_count = scene->ComponentCount();
+    for(int i = 0; i < comp_count; ++i)
+    {
+        Component* comp = scene->GetComponent(i);
+        rttr::type type = comp->GetType();
+        if(type == rttr::type::get<void>())
+            continue;
+        if(!type.is_valid()) continue;
+        std::string data = 
+            SerializeComponentToJson(archive, type, comp);
+
+        if(!mz_zip_writer_add_mem(
+            &archive, 
+            MKSTR(type.get_name() << ".comp").c_str(), 
+            data.c_str(), 
+            data.size(), 
+            0
+        )){
+            LOG_ERR("Failed to mz_zip_writer_add_mem() ");
+        }
+    }
+    return true;
+}
+
+/*
 bool SceneSerializer::SerializeScene_(
     const SceneObject* scene, 
     mz_zip_archive& archive,
@@ -170,13 +232,13 @@ bool SceneSerializer::SerializeScene_(
     for(int i = 0; i < child_count; ++i)
     {
         std::string prefix = 
-            file_prefix + "objects/" + scene->GetChild(i)->Name() + "/";
+            MKSTR(file_prefix << "objects/" << scene->GetChild(i)->Name() << "_" << scene->GetChild(i)->Uid() << "/");
         SerializeScene_(scene->GetChild(i), archive, prefix);
     }
 
     return true;
 }
-
+*/
 std::string SceneSerializer::SerializeComponentToJson(mz_zip_archive& archive, rttr::type t, Component* c)
 {
     using json = nlohmann::json;
@@ -231,6 +293,101 @@ std::string SceneSerializer::SerializeComponentToJson(mz_zip_archive& archive, r
     return result;
 }
 
+bool SceneSerializer::DeserializeScene(unsigned char* data, size_t size, SceneObject& scene) {
+    mz_zip_archive archive;
+    memset(&archive, 0, sizeof(archive));
+    mz_zip_reader_init_mem(&archive, data, size, 0);
+
+    mz_uint num_files = mz_zip_reader_get_num_files(&archive);
+    for(mz_uint i = 0; i < num_files; ++i) {
+        mz_zip_archive_file_stat file_stat;
+        if(!mz_zip_reader_file_stat(&archive, i, &file_stat)) {
+            LOG("Failed to get file stat for file at index " << i);
+            continue;
+        }
+        std::string z_filename = file_stat.m_filename;
+        const std::string resource_prefix = "resources/";
+        if(z_filename.compare(0, resource_prefix.size(), resource_prefix) == 0) {
+            std::string res_name = z_filename.substr(resource_prefix.size());
+            size_t res_size = (size_t)file_stat.m_uncomp_size;
+            std::vector<char> buf(res_size);
+            mz_zip_reader_extract_file_to_mem(
+                &archive, 
+                z_filename.c_str(), 
+                (void*)buf.data(), 
+                res_size, 0
+            );
+            importData.data_sources.insert(
+                std::make_pair(
+                    res_name,
+                    DataSourceRef(new DataSourceMemory(buf.data(), buf.size()))
+                )
+            );
+            LOG("Read local data source '" << res_name << "'");
+            continue;
+        }
+    }
+
+    for(mz_uint i = 0; i < num_files; ++i) {
+        mz_zip_archive_file_stat file_stat;
+        if(!mz_zip_reader_file_stat(&archive, i, &file_stat)) {
+            LOG("Failed to get file stat for file at index " << i);
+            continue;
+        }
+
+        std::string z_filename = file_stat.m_filename;
+        const std::string resource_prefix = "resources/";
+        if(z_filename.compare(0, resource_prefix.size(), resource_prefix) == 0)
+            continue;
+
+        if(z_filename == "UID") {
+            int64_t uid = 0;
+            if(!mz_zip_reader_extract_file_to_mem(&archive, z_filename.c_str(), (void*)&uid, sizeof(uid), 0)) {
+                LOG("Failed to extract file '" << z_filename << "'");
+                continue;
+            }
+            importData.AddObject(uid, &scene);
+            continue;
+        } else if(z_filename == "Name") {
+            std::string name;
+            name.resize(file_stat.m_uncomp_size);
+            if(!mz_zip_reader_extract_file_to_mem(&archive, z_filename.c_str(), (void*)name.data(), file_stat.m_uncomp_size, 0)) {
+                LOG("Failed to extract file '" << z_filename << "'");
+                continue;
+            }
+            scene.Name(name);
+            continue;
+        }
+
+        const std::string ext_scene = ".scn";
+        const std::string ext_comp = ".comp";
+        if(z_filename.size() >= ext_scene.size() 
+            && z_filename.compare(z_filename.size() - ext_scene.size(), ext_scene.size(), ext_scene) == 0) {
+            LOG("Reading scene object '" << z_filename << "'");
+            std::vector<char> buf(file_stat.m_uncomp_size);
+            if(!mz_zip_reader_extract_file_to_mem(&archive, z_filename.c_str(), (void*)buf.data(), file_stat.m_uncomp_size, 0)) {
+                LOG("Failed to extract file '" << z_filename << "'");
+                continue;
+            }
+            DeserializeScene((unsigned char*)buf.data(), file_stat.m_uncomp_size, *scene.CreateObject());
+
+        } else if(z_filename.size() >= ext_comp.size() 
+            && z_filename.compare(z_filename.size() - ext_comp.size(), ext_comp.size(), ext_comp) == 0) {
+            LOG("Reading component '" << z_filename << "'");
+            std::vector<char> buf(file_stat.m_uncomp_size);
+            if(!mz_zip_reader_extract_file_to_mem(&archive, z_filename.c_str(), (void*)buf.data(), file_stat.m_uncomp_size, 0)) {
+                LOG("Failed to extract file '" << z_filename << "'");
+                continue;
+            }
+
+        }
+        // TODO:
+    }
+
+    mz_zip_reader_end(&archive);
+    return true;
+}
+/*
 bool SceneSerializer::DeserializeScene(unsigned char* data, size_t size, SceneObject& scene)
 {
     mz_zip_archive archive;
@@ -267,6 +424,8 @@ bool SceneSerializer::DeserializeScene(unsigned char* data, size_t size, SceneOb
             continue;
         }
     }
+
+    std::vector<std::function<void()>> deferred_tasks;
 
     for(mz_uint i = 0; i < num_files; ++i)
     {
@@ -329,6 +488,7 @@ bool SceneSerializer::DeserializeScene(unsigned char* data, size_t size, SceneOb
                 }
                 s->Name(jname.get<std::string>());
                 importData.AddObject(juid.get<int64_t>(), s);
+                std::cout << "UID: " << juid.get<int64_t>() << ", NAME: " << jname.get<std::string>() << std::endl;
             }
         };
         lambda_component = [&](
@@ -361,60 +521,62 @@ bool SceneSerializer::DeserializeScene(unsigned char* data, size_t size, SceneOb
                 return;
             }
 
-            {
-                auto it = custom_component_readers.find(type);
-                if(it != custom_component_readers.end()) {
-                    it->second(c, json_root["ext"]);
-                }
-            }
-
-            nlohmann::json json = json_root["props"];
-            
-            for(auto it = json.begin(); it != json.end(); ++it)
-            {
-                if(!it.value().is_object()) continue;
-                rttr::property prop = type.get_property(it.key());
-                rttr::type prop_type = prop.get_type();
-
-                if(prop.get_type().is_derived_from<i_resource_ref>()) {
-                    nlohmann::json j = it.value()["value"];
-                    std::cout << j.dump() << std::endl;
-                    Resource::STORAGE storage = 
-                        (Resource::STORAGE)j["storage"].get<int>();
-                    std::string name = 
-                        j["name"].get<std::string>();
-
-                    if(storage == Resource::LOCAL) {
-                        auto res_it = resources.find(name);
-                        if(res_it != resources.end()) {
-                            rttr::variant v = prop.get_value(c);
-                            v.get_value<i_resource_ref>().set_unsafe(res_it->second);
-                            prop.set_value(c, v);
-                        } else {
-                            std::cout << "Searching for " << name << " local data source" << std::endl;
-                            if(data_sources.count(name) == 0) {
-                                std::cout << "Local resource " << name << " doesn't exist" << std::endl;
-                                continue;
-                            }
-                            rttr::variant v = prop.get_value(c);
-                            std::shared_ptr<Resource> res = 
-                                v.get_value<i_resource_ref>().set_from_data(data_sources[name]);
-                            res->Name(name);
-                            prop.set_value(c, v);
-                            resources[name] = res;
-                        }
-                    } else if(storage == Resource::GLOBAL) {
-                        rttr::variant v = prop.get_value(c);
-                        v.get_value<i_resource_ref>().set_from_factory(GlobalResourceFactory(), name);
-                        prop.set_value(c, v);
+            deferred_tasks.emplace_back([this, json_root, type, c]() mutable {
+                {
+                    auto it = custom_component_readers.find(type);
+                    if(it != custom_component_readers.end()) {
+                        it->second(c, json_root["ext"]);
                     }
-                    continue;
-                } else {
-                    rttr::variant var = prop.get_value(c);
-                    JsonPropertyToVariant(var, it.value());
-                    prop.set_value(c, var);
                 }
-            }
+
+                nlohmann::json json = json_root["props"];
+                
+                for(auto it = json.begin(); it != json.end(); ++it)
+                {
+                    if(!it.value().is_object()) continue;
+                    rttr::property prop = type.get_property(it.key());
+                    rttr::type prop_type = prop.get_type();
+
+                    if(prop.get_type().is_derived_from<i_resource_ref>()) {
+                        nlohmann::json j = it.value()["value"];
+                        std::cout << j.dump() << std::endl;
+                        Resource::STORAGE storage = 
+                            (Resource::STORAGE)j["storage"].get<int>();
+                        std::string name = 
+                            j["name"].get<std::string>();
+
+                        if(storage == Resource::LOCAL) {
+                            auto res_it = resources.find(name);
+                            if(res_it != resources.end()) {
+                                rttr::variant v = prop.get_value(c);
+                                v.get_value<i_resource_ref>().set_unsafe(res_it->second);
+                                prop.set_value(c, v);
+                            } else {
+                                std::cout << "Searching for " << name << " local data source" << std::endl;
+                                if(data_sources.count(name) == 0) {
+                                    std::cout << "Local resource " << name << " doesn't exist" << std::endl;
+                                    continue;
+                                }
+                                rttr::variant v = prop.get_value(c);
+                                std::shared_ptr<Resource> res = 
+                                    v.get_value<i_resource_ref>().set_from_data(data_sources[name]);
+                                res->Name(name);
+                                prop.set_value(c, v);
+                                resources[name] = res;
+                            }
+                        } else if(storage == Resource::GLOBAL) {
+                            rttr::variant v = prop.get_value(c);
+                            v.get_value<i_resource_ref>().set_from_factory(GlobalResourceFactory(), name);
+                            prop.set_value(c, v);
+                        }
+                        continue;
+                    } else {
+                        rttr::variant var = prop.get_value(c);
+                        JsonPropertyToVariant(var, it.value());
+                        prop.set_value(c, var);
+                    }
+                }
+            });
         };
         lambda_child = [&](
             const std::string& t, 
@@ -440,8 +602,13 @@ bool SceneSerializer::DeserializeScene(unsigned char* data, size_t size, SceneOb
 
     mz_zip_reader_end(&archive);
 
+    for(auto t : deferred_tasks) {
+        t();
+    }
+
     return true;
 }
+*/
 
 rttr::variant SceneSerializer::JsonPropertyToVariant(rttr::variant& var, nlohmann::json& j)
 {
