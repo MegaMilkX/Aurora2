@@ -1,5 +1,5 @@
-#ifndef FBX_NODE_H
-#define FBX_NODE_H
+#ifndef FBX_NODE_2_H
+#define FBX_NODE_2_H
 
 #include "fbx_prop.h"
 #include <map>

@@ -1,5 +1,5 @@
-#ifndef FBX_PROP_H
-#define FBX_PROP_H
+#ifndef FBX_PROP_2_H
+#define FBX_PROP_2_H
 
 #include <vector>
 #include <string>

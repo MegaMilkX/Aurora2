@@ -1,6 +1,8 @@
 #ifndef SCENE_FROM_FBX_H
 #define SCENE_FROM_FBX_H
 
+#include "fbx_/fbx_scene.h"
+
 #include "fbx/fbx_read.h"
 #define MINIZ_HEADER_FILE_ONLY
 #include "../../lib/miniz.c"
@@ -333,6 +335,9 @@ inline void SceneFromFbx(FbxScene& fbxScene, SceneObject* scene, FbxImportData& 
 
 inline bool SceneFromFbx(const char* data, size_t size, SceneObject* scene)
 {
+    Fbx::Scene _fbxScene;
+    _fbxScene.ReadMem(data, size);
+
     FbxScene* fbxScene = FbxScene::Create();
     if(!FbxReadMem(*fbxScene, data, size))
         return false;
@@ -346,7 +351,23 @@ inline bool SceneFromFbx(const char* data, size_t size, SceneObject* scene)
 }
 
 inline bool SceneFromFbx(const std::string& filename, SceneObject* scene)
-{    
+{
+    Fbx::SetLogCallback([](const std::string& s){
+        LOG("FBX: " << s);
+    });
+    Fbx::SetLogWarnCallback([](const std::string& s){
+        LOG("FBX: " << s);
+    });
+    Fbx::SetLogErrCallback([](const std::string& s){
+        LOG("FBX: " << s);
+    });
+    Fbx::SetLogDbgCallback([](const std::string& s){
+        LOG("FBX: " << s);
+    });
+
+    Fbx::Scene _fbxScene;
+    _fbxScene.ReadFile(filename);
+
     FbxScene* fbxScene = FbxScene::Create();
     if(!FbxReadFile(*fbxScene, filename))
         return false;

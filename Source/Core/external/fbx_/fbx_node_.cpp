@@ -1,4 +1,5 @@
 #include "fbx_node.h"
+#include "fbx_macro.h"
 
 #include <sstream>
 

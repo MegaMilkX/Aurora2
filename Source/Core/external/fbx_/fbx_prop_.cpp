@@ -1,4 +1,5 @@
 #include "fbx_prop.h"
+#include "fbx_macro.h"
 
 #include <sstream>
 #include <iostream>
