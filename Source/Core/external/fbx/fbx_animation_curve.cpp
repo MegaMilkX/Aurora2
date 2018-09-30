@@ -4,6 +4,9 @@
 #include <algorithm>
 
 bool FbxAnimationCurve::Make(FbxNode& node) {
+    if(node.GetName() != Type()) {
+        return false;
+    }
     int64_t uid = node.GetProperty(0).GetInt64();
 
     std::vector<int64_t> keyTime = 

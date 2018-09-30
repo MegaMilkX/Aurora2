@@ -19,6 +19,7 @@ public:
     std::vector<int32_t> indices;
     std::vector<double> weights;
     std::string name;
+    std::string boneName;
     int64_t targetModel;
 };
 
@@ -36,6 +37,9 @@ public:
         float weight;
     };
     std::vector<std::vector<boneData>> boneDataPerControlPoint;
+    void Print() {
+        std::cout << "Skin Deformer count: " << deformers.size() << std::endl;
+    }
 private:
     std::vector<int64_t> deformers;
     std::string name;

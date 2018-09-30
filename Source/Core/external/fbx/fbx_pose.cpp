@@ -2,6 +2,9 @@
 #include "fbx_scene.h"
 
 bool FbxPose::Make(FbxNode& node) {
+    if(node.GetName() != Type()) {
+        return false;
+    }
     subtype = node.GetProperty(2).GetString();
 
     for(unsigned int i = 0; i < node.ChildCount("PoseNode"); ++i) {

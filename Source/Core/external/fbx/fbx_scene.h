@@ -143,7 +143,7 @@ T* FbxScene::_make(FbxNode& node) {
     container.objects[uid].reset(o);
     container.uids.emplace_back(uid);
     if(!o->Make(node)) {
-        delete o;
+        container.objects.erase(uid);
         return 0;
     }
     return o;

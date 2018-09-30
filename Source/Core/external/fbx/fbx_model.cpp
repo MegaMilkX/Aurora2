@@ -3,6 +3,9 @@
 #include "fbx_scene.h"
 
 bool FbxModel::Make(FbxNode& node) {
+    if(node.GetName() != Type()) {
+        return false;
+    }
     size_t oo_parent_count = scene->Connections().CountParents(FBX_OBJECT_OBJECT, GetUid());
     for(size_t i = 0; i < oo_parent_count; ++i) {
         parent_uid = scene->Connections().GetParent(FBX_OBJECT_OBJECT, GetUid(), i);

@@ -2,6 +2,9 @@
 #include "fbx_scene.h"
 
 bool FbxMaterial::Make(FbxNode& node) {
+    if(node.GetName() != Type()) {
+        return false;
+    }
     if(!scene) return false;
     uid = node.GetProperty(0).GetInt64();
     name = node.GetProperty(1).GetString();

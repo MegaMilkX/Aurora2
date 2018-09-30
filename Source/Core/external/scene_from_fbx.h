@@ -85,17 +85,24 @@ inline void ResourcesFromFbxScene(FbxScene& fbxScene, FbxImportData& importData)
 
         FbxSkin* skin = geom->GetSkin();
         FbxPose* pose = fbxScene.GetBindPose();
-        if(skin && pose) {
+        if(skin) {
             std::shared_ptr<Skeleton> skeleton(new Skeleton());
-            skeleton->Name(skin->Name());
+            skeleton->Name(MKSTR(skin->GetUid() << ".skel"));
             skeleton->Storage(Resource::LOCAL);
             for(size_t j = 0; j < skin->DeformerCount(); ++j) {
                 FbxDeformer* deformer = skin->GetDeformer(j);
                 FbxModel* mdl = fbxScene.GetByUid<FbxModel>(deformer->targetModel);
-                FbxMatrix4 mat = pose->transforms[mdl->GetUid()];
+                FbxMatrix4 mat;
+                if(pose) {
+                    mat = pose->transforms[mdl->GetUid()];
+                } else {
+                    mat = deformer->transformLink;
+                }
                 skeleton->AddBone(mdl->GetName(), *(gfxm::mat4*)&mat);
             }
             importData.skeletons[skin->GetUid()] = skeleton;
+            LOG("Built skeleton");
+            skin->Print();
         }
         
 
@@ -257,16 +264,32 @@ inline void SceneFromFbxModel(FbxModel* fbxModel, FbxScene& fbxScene, SceneObjec
 
         FbxSkin* fbxSkin = fbxGeometry->GetSkin();
         if(fbxSkin) {
-            auto skel = importData.skeletons[fbxSkin->GetUid()];
-            resource_ref<Skeleton> skel_res_ref;
-            skel_res_ref = skel;
-            sceneObject->Get<Skin>()->SetSkeleton(skel_res_ref);
+            LOG("SceneFromFbx: " << sceneObject->Name() << " model has skin");
+            if(importData.skeletons.find(fbxSkin->GetUid()) != importData.skeletons.end()) {
+                LOG("Found skeleton");
+                auto skel = importData.skeletons[fbxSkin->GetUid()];
+                resource_ref<Skeleton> skel_res_ref;
+                skel_res_ref = skel;
+                sceneObject->Get<Skin>()->SetSkeleton(skel_res_ref);
+            } else {
+                LOG("Skeleton not found");
+            }
             FbxPose* bindPose = fbxScene.GetBindPose();
             if(bindPose) {
+                LOG("Bind pose found");
                 sceneObject->Get<Skin>()->SetBindTransform(*(gfxm::mat4*)&bindPose->GetPose(fbxModel->GetUid()));
+            } else {
+                LOG("No bind pose for skin mesh");
+                if(fbxSkin->DeformerCount() > 0) {
+                    FbxDeformer* deformer = fbxSkin->GetDeformer(0);
+                    sceneObject->Get<Skin>()->SetBindTransform(*(gfxm::mat4*)&deformer->transform);
+                } else {
+                    sceneObject->Get<Skin>()->SetBindTransform(*(gfxm::mat4*)&fbxModel->GetTransform());
+                }
             }
             SceneObject* armatureRoot = importData.Root();
             if(armatureRoot) {
+                LOG("Armature root is present");
                 sceneObject->Get<Skin>()->SetArmatureRoot(
                     armatureRoot->WeakPtr()
                 );

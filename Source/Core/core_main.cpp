@@ -14,7 +14,6 @@
 
 #include "editor/editor_config.h"
 
-
 #define MINIZ_HEADER_FILE_ONLY
 #include "../lib/miniz.c"
 void InitArchiveResources()

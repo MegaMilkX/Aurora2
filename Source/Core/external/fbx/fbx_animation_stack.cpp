@@ -4,6 +4,9 @@
 const int64_t FbxTimeSecond = 46186158000;
 
 bool FbxAnimationStack::Make(FbxNode& node) {
+    if(node.GetName() != Type()) {
+        return false;
+    }
     if(!scene) return false;
     auto& conns = scene->Connections();
     uid = node.GetProperty(0).GetInt64();

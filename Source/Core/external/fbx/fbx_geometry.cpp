@@ -60,6 +60,9 @@ inline void FillLayer(
 }
 
 bool FbxGeometry::Make(FbxNode& node) {
+    if(node.GetName() != Type()) {
+        return false;
+    }
     if(!scene) return false;
     auto scaleFactor = scene->Settings().scaleFactor;
     int64_t uid = node.GetProperty(0).GetInt64();
@@ -199,6 +202,9 @@ FbxIndexedTriangleMesh FbxGeometry::MakeIndexedMesh() {
             if(skin) {
                 std::vector<int32_t> bi(4);
                 std::vector<float> bw(4);
+                if(skin->boneDataPerControlPoint.size() <= vert.controlPoint) {
+                    std::cout << "ERROR: Bone data per control point array is too small" << std::endl;
+                }
                 for(size_t k = 0; k < skin->boneDataPerControlPoint[vert.controlPoint].size() && k < 4; ++k) {
                     bi[k] = skin->boneDataPerControlPoint[vert.controlPoint][k].bone;
                     bw[k] = skin->boneDataPerControlPoint[vert.controlPoint][k].weight;

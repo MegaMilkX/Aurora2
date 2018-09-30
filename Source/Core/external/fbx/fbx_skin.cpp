@@ -3,6 +3,9 @@
 #include <algorithm>
 
 bool FbxDeformer::Make(FbxNode& node) {
+    if(node.GetName() != Type()) {
+        return false;
+    }
     std::string sub_type = node.GetProperty(2).GetString();
     if(sub_type != "Cluster") {
         std::cout << "FBX: Expected node subtype 'Cluster', got '" << sub_type << "'" << std::endl;
@@ -11,12 +14,24 @@ bool FbxDeformer::Make(FbxNode& node) {
 
     name = node.GetProperty(1).GetString();
 
+    for(size_t i = 0; i < scene->Connections().CountChildren(FBX_OBJECT_OBJECT, GetUid()); ++i) {
+        int64_t child_uid = scene->Connections().GetChild(FBX_OBJECT_OBJECT, GetUid(), i);
+        FbxModel* mdl = scene->GetByUid<FbxModel>(child_uid);
+        if(mdl) {
+            boneName = mdl->GetName();
+            break;
+        }
+    }
+
     if(node.ChildCount("Indexes")) {
         FbxNode& nodeIndexes = node.GetNode("Indexes", 0);
         indices = nodeIndexes.GetProperty(0).GetArray<int32_t>();
     }
     if(node.ChildCount("Weights")) {
         FbxNode& nodeWeights = node.GetNode("Weights", 0);
+        weights = nodeWeights.GetProperty(0).GetArray<double>();
+    } else if(node.ChildCount("BlendWeights")) {
+        FbxNode& nodeWeights = node.GetNode("BlendWeights", 0);
         weights = nodeWeights.GetProperty(0).GetArray<double>();
     }
     if(node.ChildCount("Transform")) {
@@ -75,6 +90,9 @@ bool FbxDeformer::Make(FbxNode& node) {
 }
 
 bool FbxSkin::Make(FbxNode& node) {
+    if(node.GetName() != Type()) {
+        return false;
+    }
     name = node.GetProperty(1).GetString();
     std::string sub_type = node.GetProperty(2).GetString();
     if(sub_type != "Skin") {
@@ -98,7 +116,7 @@ bool FbxSkin::Make(FbxNode& node) {
         [this](const int64_t& a, const int64_t& b) ->bool {
             FbxDeformer* da = scene->GetByUid<FbxDeformer>(a);
             FbxDeformer* db = scene->GetByUid<FbxDeformer>(b);
-            return da->name < db->name;
+            return da->boneName < db->boneName;
         }
     );
     

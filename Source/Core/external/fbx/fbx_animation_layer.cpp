@@ -3,6 +3,9 @@
 
 bool FbxAnimationLayer::Make(FbxNode& node)
 {
+    if(node.GetName() != Type()) {
+        return false;
+    }
     int64_t uid = node.GetProperty(0).GetInt64();
     name = node.GetProperty(1).GetString();
 
