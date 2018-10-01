@@ -8,6 +8,7 @@
 #include <functional>
 
 #include "fbx_node.h"
+#include "fbx_object_container.h"
 
 namespace Fbx {
 
@@ -29,6 +30,8 @@ public:
     bool ReadMem(const char* data, size_t size);
     bool ReadFile(const std::string& filename);
 private:
+    ObjectContainer objectContainer;
+
     void Finalize(Node& node);
 
     void Log(const std::string& str);
