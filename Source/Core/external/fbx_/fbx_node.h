@@ -15,14 +15,14 @@ public:
     const std::string& GetName() const;
     unsigned PropCount() const;
     Property& GetProperty(unsigned i);
-    unsigned ChildCount(const std::string& type);
-    Node& GetNode(const std::string& type, unsigned i);
+    size_t ChildCount();
+    Node& GetNode(unsigned i);
 
     void Print(std::ostringstream& sstr, unsigned level = 0);
 private:
     std::string name;
     std::vector<Property> props;
-    std::map<std::string, std::vector<Node>> children; 
+    std::vector<Node> children; 
 };
 
 }

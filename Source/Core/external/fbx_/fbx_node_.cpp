@@ -6,7 +6,7 @@
 namespace Fbx {
 
 void Node::AddNode(const Node& node){
-    children[node.GetName()].emplace_back(node);
+    children.emplace_back(node);
 }
 void Node::AddProp(const Property& prop){
     props.emplace_back(prop);
@@ -23,11 +23,11 @@ unsigned Node::PropCount() const{
 Property& Node::GetProperty(unsigned i){
     return props[i];
 }
-unsigned Node::ChildCount(const std::string& type) {
-    return children[type].size();
+size_t Node::ChildCount() {
+    return children.size();
 }
-Node& Node::GetNode(const std::string& type, unsigned i){
-    return children[type][i];
+Node& Node::GetNode(unsigned i){
+    return children[i];
 }
 
 void Node::Print(std::ostringstream& sstr, unsigned level){
@@ -37,12 +37,9 @@ void Node::Print(std::ostringstream& sstr, unsigned level){
     ++level;
     for(unsigned i = 0; i < props.size(); ++i)
         props[i].Print(sstr, level);
-    for(auto& kv : children)
+    for(auto& n : children)
     {
-        for(auto& n : kv.second)
-        {
-            n.Print(sstr, level);
-        }
+        n.Print(sstr, level);
     }
 }
 

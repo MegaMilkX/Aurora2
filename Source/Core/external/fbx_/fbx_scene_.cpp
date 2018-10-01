@@ -8,6 +8,16 @@ namespace Fbx {
 void Scene::Finalize(Node& node) {
     LOG("Finalizing fbx data structures...");
 
+    for(size_t i = 0; i < node.ChildCount(); ++i) {
+        Node& n = node.GetNode(i);
+        // TODO try to identify node type
+        [](Node& n)->bool {
+            if(n.PropCount() < 3) return false;
+            if(!n.GetProperty(0).IsInt64()) return false;
+            if(!n.GetProperty(1).IsString()) return false;
+            if(!n.GetProperty(2).IsString()) return false;
+        };
+    }
 
     LOG("Done");
 }
