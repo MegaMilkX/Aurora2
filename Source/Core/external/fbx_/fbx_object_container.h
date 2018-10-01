@@ -13,19 +13,16 @@ class ObjectContainer {
 public:
     template<typename T>
     T* Create(Node& n) {
-        if(!T::IdentifyNode(n)) {
-            return 0;
-        }
-        std::shared_ptr<Object> ptr(new T());
-        ptr->Make(n);
+        T* ptr = n.Convert<T>();
+        if(!ptr) return 0;
         objects[TypeInfo<T>::Index()].emplace_back(ptr);
-        return ptr.get();
+        return ptr;
     }
 private:
     std::map<
         TypeIndex, 
         std::vector<
-            std::shared_ptr<Object>
+            Object*
         >
     > objects;
 };

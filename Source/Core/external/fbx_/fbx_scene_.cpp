@@ -6,20 +6,28 @@
 namespace Fbx {
 
 void Scene::Finalize(Node& node) {
-    LOG("Finalizing fbx data structures...");
+    FBX_LOG("Finalizing fbx data structures...");
 
     for(size_t i = 0; i < node.ChildCount(); ++i) {
         Node& n = node.GetNode(i);
-        // TODO try to identify node type
-        [](Node& n)->bool {
-            if(n.PropCount() < 3) return false;
-            if(!n.GetProperty(0).IsInt64()) return false;
-            if(!n.GetProperty(1).IsString()) return false;
-            if(!n.GetProperty(2).IsString()) return false;
-        };
+        
+        objectContainer.Create<AnimationCurve>(n)
+        || objectContainer.Create<AnimationCurveNode>(n)
+        || objectContainer.Create<DeformerCluster>(n)
+        || objectContainer.Create<DeformerBlendShape>(n)
+        || objectContainer.Create<NodeAttribute>(n)
+        || objectContainer.Create<Model>(n)
+        || objectContainer.Create<DeformerSkin>(n)
+        || objectContainer.Create<Geometry>(n)
+        || objectContainer.Create<AnimationStack>(n)
+        || objectContainer.Create<AnimationLayer>(n)
+        || objectContainer.Create<Texture>(n)
+        || objectContainer.Create<Material>(n)
+        || objectContainer.Create<Pose>(n)
+        || objectContainer.Create<Properties>(n);
     }
 
-    LOG("Done");
+    FBX_LOG("Done");
 }
 
 // ===============================
@@ -68,12 +76,12 @@ bool FbxReadBlock(Node& node, const char* data, const char*& cursor, const char*
 
 bool Scene::ReadMem(const char* data, size_t size)
 {
-    LOG("Reading fbx data...")
+    FBX_LOG("Reading fbx data...")
     if(!data) return false;
     if(size < 0x1b) return false;
     if(strncmp(data, "Kaydara FBX Binary", 18))
     {
-        LOG("Invalid FBX header");
+        FBX_LOG("Invalid FBX header");
         return false;
     }
 
@@ -90,17 +98,17 @@ bool Scene::ReadMem(const char* data, size_t size)
     }
 
     Finalize(rootNode);
-    LOG("Done")
+    FBX_LOG("Done")
     return true;
 }
 
 bool Scene::ReadFile(const std::string& filename)
 {
-    LOG("Reading fbx file '" << filename << "'...");
+    FBX_LOG("Reading fbx file '" << filename << "'...");
     std::ifstream f(filename, std::ios::binary | std::ios::ate);
     if(!f.is_open())
     {
-        LOG("Failed to open " << filename);
+        FBX_LOG("Failed to open " << filename);
         return false;
     }
     std::streamsize size = f.tellg();
@@ -109,14 +117,14 @@ bool Scene::ReadFile(const std::string& filename)
     if(!f.read(buffer.data(), (unsigned int)size))
     {
         f.close();
-        LOG("Failed to read " << filename);
+        FBX_LOG("Failed to read " << filename);
         return false;
     }
 
     ReadMem(buffer.data(), buffer.size());
 
     f.close();
-    LOG("Done");
+    FBX_LOG("Done");
     return true;
 }
 
@@ -315,39 +323,6 @@ bool FbxReadBlock(Node& node, const char* data, const char*& cursor, const char*
     }
     
     return true;
-}
-
-// === Log callbacks ===============
-
-static log_func_t log_func;
-static log_warn_func_t log_warn_func;
-static log_err_func_t log_err_func;
-static log_dbg_func_t log_dbg_func;
-
-void Scene::Log(const std::string& str) {
-    if(log_func) log_func(str);
-}
-void Scene::LogWarn(const std::string& str) {
-    if(log_warn_func) log_warn_func(str);
-}
-void Scene::LogErr(const std::string& str) {
-    if(log_err_func) log_err_func(str);
-}
-void Scene::LogDbg(const std::string& str) {
-    if(log_dbg_func) log_dbg_func(str);
-}
-
-void SetLogCallback(log_func_t f) {
-    log_func = f;
-}
-void SetLogWarnCallback(log_warn_func_t f) {
-    log_warn_func = f;
-}
-void SetLogErrCallback(log_err_func_t f) {
-    log_err_func = f;
-}
-void SetLogDbgCallback(log_err_func_t f) {
-    log_err_func = f;
 }
 
 } // Fbx

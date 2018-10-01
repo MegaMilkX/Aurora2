@@ -10,20 +10,28 @@
 #include "fbx_node.h"
 #include "fbx_object_container.h"
 
+#include "fbx_log.h"
+
+#include "fbx_properties.h"
+#include "fbx_model.h"
+#include "fbx_pose.h"
+#include "fbx_deformer_skin.h"
+#include "fbx_deformer_cluster.h"
+#include "fbx_deformer_blend_shape.h"
+#include "fbx_animation_stack.h"
+#include "fbx_animation_layer.h"
+#include "fbx_animation_curve_node.h"
+#include "fbx_animation_curve.h"
+#include "fbx_geometry.h"
+#include "fbx_texture.h"
+#include "fbx_material.h"
+#include "fbx_node_attribute.h"
+
 namespace Fbx {
 
 typedef uint8_t Byte;
 typedef uint32_t Word;
 typedef uint64_t DoubleWord;
-typedef std::function<void(const std::string&)> log_func_t;
-typedef std::function<void(const std::string&)> log_warn_func_t;
-typedef std::function<void(const std::string&)> log_err_func_t;
-typedef std::function<void(const std::string&)> log_dbg_func_t;
-
-void SetLogCallback(log_func_t f);
-void SetLogWarnCallback(log_warn_func_t f);
-void SetLogErrCallback(log_err_func_t f);
-void SetLogDbgCallback(log_dbg_func_t f);
 
 class Scene {
 public:
@@ -33,11 +41,6 @@ private:
     ObjectContainer objectContainer;
 
     void Finalize(Node& node);
-
-    void Log(const std::string& str);
-    void LogWarn(const std::string& str);
-    void LogErr(const std::string& str);
-    void LogDbg(const std::string& str);
 };
 
 }

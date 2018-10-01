@@ -7,9 +7,9 @@
 #define MKSTR(LINE) \
 static_cast<std::ostringstream&>(std::ostringstream() << LINE).str()
 
-#define LOG(LINE) Log(MKSTR(LINE << std::endl));
-#define LOG_WARN(LINE) LogWarn("WARNING: " << LINE << std::endl)
-#define LOG_ERR(LINE) LogErr("ERROR: " << LINE << std::endl)
-#define LOG_DBG(LINE) LogDbg("DEBUG: " << LINE << std::endl)
+#define FBX_LOG(LINE) Log(MKSTR(LINE));
+#define FBX_LOGW(LINE) LogWarn("WARNING: " << LINE)
+#define FBX_LOGE(LINE) LogErr("ERROR: " << LINE)
+#define FBX_LOGD(LINE) LogDbg("DEBUG: " << LINE)
 
 #endif

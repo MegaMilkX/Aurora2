@@ -1,10 +1,16 @@
 #include "fbx_node.h"
 #include "fbx_macro.h"
+#include "fbx_object.h"
 
 #include <sstream>
 
 namespace Fbx {
 
+Node::~Node() {
+    for(auto& kv : object_cache) {
+        delete kv.second;
+    }
+}
 void Node::AddNode(const Node& node){
     children.emplace_back(node);
 }
@@ -28,6 +34,22 @@ size_t Node::ChildCount() {
 }
 Node& Node::GetNode(unsigned i){
     return children[i];
+}
+Node* Node::FindNode(const std::string& name) {
+    return FindNode(name, 0);
+}
+Node* Node::FindNode(const std::string& name, unsigned i) {
+    unsigned counter = 0;
+    for(size_t j = 0; j < ChildCount(); ++j) {
+        Node& n = GetNode(j);
+        if(n.GetName() == name) {
+            if(counter == i) {
+                return &n;
+            }
+            counter++;
+        }
+    }
+    return 0;
 }
 
 void Node::Print(std::ostringstream& sstr, unsigned level){
