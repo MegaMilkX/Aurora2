@@ -14,11 +14,11 @@ class Node
 public:
     ~Node();
     void AddNode(const Node& node);
-    void AddProp(const Property& prop);
+    void AddProp(const NodeProperty& prop);
     void SetName(const std::string& name);
     const std::string& GetName() const;
     unsigned PropCount() const;
-    Property& GetProperty(unsigned i);
+    NodeProperty& GetProperty(unsigned i);
     size_t ChildCount();
     Node& GetNode(unsigned i);
     Node* FindNode(const std::string& name);
@@ -61,7 +61,7 @@ public:
     void Print(std::ostringstream& sstr, unsigned level = 0);
 private:
     std::string name;
-    std::vector<Property> props;
+    std::vector<NodeProperty> props;
     std::vector<Node> children;
     std::map<TypeIndex, Object*> object_cache;
 };

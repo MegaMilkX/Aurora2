@@ -6,17 +6,17 @@
 
 namespace Fbx {
 
-void Property::SetType(char t) { type = t; }
+void NodeProperty::SetType(char t) { type = t; }
 
-char Property::GetType() { return type; }
+char NodeProperty::GetType() { return type; }
 
-void Property::SetArrayLen(unsigned len){
+void NodeProperty::SetArrayLen(unsigned len){
     arraySize = len;
 }
-void Property::SetData(const std::vector<char>& data){
+void NodeProperty::SetData(const std::vector<char>& data){
     this->data = data;
 }
-std::string Property::GetString(){
+std::string NodeProperty::GetString(){
     if(type != 'S') return std::string();
     unsigned strLen = 0;
     for(unsigned i = 0; i < data.size(); ++i)
@@ -27,33 +27,33 @@ std::string Property::GetString(){
     }
     return std::string(data.data(), data.data() + strLen);
 }
-int64_t Property::GetInt64(){
+int64_t NodeProperty::GetInt64(){
     if(data.size() != sizeof(int64_t))
         return 0;
     return *(int64_t*)(data.data());
 }
-int32_t Property::GetInt32(){
+int32_t NodeProperty::GetInt32(){
     if(data.size() != sizeof(int32_t))
         return 0;
     return *(int32_t*)(data.data());
 }
-int16_t Property::GetInt16(){
+int16_t NodeProperty::GetInt16(){
     if(data.size() != sizeof(int16_t))
         return 0;
     return *(int16_t*)(data.data());
 }
-float Property::GetFloat(){
+float NodeProperty::GetFloat(){
     if(data.size() != sizeof(float))
         return 0.0;
     return *(float*)(data.data());
 }
-double Property::GetDouble(){
+double NodeProperty::GetDouble(){
     if(data.size() != sizeof(double))
         return 0.0;
     return *(double*)(data.data());
 }
 
-void Property::Print(std::ostringstream& sstr, unsigned level){
+void NodeProperty::Print(std::ostringstream& sstr, unsigned level){
     for(unsigned i = 0; i < level; ++i)
         sstr << "  ";
     int stride = 0;
@@ -61,7 +61,7 @@ void Property::Print(std::ostringstream& sstr, unsigned level){
     {
     // 16 bit int
     case 'Y':
-        sstr << *(int16_t*)(data.data());
+        sstr << "int16: " << *(int16_t*)(data.data());
         break;
     // 1 bit bool
     case 'C':
@@ -69,18 +69,18 @@ void Property::Print(std::ostringstream& sstr, unsigned level){
         break;
     // 32 bit int
     case 'I':
-        sstr << *(int32_t*)(data.data());
+        sstr << "int32: " << *(int32_t*)(data.data());
         break;
     case 'F':
-        sstr << *(float*)(data.data());
+        sstr << "float: " << *(float*)(data.data());
         break;
     // double
     case 'D':
-        sstr << *(double*)(data.data());
+        sstr << "double: " << *(double*)(data.data());
         break;
     // 64 bit int
     case 'L':
-        sstr << *(int64_t*)(data.data());
+        sstr << "int64: " << *(int64_t*)(data.data());
         break;
     // Binary data
     case 'R':
@@ -105,7 +105,7 @@ void Property::Print(std::ostringstream& sstr, unsigned level){
         sstr << "Int64 array, size: " << data.size() / stride;
         break;
     case 'S':
-        sstr << std::string(data.data(), data.data() + data.size());
+        sstr << "string: '" << std::string(data.data(), data.data() + data.size()) << "'";
         break;
     }
     

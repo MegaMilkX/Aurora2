@@ -58,7 +58,7 @@ void FbxProp::Print(std::ostringstream& sstr, unsigned level){
     {
     // 16 bit int
     case 'Y':
-        sstr << *(int16_t*)(data.data());
+        sstr << "int16: " << *(int16_t*)(data.data());
         break;
     // 1 bit bool
     case 'C':
@@ -66,18 +66,18 @@ void FbxProp::Print(std::ostringstream& sstr, unsigned level){
         break;
     // 32 bit int
     case 'I':
-        sstr << *(int32_t*)(data.data());
+        sstr << "int32: " << *(int32_t*)(data.data());
         break;
     case 'F':
-        sstr << *(float*)(data.data());
+        sstr << "float: " << *(float*)(data.data());
         break;
     // double
     case 'D':
-        sstr << *(double*)(data.data());
+        sstr << "double: " << *(double*)(data.data());
         break;
     // 64 bit int
     case 'L':
-        sstr << *(int64_t*)(data.data());
+        sstr << "int64: " << *(int64_t*)(data.data());
         break;
     // Binary data
     case 'R':
@@ -102,7 +102,7 @@ void FbxProp::Print(std::ostringstream& sstr, unsigned level){
         sstr << "Int64 array, size: " << data.size() / stride;
         break;
     case 'S':
-        sstr << std::string(data.data(), data.data() + data.size());
+        sstr << "string: '" << std::string(data.data(), data.data() + data.size()) << "'";
         break;
     }
     

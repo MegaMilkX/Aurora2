@@ -6,7 +6,7 @@
 
 namespace Fbx {
 
-class Property
+class NodeProperty
 {
 public:
     void SetType(char t);
@@ -42,7 +42,7 @@ private:
 };
 
 template<typename T>
-std::vector<T> Property::GetArray()
+std::vector<T> NodeProperty::GetArray()
 {
     std::vector<T> result;
         

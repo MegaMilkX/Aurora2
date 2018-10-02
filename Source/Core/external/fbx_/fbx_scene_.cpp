@@ -71,7 +71,7 @@ bool FbxReadString(std::string& out, const char* data, const char*& cursor, cons
     return true;
 }
 
-void FbxReadData(Property& prop, std::vector<char>& out, const char* data, const char*& cursor, const char* end);
+void FbxReadData(NodeProperty& prop, std::vector<char>& out, const char* data, const char*& cursor, const char* end);
 bool FbxReadBlock(Node& node, const char* data, const char*& cursor, const char* end, Word flags);
 
 bool Scene::ReadMem(const char* data, size_t size)
@@ -128,7 +128,7 @@ bool Scene::ReadFile(const std::string& filename)
     return true;
 }
 
-void FbxReadData(Property& prop, std::vector<char>& out, const char* data, const char*& cursor, const char* end)
+void FbxReadData(NodeProperty& prop, std::vector<char>& out, const char* data, const char*& cursor, const char* end)
 {
     bool is_encoded = false;
     Word uncomp_len;    
@@ -276,7 +276,7 @@ bool FbxReadBlock(Node& node, const char* data, const char*& cursor, const char*
     const char* begin_cur = cursor;
     for(unsigned i = 0; i < prop_count; ++i)
     {
-        Property prop;
+        NodeProperty prop;
         std::vector<char> actual_data;
         FbxReadData(prop, actual_data, data, cursor, begin_cur + prop_len);
         node.AddProp(prop);
@@ -284,7 +284,7 @@ bool FbxReadBlock(Node& node, const char* data, const char*& cursor, const char*
     
     if(FbxOffset(begin_cur, cursor) != prop_len)
     {
-        //std::cout << "Property length was not reached" << std::endl;
+        //std::cout << "NodeProperty length was not reached" << std::endl;
         return false;
     }
     

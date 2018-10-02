@@ -14,7 +14,7 @@ Node::~Node() {
 void Node::AddNode(const Node& node){
     children.emplace_back(node);
 }
-void Node::AddProp(const Property& prop){
+void Node::AddProp(const NodeProperty& prop){
     props.emplace_back(prop);
 }
 void Node::SetName(const std::string& name){
@@ -26,7 +26,7 @@ const std::string& Node::GetName() const{
 unsigned Node::PropCount() const{
     return props.size();
 }
-Property& Node::GetProperty(unsigned i){
+NodeProperty& Node::GetProperty(unsigned i){
     return props[i];
 }
 size_t Node::ChildCount() {
