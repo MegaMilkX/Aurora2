@@ -144,9 +144,11 @@ public:
         f << sstr.str();
         f.close();
     }
+
+    Properties* properties = 0;
+
 private:
     ObjectContainer objects;
-    Properties* properties;
     ConnectionContainer connections;
     std::vector<Model*> rootModels;
 

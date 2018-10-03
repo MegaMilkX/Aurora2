@@ -368,6 +368,16 @@ inline void SceneFromFbx(Fbx::Scene& fbxScene, SceneObject* scene, FbxImportData
         SceneFromFbxModel(fbxScene.GetRootModel(i), fbxScene, child, importData);
     }
 
+    float scaleFactor = 1.0f;
+    if(fbxScene.properties) {
+        double scaleFactorD = fbxScene.properties->GetValue<double>("UnitScaleFactor");
+        if(scaleFactorD != 0.0) {
+            scaleFactor = (float)(scaleFactorD * 0.01);
+        }
+    }
+
+    scene->Get<Transform>()->Scale(gfxm::vec3(1.0f, 1.0f, 1.0f) * scaleFactor);
+
     /*
     for(size_t i = 0; i < fbxScene.Count<FbxAnimationStack>(); ++i) {
         //auto animDriver = scene->Get<SkeletonAnimator>();
