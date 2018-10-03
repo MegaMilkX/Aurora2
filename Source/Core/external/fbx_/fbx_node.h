@@ -46,6 +46,17 @@ public:
         return ConvertChild<T>(0);
     }
     template<typename T>
+    size_t CountConvertable() {
+        size_t counter = 0;
+        for(size_t j = 0; j < ChildCount(); ++j) {
+            Node& n = GetNode(j);
+            if(T::IdentifyNode(n)) {
+                counter++;
+            }
+        }
+        return counter;
+    }
+    template<typename T>
     T* ConvertChild(unsigned i) {
         unsigned counter = 0;
         for(size_t j = 0; j < ChildCount(); ++j) {

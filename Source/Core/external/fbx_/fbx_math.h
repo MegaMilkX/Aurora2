@@ -243,8 +243,13 @@ inline FbxVector4 operator+(const FbxVector4& a, const FbxVector4& b){
     return FbxVector4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
 }
 
-inline FbxVector3 operator*(const FbxVector3& a, float f){
-    return FbxVector3(a.x * f, a.y * f, a.z * f);
+template<typename V, typename T>
+inline TFbxVector3<V> operator*(const TFbxVector3<V>& a, T f){
+    return TFbxVector3<V>(a.x * f, a.y * f, a.z * f);
+}
+template<typename V, typename T>
+inline TFbxVector3<V> operator/(const TFbxVector3<V>& a, T f){
+    return TFbxVector3<V>(a.x / f, a.y / f, a.z / f);
 }
 
 inline FbxVector4 operator*(const FbxVector4& a, float f){

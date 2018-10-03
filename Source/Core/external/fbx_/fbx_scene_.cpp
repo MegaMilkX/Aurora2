@@ -110,7 +110,6 @@ bool Scene::ReadMem(const char* data, size_t size)
     const Byte padding_0 = FbxRead<Byte>(data, cursor, data + size);
     const Byte padding_1 = FbxRead<Byte>(data, cursor, data + size);
 
-    Node rootNode;
     while(cursor < data + size)
     {
         if(!FbxReadBlock(rootNode, data, cursor, data + size, flags)) 

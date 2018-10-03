@@ -51,7 +51,7 @@ public:
         }
         if(props->Get("Lcl Rotation")) {
             lclRotation =
-                props->GetValue<FbxDVector3>("Lcl Rotation");
+                props->GetValue<FbxDVector3>("Lcl Rotation") * FbxPi / 180.0f;
         }
         if(props->Get("Lcl Scaling")) {
             lclScaling =
@@ -59,11 +59,11 @@ public:
         }
         if(props->Get("PreRotation")) {
             preRotation = 
-                props->GetValue<FbxDVector3>("PreRotation");
+                props->GetValue<FbxDVector3>("PreRotation") * FbxPi / 180.0f;
         }
         if(props->Get("PostRotation")) {
             postRotation =
-                props->GetValue<FbxDVector3>("PostRotation");
+                props->GetValue<FbxDVector3>("PostRotation") * FbxPi / 180.0f;
         }
 
         FbxQuat preQuat = FbxEulerToQuat(preRotation);

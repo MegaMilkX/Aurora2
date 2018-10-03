@@ -134,12 +134,22 @@ public:
         }
         return 0;
     }
+
+    void _dumpFile(const std::string& filename)
+    {
+        std::ostringstream sstr;
+        rootNode.Print(sstr);
+        std::ofstream f(filename + ".dump", std::ios::out);
+        f << sstr.str();
+        f.close();
+    }
 private:
     ObjectContainer objects;
     Properties* properties;
     ConnectionContainer connections;
     std::vector<Model*> rootModels;
 
+    Node rootNode;
     void Finalize(Node& node);
 };
 
