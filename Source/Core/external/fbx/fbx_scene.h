@@ -11,7 +11,7 @@
 #include "fbx_texture.h"
 #include "fbx_pose.h"
 #include "fbx_connections.h"
-#include "fbx_math.h"
+#include "../fbx_/fbx_math.h"
 #include "fbx_type_index.h"
 
 #include <string>

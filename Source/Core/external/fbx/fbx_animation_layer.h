@@ -7,7 +7,7 @@
 
 #include "fbx_animation_curve_node.h"
 
-#include "fbx_math.h"
+#include "../fbx_/fbx_math.h"
 #include "fbx_model.h"
 
 class FbxAnimationLayer : public FbxObject

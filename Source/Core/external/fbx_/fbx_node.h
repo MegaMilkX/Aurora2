@@ -8,6 +8,7 @@
 
 namespace Fbx {
 
+class BasicObject;
 class Object;
 class Node
 {
@@ -32,6 +33,7 @@ public:
             return 0;
         }
         T* ptr = new T();
+        SetUidAndName(*this, ptr);
         if(!ptr->Make(*this)) {
             delete ptr;
             return 0;
@@ -63,7 +65,10 @@ private:
     std::string name;
     std::vector<NodeProperty> props;
     std::vector<Node> children;
-    std::map<TypeIndex, Object*> object_cache;
+    std::map<TypeIndex, BasicObject*> object_cache;
+
+    void SetUidAndName(Node& node, Object* o);
+    void SetUidAndName(Node& node, BasicObject* o);
 };
 
 }

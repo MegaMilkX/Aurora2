@@ -65,4 +65,15 @@ void Node::Print(std::ostringstream& sstr, unsigned level){
     }
 }
 
+void Node::SetUidAndName(Node& node, Object* o) {
+    if(node.PropCount() < 2) return;
+    if(node.GetProperty(0).IsInt64())
+        o->SetUid(node.GetProperty(0).GetInt64());
+    if(node.GetProperty(1).IsString())
+        o->SetName(node.GetProperty(1).GetString());
+}
+void Node::SetUidAndName(Node& node, BasicObject* o) {
+    // Do nothing
+}
+
 }

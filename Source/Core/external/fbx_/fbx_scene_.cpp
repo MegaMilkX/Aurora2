@@ -8,24 +8,44 @@ namespace Fbx {
 void Scene::Finalize(Node& node) {
     FBX_LOG("Finalizing fbx data structures...");
 
+    Properties* props;
+    if(props = node.ConvertChild<Properties>()) {
+        properties = props;
+    } else {
+        FBX_LOGW("Scene properties not found");
+    }
+
+    for(size_t i = 0; i < node.ChildCount(); ++i) {
+        Node& n = node.GetNode(i);
+        if(n.GetName() != "C") continue;
+        Connection* c = n.Convert<Connection>();
+        connections.Add(*c);
+    }
+
     for(size_t i = 0; i < node.ChildCount(); ++i) {
         Node& n = node.GetNode(i);
         
-        objectContainer.Create<AnimationCurve>(n)
-        || objectContainer.Create<AnimationCurveNode>(n)
-        || objectContainer.Create<DeformerCluster>(n)
-        || objectContainer.Create<DeformerBlendShape>(n)
-        || objectContainer.Create<NodeAttribute>(n)
-        || objectContainer.Create<Model>(n)
-        || objectContainer.Create<DeformerSkin>(n)
-        || objectContainer.Create<Geometry>(n)
-        || objectContainer.Create<AnimationStack>(n)
-        || objectContainer.Create<AnimationLayer>(n)
-        || objectContainer.Create<Texture>(n)
-        || objectContainer.Create<Material>(n)
-        || objectContainer.Create<Pose>(n)
-        || objectContainer.Create<Properties>(n);
+        objects.Create<AnimationCurve>(n)
+        || objects.Create<AnimationCurveNode>(n)
+        || objects.Create<DeformerCluster>(n)
+        || objects.Create<DeformerBlendShape>(n)
+        || objects.Create<NodeAttribute>(n)
+        || objects.Create<Model>(n)
+        || objects.Create<DeformerSkin>(n)
+        || objects.Create<Geometry>(n)
+        || objects.Create<AnimationStack>(n)
+        || objects.Create<AnimationLayer>(n)
+        || objects.Create<Texture>(n)
+        || objects.Create<Material>(n)
+        || objects.Create<Pose>(n);
     }
+
+    for(size_t i = 0; i < objects.Count<Model>(); ++i) {
+        if(!GetParent<Model>(OBJECT_OBJECT, objects.Get<Model>(i)->GetUid())) {
+            rootModels.emplace_back(objects.Get<Model>(i));
+        }
+    }
+    FBX_LOG("Root model count: " << rootModels.size());
 
     FBX_LOG("Done");
 }

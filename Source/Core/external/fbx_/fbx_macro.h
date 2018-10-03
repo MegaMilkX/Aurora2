@@ -8,8 +8,8 @@
 static_cast<std::ostringstream&>(std::ostringstream() << LINE).str()
 
 #define FBX_LOG(LINE) Log(MKSTR(LINE));
-#define FBX_LOGW(LINE) LogWarn("WARNING: " << LINE)
-#define FBX_LOGE(LINE) LogErr("ERROR: " << LINE)
-#define FBX_LOGD(LINE) LogDbg("DEBUG: " << LINE)
+#define FBX_LOGW(LINE) LogWarn(MKSTR("WARNING: " << LINE))
+#define FBX_LOGE(LINE) LogErr(MKSTR("ERROR: " << LINE))
+#define FBX_LOGD(LINE) LogDbg(MKSTR("DEBUG: " << LINE))
 
 #endif

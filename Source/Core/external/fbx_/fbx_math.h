@@ -2,92 +2,219 @@
 #define FBX_MATH_H
 
 #include <math.h>
+#include <stdint.h>
 
 const double FbxPi = 3.14159265359;
 
-struct FbxVector2
+template<typename T>
+struct TFbxVector2
 {
-    FbxVector2()
-    : FbxVector2(0.0f, 0.0f) {}
-    FbxVector2(float x, float y)
-    : x(x), y(y) {}
-    float operator[](int i) const {
+    union { T x, r; };
+    union { T y, g; };
+    
+    TFbxVector2() : x(0), y(0) {}
+    TFbxVector2(T x, T y) : x(x), y(y) {}
+
+    T operator[](const int &i) const {
         return *((&x) + i);
     }
-    float& operator[](int i) {
+    T& operator[](const int &i) {
         return *((&x) + i);
     }
-    float x, y;
+
+    T length() const { return sqrt(x*x + y*y); }
+
+    operator TFbxVector2<float>() const {
+        TFbxVector2<float> r;
+        r.x = static_cast<float>(x);
+        r.y = static_cast<float>(y);
+        return r;
+    }
+    operator TFbxVector2<double>() const {
+        TFbxVector2<double> r;
+        r.x = static_cast<double>(x);
+        r.y = static_cast<double>(y);
+        return r;
+    }
 };
 
-struct FbxVector3
+template<typename T>
+struct TFbxVector3
 {
-    FbxVector3()
-    : FbxVector3(0.0f, 0.0f, 0.0f) {}
-    FbxVector3(float x, float y, float z)
-    : x(x), y(y), z(z) {}
-    float operator[](int i) const {
+    union { T x, r; };
+    union { T y, g; };
+    union { T z, b; };
+    
+    TFbxVector3() : x(0), y(0), z(0) {}
+    TFbxVector3(T x, T y, T z) : x(x), y(y), z(z) {}
+
+    T operator[](const int &i) const {
         return *((&x) + i);
     }
-    float& operator[](int i) {
+    T& operator[](const int &i) {
         return *((&x) + i);
     }
-    float x, y, z;
+
+    T length() const { return sqrt(x*x + y*y + z*z); }
+
+    operator TFbxVector3<float>() const {
+        TFbxVector3<float> r;
+        r.x = static_cast<float>(x);
+        r.y = static_cast<float>(y);
+        r.z = static_cast<float>(z);
+        return r;
+    }
+    operator TFbxVector3<double>() const {
+        TFbxVector3<double> r;
+        r.x = static_cast<double>(x);
+        r.y = static_cast<double>(y);
+        r.z = static_cast<double>(z);
+        return r;
+    }
 };
 
-struct FbxVector4
+template<typename T>
+struct TFbxVector4
 {
-    FbxVector4()
-    : FbxVector4(0.0f, 0.0f, 0.0f, 0.0f) {}
-    FbxVector4(float x, float y, float z, float w)
-    : x(x), y(y), z(z), w(w) {}
-    const float operator[](int i) const {
+    union { T x, r; };
+    union { T y, g; };
+    union { T z, b; };
+    union { T w, a; };
+    
+    TFbxVector4() : x(0), y(0), z(0), w(0) {}
+    TFbxVector4(T x, T y, T z, T w) : x(x), y(y), z(z), w(w) {}
+
+    operator TFbxVector3<T>() const { return TFbxVector3<T>(x, y, z); }
+
+    T operator[](const int &i) const {
         return *((&x) + i);
     }
-    float& operator[](int i) {
+    T& operator[](const int &i) {
         return *((&x) + i);
     }
-    float x, y, z, w;
+
+    T length() const { return sqrt(x*x + y*y + z*z + w*w); }
+
+    operator TFbxVector4<float>() const {
+        TFbxVector4<float> r;
+        r.x = static_cast<float>(x);
+        r.y = static_cast<float>(y);
+        r.z = static_cast<float>(z);
+        r.w = static_cast<float>(w);
+        return r;
+    }
+    operator TFbxVector4<double>() const {
+        TFbxVector4<double> r;
+        r.x = static_cast<double>(x);
+        r.y = static_cast<double>(y);
+        r.z = static_cast<double>(z);
+        r.w = static_cast<double>(w);
+        return r;
+    }
 };
 
-struct FbxQuat
+template<typename T>
+struct TFbxQuat
 {
-    FbxQuat()
-    : FbxQuat(0.0f, 0.0f, 0.0f, 1.0f) {}
-    FbxQuat(float x, float y, float z, float w)
-    : x(x), y(y), z(z), w(w) {}
-    float x, y, z, w;  
+    T x;
+    T y;
+    T z;
+    T w;
+
+    TFbxQuat<T>& operator=(const TFbxVector4<T>& v) {
+        x = v.x; y = v.y; z = v.z; w = v.w;
+        return *this;
+    }
+    
+    TFbxQuat() : x(0), y(0), z(0), w(1) {}
+    TFbxQuat(T x, T y, T z, T w) : x(x), y(y), z(z), w(w) {}
+    TFbxQuat(const TFbxVector4<T>& v) : x(v.x), y(v.y), z(v.z), w(v.w) {}
+
+    operator TFbxQuat<double>() const {
+        TFbxQuat<double> r;
+        r.x = static_cast<double>(x);
+        r.y = static_cast<double>(y);
+        r.z = static_cast<double>(z);
+        r.w = static_cast<double>(w);
+        return r;
+    }
+
+    operator TFbxQuat<float>() const {
+        TFbxQuat<float> r;
+        r.x = static_cast<float>(x);
+        r.y = static_cast<float>(y);
+        r.z = static_cast<float>(z);
+        r.w = static_cast<float>(w);
+        return r;
+    }
 };
 
-struct FbxMatrix3
+template<typename T>
+struct TFbxMatrix3
 {
-    FbxVector3& operator[](int col) { return columns[col]; }
-    const FbxVector3& operator[](int col) const { return columns[col]; }
-    FbxVector3 columns[3];
-};
-
-struct FbxMatrix4
-{
-    FbxMatrix4()
-    : FbxMatrix4(1.0f) {}
-    FbxMatrix4(float f)
+    TFbxMatrix3(){}
+    explicit TFbxMatrix3(T f)
     {
-        columns[0].x = f;
-        columns[1].y = f;
-        columns[2].z = f;
-        columns[3].w = f;
+        col[0].x = f;
+        col[1].y = f;
+        col[2].z = f;
     }
-    void operator=(const FbxMatrix3& m)
-    {
-        (*this) = FbxMatrix4(1.0f);
-        columns[0][0] = m[0][0]; columns[0][1] = m[0][1]; columns[0][2] = m[0][2];
-        columns[1][0] = m[1][0]; columns[1][1] = m[1][1]; columns[1][2] = m[1][2];
-        columns[2][0] = m[2][0]; columns[2][1] = m[2][1]; columns[2][2] = m[2][2];
+    
+    TFbxVector3<T> operator[](const int &i) const {
+        return col[i];
     }
-    FbxVector4& operator[](int col) { return columns[col]; }
-    const FbxVector4& operator[](int col) const { return columns[col]; }
-    FbxVector4 columns[4];
+    TFbxVector3<T>& operator[](const int &i){
+        return col[i];
+    }
+private:
+    TFbxVector3<T> col[3];
 };
+
+template<typename T>
+struct TFbxMatrix4
+{
+    TFbxMatrix4(){}
+    explicit TFbxMatrix4(T f)
+    {
+        col[0].x = f;
+        col[1].y = f;
+        col[2].z = f;
+        col[3].w = f;
+    }
+
+    void operator=(const TFbxMatrix3<T>& m)
+    {
+        (*this) = TFbxMatrix4<T>(static_cast<T>(1));
+        col[0][0] = m[0][0]; col[0][1] = m[0][1]; col[0][2] = m[0][2];
+        col[1][0] = m[1][0]; col[1][1] = m[1][1]; col[1][2] = m[1][2];
+        col[2][0] = m[2][0]; col[2][1] = m[2][1]; col[2][2] = m[2][2];
+    }
+    
+    TFbxVector4<T> operator[](const int &i) const {
+        return col[i];
+    }
+    TFbxVector4<T>& operator[](const int &i){
+        return col[i];
+    }
+private:
+    TFbxVector4<T> col[4];
+};
+
+typedef TFbxVector2<float> FbxVector2;
+typedef TFbxVector2<int64_t> FbxIVector2;
+typedef TFbxVector2<double> FbxDVector2;
+typedef TFbxVector3<float> FbxVector3;
+typedef TFbxVector3<int64_t> FbxIVector3;
+typedef TFbxVector3<double> FbxDVector3;
+typedef TFbxVector4<float> FbxVector4;
+typedef TFbxVector4<int64_t> FbxIVector4;
+typedef TFbxVector4<double> FbxDVector4;
+typedef TFbxQuat<float> FbxQuat;
+typedef TFbxQuat<double> FbxDQuat;
+typedef TFbxMatrix3<float> FbxMatrix3;
+typedef TFbxMatrix3<double> FbxDMatrix3;
+typedef TFbxMatrix4<float> FbxMatrix4;
+typedef TFbxMatrix4<double> FbxDMatrix4;
 
 inline FbxQuat FbxNormalize(const FbxQuat& a);
 

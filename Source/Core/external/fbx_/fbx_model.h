@@ -29,21 +29,50 @@ public:
         Null
     };
 
+    size_t ChildCount() const;
+    Model* GetChild(size_t i);
+
     virtual bool Make(Node& node) {
         type = node.GetProperty(2).GetString();
-        lclTranslation = FbxVector3(0.0f, 0.0f, 0.0f);
-        lclRotation = FbxVector3(0.0f, 0.0f, 0.0f);
-        lclScaling = FbxVector3(1.0f, 1.0f, 1.0f);
-        preRotation = FbxVector3(0.0f, 0.0f, 0.0f);
-        postRotation = FbxVector3(0.0f, 0.0f, 0.0f);
+        lclTranslation = FbxDVector3(0.0f, 0.0f, 0.0f);
+        lclRotation = FbxDVector3(0.0f, 0.0f, 0.0f);
+        lclScaling = FbxDVector3(1.0f, 1.0f, 1.0f);
+        preRotation = FbxDVector3(0.0f, 0.0f, 0.0f);
+        postRotation = FbxDVector3(0.0f, 0.0f, 0.0f);
 
         Properties* props = node.ConvertChild<Properties>();
         if(!props) {
             Log("Failed to get model properties");
             return false;
+        }     
+        if(props->Get("Lcl Translation")) {
+            lclTranslation =
+                props->GetValue<FbxDVector3>("Lcl Translation");
         }
-        
-        // TODO
+        if(props->Get("Lcl Rotation")) {
+            lclRotation =
+                props->GetValue<FbxDVector3>("Lcl Rotation");
+        }
+        if(props->Get("Lcl Scaling")) {
+            lclScaling =
+                props->GetValue<FbxDVector3>("Lcl Scaling");
+        }
+        if(props->Get("PreRotation")) {
+            preRotation = 
+                props->GetValue<FbxDVector3>("PreRotation");
+        }
+        if(props->Get("PostRotation")) {
+            postRotation =
+                props->GetValue<FbxDVector3>("PostRotation");
+        }
+
+        FbxQuat preQuat = FbxEulerToQuat(preRotation);
+        FbxQuat postQuat = FbxEulerToQuat(postRotation);
+        FbxQuat rotation = FbxEulerToQuat(lclRotation);
+        lclTransform = 
+            FbxTranslate(FbxMatrix4(1.0f), lclTranslation) *
+            FbxToMatrix4(preQuat * rotation * postQuat) *
+            FbxScale(FbxMatrix4(1.0f), lclScaling);
 
         return true;
     }
@@ -60,11 +89,11 @@ public:
 
     std::string type;
 
-    FbxVector3 preRotation;
-    FbxVector3 postRotation;
-    FbxVector3 lclTranslation;
-    FbxVector3 lclRotation;
-    FbxVector3 lclScaling;
+    FbxDVector3 preRotation;
+    FbxDVector3 postRotation;
+    FbxDVector3 lclTranslation;
+    FbxDVector3 lclRotation;
+    FbxDVector3 lclScaling;
 
     FbxMatrix4 lclTransform;
 };

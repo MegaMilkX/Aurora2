@@ -4,7 +4,7 @@
 #include <vector>
 #include <iostream>
 
-#include "fbx_math.h"
+#include "../fbx_/fbx_math.h"
 #include "fbx_node.h"
 #include "fbx_object.h"
 

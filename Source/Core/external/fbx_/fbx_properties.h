@@ -7,13 +7,69 @@
 #include "fbx_type_index.h"
 #include "fbx_math.h"
 
+#include <memory>
+
 namespace Fbx {
 
-class Property : public Object {
+class ValueHolderBase {
 public:
+    virtual ~ValueHolderBase() {}
+    template<typename Y>
+    Y Get() {
+        if(GetType() != TypeInfo<Y>::Index())
+            return Y();
+        Y v = *(Y*)GetPtr();
+        return v;
+    }
+protected:
+    virtual TypeIndex GetType() = 0;
+    virtual void* GetPtr() = 0;
+};
+
+template<typename T>
+class ValueHolder : public ValueHolderBase {
+public:
+    ValueHolder(const T& v)
+    : value(v) {}
+protected:
+    virtual TypeIndex GetType() { return TypeInfo<T>::Index(); }
+    virtual void* GetPtr() { return (void*)&value; }
+private:
+    T value;
+};
+
+class Variant {
+public:
+    Variant()
+    : type(TypeInfo<void>::Index()) {}
+    ~Variant() {}
+    template<typename T>
+    void Set(const T& v) {
+        type = TypeInfo<T>::Index();
+        value.reset(new ValueHolder<T>(v));
+    }
+    template<typename T>
+    bool Is() {
+        if(type != TypeInfo<T>::Index())
+            return false;
+        return true;
+    }
+    template<typename T>
+    T Get() {
+        if(type != TypeInfo<T>::Index())
+            return T();
+        return value->Get<T>();
+    }
+private:
+    TypeIndex type;
+    std::shared_ptr<ValueHolderBase> value;
+};
+
+class Property : public BasicObject {
+public:
+    
     virtual bool Make(Node& node) {
         name = node.GetProperty(0).GetString();
-        std::string type_str = node.GetProperty(1).GetString();
         /*
         { "bool",
             "Number",
@@ -31,41 +87,102 @@ public:
         if(node.PropCount() == 5) {
             NodeProperty& p = node.GetProperty(4);
             if(p.IsDouble()) {
-                type = TypeInfo<double>::Index();
-                double v = p.GetDouble();
+                variant.Set(p.GetDouble());
             } else if(p.IsInt16()) {
-                type = TypeInfo<int16_t>::Index();
+                variant.Set(p.GetInt16());
             } else if(p.IsInt32()) {
-                type = TypeInfo<int32_t>::Index();
+                variant.Set(p.GetInt32());
             } else if(p.IsInt64()) {
-                type = TypeInfo<int64_t>::Index();
+                variant.Set(p.GetInt64());
             } else if(p.IsFloat()) {
-                type = TypeInfo<float>::Index();
+                variant.Set(p.GetFloat());
             } else if(p.IsString()) {
-                type = TypeInfo<std::string>::Index();
+                variant.Set(p.GetString());
             }
         } else if(node.PropCount() == 6) {
             NodeProperty& p0 = node.GetProperty(4);
             NodeProperty& p1 = node.GetProperty(5);
-
-            type = TypeInfo<void>::Index();
+            if(p0.IsDouble() && p1.IsDouble()) {
+                variant.Set(
+                    FbxDVector2(
+                        p0.GetDouble(), 
+                        p1.GetDouble()
+                    )
+                );
+            } else if(p0.IsInt16() && p1.IsInt16()) {
+                variant.Set(
+                    FbxIVector2(
+                        p0.GetInt16(),
+                        p1.GetInt16()
+                    )
+                );
+            } else if(p0.IsInt32() && p1.IsInt32()) {
+                variant.Set(
+                    FbxIVector2(
+                        p0.GetInt32(),
+                        p1.GetInt32()
+                    )
+                );
+            } else if(p0.IsInt64() && p1.IsInt64()) {
+                variant.Set(
+                    FbxIVector2(
+                        p0.GetInt64(),
+                        p1.GetInt64()
+                    )
+                );
+            } else if(p0.IsFloat() && p1.IsFloat()) {
+                variant.Set(
+                    FbxVector2(
+                        p0.GetFloat(),
+                        p1.GetFloat()
+                    )
+                );
+            }
         } else if(node.PropCount() == 7) {
             NodeProperty& p0 = node.GetProperty(4);
             NodeProperty& p1 = node.GetProperty(5);
             NodeProperty& p2 = node.GetProperty(6);
             if(p0.IsDouble() && p1.IsDouble() && p2.IsDouble()) {
-                // TODO
+                variant.Set(
+                    FbxDVector3(
+                        p0.GetDouble(), 
+                        p1.GetDouble(), 
+                        p2.GetDouble()
+                    )
+                );
             } else if(p0.IsInt16() && p1.IsInt16() && p2.IsInt16()) {
-                //type = TypeInfo<int16_t>::Index();
+                variant.Set(
+                    FbxIVector3(
+                        p0.GetInt16(),
+                        p1.GetInt16(),
+                        p2.GetInt16()
+                    )
+                );
             } else if(p0.IsInt32() && p1.IsInt32() && p2.IsInt32()) {
-                //type = TypeInfo<int32_t>::Index();
+                variant.Set(
+                    FbxIVector3(
+                        p0.GetInt32(),
+                        p1.GetInt32(),
+                        p2.GetInt32()
+                    )
+                );
             } else if(p0.IsInt64() && p1.IsInt64() && p2.IsInt64()) {
-                //type = TypeInfo<int64_t>::Index();
+                variant.Set(
+                    FbxIVector3(
+                        p0.GetInt64(),
+                        p1.GetInt64(),
+                        p2.GetInt64()
+                    )
+                );
             } else if(p0.IsFloat() && p1.IsFloat() && p2.IsFloat()) {
-                //type = TypeInfo<float>::Index();
+                variant.Set(
+                    FbxVector3(
+                        p0.GetFloat(),
+                        p1.GetFloat(),
+                        p2.GetFloat()
+                    )
+                );
             }
-        } else {
-            type = TypeInfo<void>::Index();
         }
         return true;
     }
@@ -83,12 +200,24 @@ public:
     const std::string& Name() const {
         return name;
     }
+
+    template<typename T>
+    T Get() {
+        if(!variant.Is<T>()) {
+            FBX_LOGW("Property '" << name "' - invalid type specified when getting value");
+        }
+        return variant.Get<T>();
+    }
+
+    Variant& GetVariant() {
+        return variant;
+    }
 private:
     std::string name;
-    TypeIndex type;
+    Variant variant;
 };
 
-class Properties : public Object {
+class Properties : public BasicObject {
 public:
     virtual bool Make(Node& node) {
         for(size_t i = 0; i < node.ChildCount(); ++i) {
@@ -110,6 +239,17 @@ public:
             if(p->Name() == name) return p;   
         }
         return 0;
+    }
+    template<typename T>
+    T GetValue(const std::string& name) {
+        T v = T();
+        Property* p = Get(name);
+        if(p) {
+            v = p->GetVariant().Get<T>();
+        } else {
+            FBX_LOGW(name << " - no such property");
+        }
+        return v;
     }
 private:
     std::vector<Property*> props;

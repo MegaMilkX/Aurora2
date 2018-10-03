@@ -1,7 +1,7 @@
 #ifndef FBX_POSE_H
 #define FBX_POSE_H
 
-#include "fbx_math.h"
+#include "../fbx_/fbx_math.h"
 #include "fbx_node.h"
 #include "fbx_object.h"
 
