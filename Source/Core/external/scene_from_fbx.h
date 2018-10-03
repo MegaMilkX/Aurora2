@@ -74,17 +74,19 @@ inline void ResourcesFromFbxScene(Fbx::Scene& fbxScene, FbxImportData& importDat
         }
 
         // TODO: Skin data load
-        std::vector<int32_t> boneIndices4 = fbxMesh.GetBoneIndices4();
-        std::vector<float> boneIndices4f;
-        for(auto i : boneIndices4) {
-            boneIndices4f.emplace_back((float)i);
+        Fbx::DeformerSkin* fbxSkin = 
+            fbxScene.GetChild<Fbx::DeformerSkin>(Fbx::OBJECT_OBJECT, geom->GetUid());
+        if(fbxSkin) {
+            std::vector<FbxVector4> boneIndices;
+            std::vector<FbxVector4> boneWeights;
+            if(MakeBlendIndicesAndWeights(fbxScene, fbxSkin, geom, fbxMesh, boneIndices, boneWeights)) {
+                if(!boneIndices.empty() && !boneWeights.empty()) {
+                    mz_zip_writer_add_mem(&zip, "BoneIndices4", (void*)boneIndices.data(), boneIndices.size() * sizeof(FbxVector4), 0);
+                    mz_zip_writer_add_mem(&zip, "BoneWeights4", (void*)boneWeights.data(), boneWeights.size() * sizeof(FbxVector4), 0);
+                }
+            }
         }
-        std::vector<float> boneWeights4 = fbxMesh.GetBoneWeights4();
-        if(!boneIndices4.empty() && !boneWeights4.empty()) {
-            mz_zip_writer_add_mem(&zip, "BoneIndices4", (void*)boneIndices4f.data(), boneIndices4f.size() * sizeof(float), 0);
-            mz_zip_writer_add_mem(&zip, "BoneWeights4", (void*)boneWeights4.data(), boneWeights4.size() * sizeof(float), 0);
-        }
-
+        
 /*
         FbxSkin* skin = geom->GetSkin();
         FbxPose* pose = fbxScene.GetBindPose();
@@ -120,13 +122,25 @@ inline void ResourcesFromFbxScene(Fbx::Scene& fbxScene, FbxImportData& importDat
         mesh_ref->Storage(Resource::LOCAL);
         importData.meshes[geom->GetUid()] = mesh_ref;
 
-        /*
-        GlobalDataRegistry().Add(
-            MKSTR(geom->GetUid() << geom->GetName() << ".geo"),
-            DataSourceRef(new DataSourceMemory((char*)bufptr, sz))
-        );
-        */
         mz_zip_writer_end(&zip);
+    }
+
+    for(size_t i = 0; i < fbxScene.Objects().Count<Fbx::DeformerSkin>(); ++i) {
+        Fbx::DeformerSkin* skin = fbxScene.Objects().Get<Fbx::DeformerSkin>(i);
+        std::shared_ptr<Skeleton> skeleton(new Skeleton());
+        skeleton->Name(MKSTR(skin->GetUid() << ".skel"));
+        skeleton->Storage(Resource::LOCAL);
+        size_t cluster_count = 
+            fbxScene.CountChildren<Fbx::DeformerCluster>(Fbx::OBJECT_OBJECT, skin->GetUid());
+        for(size_t j = 0; j < cluster_count; ++j) {
+            Fbx::DeformerCluster* cluster = 
+                fbxScene.GetChild<Fbx::DeformerCluster>(Fbx::OBJECT_OBJECT, skin->GetUid());
+            Fbx::Model* model = 
+                fbxScene.GetChild<Fbx::Model>(Fbx::OBJECT_OBJECT, cluster->GetUid());
+            if(!model) continue;
+            skeleton->AddBone(model->GetName(), *(gfxm::mat4*)&cluster->transformLink);
+        }
+        importData.skeletons[skin->GetUid()] = skeleton;
     }
 /*
     
@@ -259,8 +273,30 @@ inline void SceneFromFbxModel(Fbx::Model* fbxModel, Fbx::Scene& fbxScene, SceneO
     sceneObject->Name(fbxModel->GetName());
     //LOG("Created object: " << fbxModel->GetName());
     //LOG("Type: " << fbxModel->GetType());
-
     sceneObject->Get<Transform>()->SetTransform(*(gfxm::mat4*)&fbxModel->lclTransform);
+
+    Fbx::Geometry* geom = 0;
+    if(geom = fbxScene.GetChild<Fbx::Geometry>(Fbx::OBJECT_OBJECT, fbxModel->GetUid())) {
+        auto it = importData.meshes.find(geom->GetUid());
+        if(it != importData.meshes.end()) {
+            sceneObject->Get<Model>()->mesh = it->second;
+        }
+
+        /*
+        Fbx::DeformerSkin* fbxSkin = fbxScene.GetChild<Fbx::DeformerSkin>(Fbx::OBJECT_OBJECT, geom->GetUid());
+        if(fbxSkin) {
+            LOG("Found skin!");
+            Skin* skin = sceneObject->Get<Skin>();
+            skin->SetArmatureRoot(importData.Root()->WeakPtr());
+            auto it = importData.skeletons.find(fbxSkin->GetUid());
+            if(it != importData.skeletons.end()) {
+                resource_ref<Skeleton> skel_res_ref;
+                skel_res_ref = it->second;
+                skin->SetSkeleton(skel_res_ref);
+            }
+        }
+        */
+    }
     /*
     if(fbxModel->GetType() == "Mesh") {
         FbxMesh* fbxMesh = fbxScene.GetByUid<FbxMesh>(fbxModel->GetUid());

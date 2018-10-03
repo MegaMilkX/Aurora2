@@ -10,6 +10,72 @@ namespace Fbx {
 class DeformerCluster : public Object {
 public:
     virtual bool Make(Node& node) {
+        Node* n = 0;
+        if(n = node.FindNode("Indexes")) {
+            if(!n->GetProperty(0).IsInt32Array()) {
+                FBX_LOGW("Unexpected deformer index format (Indexes)");
+            } else {
+                indices = n->GetProperty(0).GetArray<int32_t>();
+            }
+        } else {
+            FBX_LOGW("Deformer cluster has no indices");
+        }
+
+        if(n = node.FindNode("Weights")) {
+            if(!n->GetProperty(0).IsDoubleArray()) {
+                FBX_LOGW("Unexpected deformer weights format (Weights)");
+            } else {
+                weights = n->GetProperty(0).GetArray<double>();
+            }
+        } else if(n = node.FindNode("BlendWeights")) {
+            if(!n->GetProperty(0).IsDoubleArray()) {
+                FBX_LOGW("Unexpected deformer weights format (BlendWeights)");
+            } else {
+                weights = n->GetProperty(0).GetArray<double>();
+            }
+        } else {
+            FBX_LOGW("Deformer cluster has no weights");
+        }
+        
+        if(n = node.FindNode("Transform")) {
+            if(!n->GetProperty(0).IsDoubleArray()) {
+                FBX_LOGW("Unexpected deformer Transform format");
+            } else {
+                std::vector<double> data =
+                    n->GetProperty(0).GetArray<double>();
+                FbxDMatrix4 t = *(FbxDMatrix4*)data.data();
+                transform = static_cast<FbxMatrix4>(t);
+            }
+        } else {
+            //FBX_LOGW("Deformer has no Transform");
+        }
+
+        if(n = node.FindNode("TransformAssociateModel")) {
+            if(!n->GetProperty(0).IsDoubleArray()) {
+                FBX_LOGW("Unexpected deformer TransformAssociateModel format");
+            } else {
+                std::vector<double> data =
+                    n->GetProperty(0).GetArray<double>();
+                FbxDMatrix4 t = *(FbxDMatrix4*)data.data();
+                transformAssociateModel = static_cast<FbxMatrix4>(t);
+            }
+        } else {
+            //FBX_LOGW("Deformer has no TransformAssociateModel");
+        }
+
+        if(n = node.FindNode("TransformLink")) {
+            if(!n->GetProperty(0).IsDoubleArray()) {
+                FBX_LOGW("Unexpected deformer TransformLink format");
+            } else {
+                std::vector<double> data =
+                    n->GetProperty(0).GetArray<double>();
+                FbxDMatrix4 t = *(FbxDMatrix4*)data.data();
+                transformLink = static_cast<FbxMatrix4>(t);
+            }
+        } else {
+            FBX_LOGW("Deformer has no TransformLink");
+        }
+        
         return true;
     }
 
@@ -23,6 +89,12 @@ public:
             return false;
         return true;
     }
+
+    std::vector<int32_t> indices;
+    std::vector<double> weights;
+    FbxMatrix4 transform;
+    FbxMatrix4 transformLink;
+    FbxMatrix4 transformAssociateModel;
 };
 
 }

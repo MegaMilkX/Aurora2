@@ -166,6 +166,21 @@ struct TFbxMatrix3
     TFbxVector3<T>& operator[](const int &i){
         return col[i];
     }
+
+    operator TFbxMatrix3<float>() const {
+        TFbxMatrix3<float> r;
+        r[0] = static_cast<TFbxVector3<float>>(col[0]);
+        r[1] = static_cast<TFbxVector3<float>>(col[1]);
+        r[2] = static_cast<TFbxVector3<float>>(col[2]);
+        return r;
+    }
+    operator TFbxMatrix3<double>() const {
+        TFbxMatrix3<double> r;
+        r[0] = static_cast<TFbxVector3<double>>(col[0]);
+        r[1] = static_cast<TFbxVector3<double>>(col[1]);
+        r[2] = static_cast<TFbxVector3<double>>(col[2]);
+        return r;
+    }
 private:
     TFbxVector3<T> col[3];
 };
@@ -195,6 +210,23 @@ struct TFbxMatrix4
     }
     TFbxVector4<T>& operator[](const int &i){
         return col[i];
+    }
+
+    operator TFbxMatrix4<float>() const {
+        TFbxMatrix4<float> r;
+        r[0] = static_cast<TFbxVector4<float>>(col[0]);
+        r[1] = static_cast<TFbxVector4<float>>(col[1]);
+        r[2] = static_cast<TFbxVector4<float>>(col[2]);
+        r[3] = static_cast<TFbxVector4<float>>(col[3]);
+        return r;
+    }
+    operator TFbxMatrix4<double>() const {
+        TFbxMatrix4<double> r;
+        r[0] = static_cast<TFbxVector4<double>>(col[0]);
+        r[1] = static_cast<TFbxVector4<double>>(col[1]);
+        r[2] = static_cast<TFbxVector4<double>>(col[2]);
+        r[3] = static_cast<TFbxVector4<double>>(col[3]);
+        return r;
     }
 private:
     TFbxVector4<T> col[4];

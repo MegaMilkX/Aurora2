@@ -151,7 +151,7 @@ public:
             || !node.GetProperty(0).IsInt64()
             || !node.GetProperty(1).IsString()
             || !node.GetProperty(2).IsString()
-            || node.GetProperty(2).GetString != "Mesh") 
+            || node.GetProperty(2).GetString() != "Mesh") 
             return false;
         return true;
     }
@@ -201,13 +201,14 @@ public:
                 }
                 */
                 mesh.indices.emplace_back(index);
+                mesh.controlPointReferences.emplace_back(vert.controlPoint);
                 index++;
             }
         }
 
         return mesh;
     }
-private:
+
     std::vector<Vertex> unindexedVertices;
 
     std::vector<FbxVector3> controlPoints;
@@ -216,6 +217,8 @@ private:
     std::vector<LayerElementUV*> uvLayers;
     std::vector<LayerElementColor*> rgbLayers;
     std::vector<LayerElementMaterial*> materialLayers;
+private:
+    
 };
 
 }

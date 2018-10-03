@@ -26,7 +26,7 @@ public:
 
     const std::vector<int32_t>& GetBoneIndices4() const { return boneIndices4; }
     const std::vector<float>& GetBoneWeights4() const { return boneWeights4; }
-private:
+
     std::vector<float> vertices;
     std::vector<uint32_t> indices;
     std::vector<std::vector<float>> normal_layers;
@@ -35,6 +35,10 @@ private:
     
     std::vector<int32_t> boneIndices4;
     std::vector<float> boneWeights4;
+
+    std::vector<int32_t> controlPointReferences;
+private:
+    
 };
 
 }
