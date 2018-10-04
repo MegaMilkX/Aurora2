@@ -45,6 +45,7 @@ public:
     ) {
         int elemSize = 2;
         Vertex::Attrib attr = Vertex::UV;
+        
         if(mapping == ByVertex) {
             // Element for each vertex
             // TODO: WRONG, it's for each CONTROL POINT

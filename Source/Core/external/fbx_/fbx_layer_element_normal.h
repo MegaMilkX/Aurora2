@@ -45,6 +45,7 @@ public:
     ) {
         int elemSize = 3;
         Vertex::Attrib attr = Vertex::Normal;
+
         if(mapping == ByVertex) {
             // Element for each vertex
             // TODO: WRONG, it's for each CONTROL POINT

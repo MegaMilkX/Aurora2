@@ -309,6 +309,8 @@ inline void SceneFromFbxModel(Fbx::Model* fbxModel, Fbx::Scene& fbxScene, SceneO
                 }
             }
         }
+    } else if(fbxModel->type == "LimbNode") {
+        sceneObject->Get<Bone>();
     }
     /*
     if(fbxModel->GetType() == "Mesh") {

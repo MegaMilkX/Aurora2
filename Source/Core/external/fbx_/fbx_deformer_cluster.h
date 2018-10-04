@@ -44,7 +44,7 @@ public:
                 std::vector<double> data =
                     n->GetProperty(0).GetArray<double>();
                 FbxDMatrix4 t = *(FbxDMatrix4*)data.data();
-                transform = static_cast<FbxMatrix4>(t);
+                transform = (t);
             }
         } else {
             //FBX_LOGW("Deformer has no Transform");
@@ -57,7 +57,7 @@ public:
                 std::vector<double> data =
                     n->GetProperty(0).GetArray<double>();
                 FbxDMatrix4 t = *(FbxDMatrix4*)data.data();
-                transformAssociateModel = static_cast<FbxMatrix4>(t);
+                transformAssociateModel = (t);
             }
         } else {
             //FBX_LOGW("Deformer has no TransformAssociateModel");
@@ -70,7 +70,7 @@ public:
                 std::vector<double> data =
                     n->GetProperty(0).GetArray<double>();
                 FbxDMatrix4 t = *(FbxDMatrix4*)data.data();
-                transformLink = static_cast<FbxMatrix4>(t);
+                transformLink = (t);
             }
         } else {
             FBX_LOGW("Deformer " << GetUid() << " has no TransformLink");
