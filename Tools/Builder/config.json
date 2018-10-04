@@ -1,5 +1,6 @@
 {
     "include_paths":[
+		"..\\..\\Lib\\Include\\Assimp\\include",
         "..\\..\\Lib\\Include\\Aurora\\include",
         "..\\..\\Lib\\Include\\lua\\include",
         "..\\..\\Lib\\Include\\bullet3-2.86.1\\src",
@@ -47,6 +48,7 @@
         "librttr_core.lib",
         "ozz_animation_r.lib",
         "ozz_base_r.lib",
-        "ozz_options_r.lib"
+        "ozz_options_r.lib",
+		"assimp.lib"
     ]
 }
