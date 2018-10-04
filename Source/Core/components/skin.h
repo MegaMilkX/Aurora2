@@ -83,7 +83,7 @@ private:
     std::vector<Transform*> transformObjects;
     std::vector<gfxm::mat4> transforms;
     std::vector<gfxm::mat4> inverseBind;
-    gfxm::mat4 bindTransform;
+    gfxm::mat4 bindTransform = gfxm::mat4(1.0f);
     bool skeletonDirty = true;
 };
 STATIC_RUN(Skin)

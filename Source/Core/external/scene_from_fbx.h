@@ -73,6 +73,8 @@ inline void ResourcesFromFbxScene(Fbx::Scene& fbxScene, FbxImportData& importDat
             mz_zip_writer_add_mem(&zip, MKSTR("UV." << j).c_str(), (void*)fbxMesh.GetUV(0).data(), vertexCount * 2 * sizeof(float), 0);
         }
 
+        LOG("Making a mesh resource: " << vertexCount << " vertices, " << indexCount << " indices");
+
         // TODO: Skin data load
         Fbx::DeformerSkin* fbxSkin = 
             fbxScene.GetChild<Fbx::DeformerSkin>(Fbx::OBJECT_OBJECT, geom->GetUid());
@@ -85,6 +87,14 @@ inline void ResourcesFromFbxScene(Fbx::Scene& fbxScene, FbxImportData& importDat
                     mz_zip_writer_add_mem(&zip, "BoneWeights4", (void*)boneWeights.data(), boneWeights.size() * sizeof(FbxVector4), 0);
                 }
             }
+            /*
+            LOG("BoneIndex attributes: " << boneIndices.size());
+            for(size_t i = 0; i < boneIndices.size(); ++i) {
+                LOG(boneIndices[i].x << ", " << boneIndices[i].y << ", " << boneIndices[i].z << ", " << boneIndices[i].w << " - "
+                    << boneWeights[i].x << ", " << boneWeights[i].y << ", " << boneWeights[i].z << ", " << boneWeights[i].w);
+            }
+            LOG("BoneWeight attributes: " << boneWeights.size());
+            */
         }
         
 /*
@@ -134,7 +144,7 @@ inline void ResourcesFromFbxScene(Fbx::Scene& fbxScene, FbxImportData& importDat
             fbxScene.CountChildren<Fbx::DeformerCluster>(Fbx::OBJECT_OBJECT, skin->GetUid());
         for(size_t j = 0; j < cluster_count; ++j) {
             Fbx::DeformerCluster* cluster = 
-                fbxScene.GetChild<Fbx::DeformerCluster>(Fbx::OBJECT_OBJECT, skin->GetUid());
+                fbxScene.GetChild<Fbx::DeformerCluster>(Fbx::OBJECT_OBJECT, skin->GetUid(), j);
             Fbx::Model* model = 
                 fbxScene.GetChild<Fbx::Model>(Fbx::OBJECT_OBJECT, cluster->GetUid());
             if(!model) continue;
@@ -282,7 +292,6 @@ inline void SceneFromFbxModel(Fbx::Model* fbxModel, Fbx::Scene& fbxScene, SceneO
             sceneObject->Get<Model>()->mesh = it->second;
         }
 
-        /*
         Fbx::DeformerSkin* fbxSkin = fbxScene.GetChild<Fbx::DeformerSkin>(Fbx::OBJECT_OBJECT, geom->GetUid());
         if(fbxSkin) {
             LOG("Found skin!");
@@ -293,9 +302,13 @@ inline void SceneFromFbxModel(Fbx::Model* fbxModel, Fbx::Scene& fbxScene, SceneO
                 resource_ref<Skeleton> skel_res_ref;
                 skel_res_ref = it->second;
                 skin->SetSkeleton(skel_res_ref);
+                Fbx::DeformerCluster* cluster = 
+                    fbxScene.GetChild<Fbx::DeformerCluster>(Fbx::OBJECT_OBJECT, fbxSkin->GetUid());
+                if(cluster) {
+                    skin->SetBindTransform(*(gfxm::mat4*)&cluster->transform);
+                }
             }
         }
-        */
     }
     /*
     if(fbxModel->GetType() == "Mesh") {

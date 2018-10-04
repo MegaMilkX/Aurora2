@@ -176,9 +176,10 @@ inline bool MakeBlendIndicesAndWeights(
     std::vector<Bone> bones;
     size_t cluster_count = 
         scene.CountChildren<Fbx::DeformerCluster>(Fbx::OBJECT_OBJECT, skin->GetUid());
+    FBX_LOG("Cluster count: " << cluster_count);
     for(size_t j = 0; j < cluster_count; ++j) {
         Fbx::DeformerCluster* cluster = 
-            scene.GetChild<Fbx::DeformerCluster>(Fbx::OBJECT_OBJECT, skin->GetUid());
+            scene.GetChild<Fbx::DeformerCluster>(Fbx::OBJECT_OBJECT, skin->GetUid(), j);
         if(cluster->indices.size() != cluster->weights.size()) {
             FBX_LOGW("Cluster " << cluster->GetUid() << ": index and weight count mismatch: "
                 << cluster->indices.size() << " vs " << cluster->weights.size());
@@ -196,14 +197,14 @@ inline bool MakeBlendIndicesAndWeights(
         return a.model->GetName() < b.model->GetName();
     });
 
-    /*
-
     for(size_t i = 0; i < bones.size(); ++i) {
         Bone& b = bones[i];
         float boneIndex = (float)i;
+        FBX_LOG(b.model->GetName());
         for(size_t j = 0; j < b.cluster->indices.size(); ++j) {
             int32_t controlPoint = b.cluster->indices[j];
             double weight = b.cluster->weights[j];
+            //FBX_LOG("CP: " << controlPoint << ", bone: " << boneIndex << ", weight: " << weight);
             for(size_t k = 0; k < 4; ++k) {
                 if(indicesPerCP[controlPoint][k] < 0.0f) {
                     indicesPerCP[controlPoint][k] = boneIndex;
@@ -225,9 +226,8 @@ inline bool MakeBlendIndicesAndWeights(
         int32_t cp = triMesh.controlPointReferences[i];
         indices.emplace_back(indicesPerCP[cp]);
         weights.emplace_back(weightsPerCP[cp]);
+        //weights.emplace_back(FbxVector4(0.0f, 0.0f, 0.0f, 0.0f));
     }
-
-    */
 
     return true;
 }

@@ -33,13 +33,21 @@ void main()
     vec3 Pos = (SkinBindPose * vec4(Position, 1.0)).xyz;
     vec3 Norm = (SkinBindPose * vec4(Normal, 0.0)).xyz;
 
+    vec4 weights = BoneWeight4;
+    if(weights.x + weights.y + weights.z + weights.w > 1.0) {
+        weights = normalize(weights);
+    }
+    float bindWeight = 1.0 - (weights.x + weights.y + weights.z + weights.w);
+
     PositionModel = (
-        (BoneTransforms[bi0] * BoneInverseBindTransforms[bi0]) * vec4(Pos, 1.0) * BoneWeight4.x +
-        (BoneTransforms[bi1] * BoneInverseBindTransforms[bi1]) * vec4(Pos, 1.0) * BoneWeight4.y +
-        (BoneTransforms[bi2] * BoneInverseBindTransforms[bi2]) * vec4(Pos, 1.0) * BoneWeight4.z +
-        (BoneTransforms[bi3] * BoneInverseBindTransforms[bi3]) * vec4(Pos, 1.0) * BoneWeight4.w 
+        vec4(Pos, 1.0) * bindWeight +
+        (BoneTransforms[bi0] * BoneInverseBindTransforms[bi0]) * vec4(Pos, 1.0) * weights.x +
+        (BoneTransforms[bi1] * BoneInverseBindTransforms[bi1]) * vec4(Pos, 1.0) * weights.y +
+        (BoneTransforms[bi2] * BoneInverseBindTransforms[bi2]) * vec4(Pos, 1.0) * weights.z +
+        (BoneTransforms[bi3] * BoneInverseBindTransforms[bi3]) * vec4(Pos, 1.0) * weights.w 
     );
     vec3 NormalSkinned = (
+        vec4(Norm , 0.0) * bindWeight +
         (BoneTransforms[bi0] * BoneInverseBindTransforms[bi0]) * vec4 ( Norm , 0.0 ) * BoneWeight4.x +
         (BoneTransforms[bi1] * BoneInverseBindTransforms[bi1]) * vec4 ( Norm , 0.0 ) * BoneWeight4.y +
         (BoneTransforms[bi2] * BoneInverseBindTransforms[bi2]) * vec4 ( Norm , 0.0 ) * BoneWeight4.z +
