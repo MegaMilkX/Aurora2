@@ -60,8 +60,8 @@ inline void ResourcesFromFbxScene(const aiScene* ai_scene, FbxImportData& import
         normal_layers.resize(1);
         std::vector<std::vector<float>> uv_layers;
         std::vector<std::vector<float>> rgb_layers;
-        std::vector<float> boneIndices4;
-        std::vector<float> boneWeights4;
+        std::vector<gfxm::vec4> boneIndices;
+        std::vector<gfxm::vec4> boneWeights;
 
         for(unsigned j = 0; j < vertexCount; ++j) {
             aiVector3D& v = ai_mesh->mVertices[j];
@@ -101,7 +101,39 @@ inline void ResourcesFromFbxScene(const aiScene* ai_scene, FbxImportData& import
         {
             mz_zip_writer_add_mem(&zip, MKSTR("UV." << j).c_str(), (void*)fbxMesh.GetUV(0).data(), vertexCount * 2 * sizeof(float), 0);
         }
+*/
+        if(ai_mesh->mNumBones) {
+            boneIndices.resize(vertexCount);
+            boneWeights.resize(vertexCount);
+            std::fill(boneIndices.begin(), boneIndices.end(), gfxm::vec4(-1.0f, -1.0f, -1.0f, -1.0f));
+            for(unsigned j = 0; j < ai_mesh->mNumBones; ++j) {
+                unsigned int bone_index = j;
+                aiBone* bone = ai_mesh->mBones[j];
+                for(unsigned k = 0; k < bone->mNumWeights && k < 4; ++k) {
+                    aiVertexWeight& w = bone->mWeights[k];
+                    gfxm::vec4& indices_ref = boneIndices[w.mVertexId];
+                    gfxm::vec4& weights_ref = boneWeights[w.mVertexId];
+                    for(unsigned l = 0; l < 4; ++l) {
+                        if(indices_ref[l] < 0.0f) {
+                            indices_ref[l] = (float)bone_index;
+                            weights_ref[l] = w.mWeight;
+                            break;
+                        }
+                    }
+                }
+            }
+            for(unsigned j = 0; j < boneIndices.size(); ++j) {
+                for(unsigned k = 0; k < 4; ++k) {
+                    if(boneIndices[j][k] < 0.0f) {
+                        boneIndices[j][k] = 0.0f;
+                    }
+                }
+            }
 
+            mz_zip_writer_add_mem(&zip, "BoneIndices4", (void*)boneIndices.data(), boneIndices.size() * sizeof(gfxm::vec4), 0);
+            mz_zip_writer_add_mem(&zip, "BoneWeights4", (void*)boneWeights.data(), boneWeights.size() * sizeof(gfxm::vec4), 0);
+        }
+/*
         LOG("Making a mesh resource: " << vertexCount << " vertices, " << indexCount << " indices");
 
         // TODO: Skin data load
@@ -136,7 +168,7 @@ inline void ResourcesFromFbxScene(const aiScene* ai_scene, FbxImportData& import
 inline void SceneObjectFromFbxNode(aiNode* node, SceneObject* object, FbxImportData& importData) {
     std::string name(node->mName.data, node->mName.length);
     object->Name(name);
-    object->Get<Transform>()->SetTransform(*(gfxm::mat4*)&node->mTransformation);
+    object->Get<Transform>()->SetTransform(gfxm::transpose(*(gfxm::mat4*)&node->mTransformation));
     for(unsigned int i = 0; i < node->mNumChildren; ++i) {
         SceneObject* child = object->CreateObject();
         object->Get<Transform>()->Attach(child->Get<Transform>());
@@ -154,7 +186,13 @@ inline void SceneObjectFromFbxNode(aiNode* node, SceneObject* object, FbxImportD
 inline void SceneFromFbx(const aiScene* ai_scene, SceneObject* scene, FbxImportData& importData) {
     aiNode* ai_rootNode = ai_scene->mRootNode;
     if(!ai_rootNode) return;
-    scene->Get<Transform>()->SetTransform(*(gfxm::mat4*)&ai_rootNode->mTransformation);
+    //scene->Get<Transform>()->SetTransform(*(gfxm::mat4*)&ai_rootNode->mTransformation);
+    
+    //double scaleFactor = 1.0;
+    //ai_rootNode->mMetaData->Get("UnitScaleFactor", scaleFactor);
+    //scaleFactor *= 0.01;
+    //scene->Get<Transform>()->Scale(gfxm::vec3(1.0f, 1.0f, 1.0f) * 0.01f);
+    
     for(unsigned int i = 0; i < ai_rootNode->mNumChildren; ++i) {
         SceneObject* child = scene->CreateObject();
         scene->Get<Transform>()->Attach(child->Get<Transform>());
@@ -170,7 +208,8 @@ inline bool SceneFromFbx(const std::string& filename, SceneObject* scene)
         aiProcess_CalcTangentSpace |
         aiProcess_Triangulate | 
         aiProcess_JoinIdenticalVertices |
-        aiProcess_LimitBoneWeights
+        aiProcess_LimitBoneWeights |
+        aiProcess_GlobalScale
     );
     if(!ai_scene) {
         LOG("Failed to read " << filename);
