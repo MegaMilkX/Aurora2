@@ -55,7 +55,7 @@ inline void ResourcesFromFbxScene(const aiScene* ai_scene, FbxImportData& import
         int32_t indexCount = triCount * 3;
 
         std::vector<float> vertices;
-        std::vector<int32_t> indices;
+        std::vector<uint32_t> indices;
         std::vector<std::vector<float>> normal_layers;
         normal_layers.resize(1);
         std::vector<std::vector<float>> uv_layers;
@@ -81,40 +81,29 @@ inline void ResourcesFromFbxScene(const aiScene* ai_scene, FbxImportData& import
             normal_layers[0].emplace_back(n.y);
             normal_layers[0].emplace_back(n.z);
         }
-
-        mz_zip_archive zip;
-        memset(&zip, 0, sizeof(zip));
-        mz_zip_writer_init_heap(&zip, 0, 0);
-
-        mz_zip_writer_add_mem(&zip, "VertexCount", (void*)&vertexCount, sizeof(vertexCount), 0);
-        mz_zip_writer_add_mem(&zip, "IndexCount", (void*)&indexCount, sizeof(indexCount), 0);
-        mz_zip_writer_add_mem(&zip, "Indices", (void*)indices.data(), indexCount * sizeof(uint32_t), 0);
-        mz_zip_writer_add_mem(&zip, "Vertices", (void*)vertices.data(), vertexCount * 3 * sizeof(float), 0);
-        
-        
-        for(size_t j = 0; j < normal_layers.size(); ++j)
-        {
-            mz_zip_writer_add_mem(&zip, MKSTR("Normals." << j).c_str(), (void*)normal_layers[j].data(), vertexCount * 3 * sizeof(float), 0);
+        for(unsigned j = 0; j < AI_MAX_NUMBER_OF_TEXTURECOORDS; ++j) {
+            if(!ai_mesh->HasTextureCoords(j)) break;
+            std::vector<float> uv_layer;
+            for(unsigned k = 0; k < vertexCount; ++k) {
+                aiVector3D& uv = ai_mesh->mTextureCoords[j][k];
+                uv_layer.emplace_back(uv.x);
+                uv_layer.emplace_back(uv.y);
+            }
+            uv_layers.emplace_back(uv_layer);
         }
-        /*
-        for(size_t j = 0; j < fbxMesh.UVLayerCount(); ++j)
-        {
-            mz_zip_writer_add_mem(&zip, MKSTR("UV." << j).c_str(), (void*)fbxMesh.GetUV(0).data(), vertexCount * 2 * sizeof(float), 0);
-        }
-*/
+
         if(ai_mesh->mNumBones) {
             boneIndices.resize(vertexCount);
             boneWeights.resize(vertexCount);
-            std::fill(boneIndices.begin(), boneIndices.end(), gfxm::vec4(-1.0f, -1.0f, -1.0f, -1.0f));
             for(unsigned j = 0; j < ai_mesh->mNumBones; ++j) {
                 unsigned int bone_index = j;
                 aiBone* bone = ai_mesh->mBones[j];
-                for(unsigned k = 0; k < bone->mNumWeights && k < 4; ++k) {
+                for(unsigned k = 0; k < bone->mNumWeights; ++k) {
                     aiVertexWeight& w = bone->mWeights[k];
                     gfxm::vec4& indices_ref = boneIndices[w.mVertexId];
                     gfxm::vec4& weights_ref = boneWeights[w.mVertexId];
                     for(unsigned l = 0; l < 4; ++l) {
-                        if(indices_ref[l] < 0.0f) {
+                        if(weights_ref[l] == 0.0f) {
                             indices_ref[l] = (float)bone_index;
                             weights_ref[l] = w.mWeight;
                             break;
@@ -122,63 +111,87 @@ inline void ResourcesFromFbxScene(const aiScene* ai_scene, FbxImportData& import
                     }
                 }
             }
-            for(unsigned j = 0; j < boneIndices.size(); ++j) {
-                for(unsigned k = 0; k < 4; ++k) {
-                    if(boneIndices[j][k] < 0.0f) {
-                        boneIndices[j][k] = 0.0f;
-                    }
-                }
-            }
-
-            mz_zip_writer_add_mem(&zip, "BoneIndices4", (void*)boneIndices.data(), boneIndices.size() * sizeof(gfxm::vec4), 0);
-            mz_zip_writer_add_mem(&zip, "BoneWeights4", (void*)boneWeights.data(), boneWeights.size() * sizeof(gfxm::vec4), 0);
         }
-/*
-        LOG("Making a mesh resource: " << vertexCount << " vertices, " << indexCount << " indices");
 
-        // TODO: Skin data load
-        Fbx::DeformerSkin* fbxSkin = 
-            fbxScene.GetChild<Fbx::DeformerSkin>(Fbx::OBJECT_OBJECT, geom->GetUid());
-        if(fbxSkin) {
-            std::vector<FbxVector4> boneIndices;
-            std::vector<FbxVector4> boneWeights;
-            if(MakeBlendIndicesAndWeights(fbxScene, fbxSkin, geom, fbxMesh, boneIndices, boneWeights)) {
-                if(!boneIndices.empty() && !boneWeights.empty()) {
-                    mz_zip_writer_add_mem(&zip, "BoneIndices4", (void*)boneIndices.data(), boneIndices.size() * sizeof(FbxVector4), 0);
-                    mz_zip_writer_add_mem(&zip, "BoneWeights4", (void*)boneWeights.data(), boneWeights.size() * sizeof(FbxVector4), 0);
-                }
-            }
-        }
-*/
-        void* bufptr;
-        size_t sz;
-        mz_zip_writer_finalize_heap_archive(&zip, &bufptr, &sz);
-
-        DataSourceRef data_ref(new DataSourceMemory((char*)bufptr, sz));
         std::shared_ptr<Mesh> mesh_ref(new Mesh());
-        mesh_ref->Build(data_ref);
         mesh_ref->Name(MKSTR(i << ".geo"));
         mesh_ref->Storage(Resource::LOCAL);
+
+        LOG("VERTEX_COUNT: " << vertices.size() / 3);
+        LOG("BONE_DATA_COUNT: " << boneWeights.size());
+
+        mesh_ref->SetAttribArray<Au::Position>(vertices);
+        if(normal_layers.size() > 0) {
+            mesh_ref->SetAttribArray<Au::Normal>(normal_layers[0]);
+        }
+        if(uv_layers.size() > 0) {
+            mesh_ref->SetAttribArray<Au::UV>(uv_layers[0]);
+        }
+        if(!boneIndices.empty() && !boneWeights.empty()) {
+            mesh_ref->SetAttribArray<Au::BoneIndex4>(boneIndices);
+            mesh_ref->SetAttribArray<Au::BoneWeight4>(boneWeights);
+            /*
+            for(unsigned j = 0; j < boneWeights.size(); ++j) {
+                gfxm::vec4& v = boneWeights[j];
+                gfxm::vec4& bi = boneIndices[j];
+                LOG(
+                    "[" << bi.x << ", " << bi.y << ", " << bi.z << ", " << bi.w << "]: " <<
+                    v.x << ", " << v.y << ", " << v.z << ", " << v.w
+                );
+                if(v.x == 0.0f && v.y == 0.0f && v.z == 0.0f && v.w == 0.0f) {
+                    LOG("EMPTY BONE WEIGHTS FOR VERTEX " << j)
+                }
+            }*/
+        }
+        mesh_ref->SetIndices(indices);
+
         importData.meshes[i] = mesh_ref;
 
-        mz_zip_writer_end(&zip);
+        // === Skin data
+        if(ai_mesh->mNumBones) {
+            std::shared_ptr<Skeleton> skeleton(new Skeleton());
+            skeleton->Name(MKSTR(i << ".skel"));
+            skeleton->Storage(Resource::LOCAL);
+
+            for(unsigned j = 0; j < ai_mesh->mNumBones; ++j) {
+                aiBone* bone = ai_mesh->mBones[j];
+                std::string name(bone->mName.data, bone->mName.length);
+
+                skeleton->AddBone(name, gfxm::transpose(*(gfxm::mat4*)&bone->mOffsetMatrix));
+            }
+
+            importData.skeletons[i] = skeleton;
+            LOG("Built skeleton");
+        }
     }
 }
 
-inline void SceneObjectFromFbxNode(aiNode* node, SceneObject* object, FbxImportData& importData) {
+inline void SceneObjectFromFbxNode(const aiScene* ai_scene, aiNode* node, SceneObject* object, FbxImportData& importData) {
     std::string name(node->mName.data, node->mName.length);
     object->Name(name);
     object->Get<Transform>()->SetTransform(gfxm::transpose(*(gfxm::mat4*)&node->mTransformation));
     for(unsigned int i = 0; i < node->mNumChildren; ++i) {
         SceneObject* child = object->CreateObject();
         object->Get<Transform>()->Attach(child->Get<Transform>());
-        SceneObjectFromFbxNode(node->mChildren[i], child, importData);
+        SceneObjectFromFbxNode(ai_scene, node->mChildren[i], child, importData);
     }
 
     if(node->mNumMeshes > 0) {
         auto it = importData.meshes.find(node->mMeshes[0]);
         if(it != importData.meshes.end()) {
             object->Get<Model>()->mesh = it->second;
+        }
+        aiMesh* ai_mesh = ai_scene->mMeshes[node->mMeshes[0]];
+        if(ai_mesh->mNumBones) {
+            Skin* skin = object->Get<Skin>();
+            skin->SetArmatureRoot(importData.Root()->WeakPtr());
+            auto it = importData.skeletons.find(node->mMeshes[0]);
+            if(it != importData.skeletons.end()) {
+                resource_ref<Skeleton> skel_res_ref;
+                skel_res_ref = it->second;
+                skin->SetSkeleton(skel_res_ref);
+            }
+            skin->SetBindTransform(gfxm::mat4(1.0f));
         }
     }
 }
@@ -196,7 +209,7 @@ inline void SceneFromFbx(const aiScene* ai_scene, SceneObject* scene, FbxImportD
     for(unsigned int i = 0; i < ai_rootNode->mNumChildren; ++i) {
         SceneObject* child = scene->CreateObject();
         scene->Get<Transform>()->Attach(child->Get<Transform>());
-        SceneObjectFromFbxNode(ai_rootNode->mChildren[i], child, importData);
+        SceneObjectFromFbxNode(ai_scene, ai_rootNode->mChildren[i], child, importData);
     }
 }
 
@@ -209,7 +222,9 @@ inline bool SceneFromFbx(const std::string& filename, SceneObject* scene)
         aiProcess_Triangulate | 
         aiProcess_JoinIdenticalVertices |
         aiProcess_LimitBoneWeights |
-        aiProcess_GlobalScale
+        aiProcess_GlobalScale |
+        aiProcess_GenUVCoords |
+        aiProcess_OptimizeGraph
     );
     if(!ai_scene) {
         LOG("Failed to read " << filename);

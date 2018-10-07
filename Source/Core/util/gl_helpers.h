@@ -100,6 +100,18 @@ public:
         glBufferData(GL_ARRAY_BUFFER, sz, data, desc.hint);
         glEnableVertexAttribArray(bufId);
         glVertexAttribPointer(bufId, desc.size, desc.type, desc.normalized, desc.stride, 0);
+/*
+        std::cout << name << std::endl;
+        if(desc.type == GL_FLOAT) {
+            size_t count = sz / 4 / desc.size;
+            for(size_t i = 0; i < count; ++i) {
+                float* fdata = (float*)data;
+                for(size_t j = 0; j < desc.size; ++j) {
+                    std::cout << " " << fdata[i * desc.size + j];
+                }
+                std::cout << std::endl;
+            }
+        }*/
     }
     void FillIndexBuffer(const std::vector<unsigned>& data)
     {

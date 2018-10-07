@@ -15,6 +15,23 @@ R"(#version 450
     uniform vec3 LightOmniPos[LIGHT_OMNI_COUNT];
     uniform vec3 ViewPos;
 
+    float fogFactorExp(
+        const float dist,
+        const float density
+    ) {
+        return 1.0 - clamp(exp(-density * dist), 0.0, 1.0);
+    }
+
+    vec3 applyFog( in vec3  rgb,      // original color of the pixel
+                in float distance, // camera to point distance
+                in vec3  rayOri,   // camera position
+                in vec3  rayDir )  // camera to point vector
+    {
+        float fogAmount = c*exp(-rayOri.y*b)*(1.0-exp(-distance*rayDir.y*b))/rayDir.y;
+        vec3  fogColor  = vec3(0.5,0.6,0.7);
+        return mix( rgb, fogColor, fogAmount );
+    }
+
     void main()
     {
         vec4 add2;
@@ -62,6 +79,10 @@ R"(#version 450
                 SpecDirect += vec4(LightOmniRGB [ i ] * s, 1.0);
             }
         }
+
+        float fogDistance = gl_FragDepth ;
+        float fogFactor = fogFactorExp(fogDistance, 1.05);
+        
         
         Ambient = vec4 ( AmbientColor , 1.0 ) ; 
         vec4 Light = 
@@ -72,6 +93,16 @@ R"(#version 450
             SpecDirect;
         Diffuse = texture ( DiffuseTexture , UVFrag ) ; 
         Diffuse *= Light ; 
-        fragOut = Diffuse ; 
+
+        Diffuse = vec4(
+            applyFog(
+                Diffuse.xyz,
+                length(FragPosWorld - ViewPos),
+                ViewPos,
+                FragPosWorld - ViewPos
+            ), 1.0
+        );
+
+        fragOut = Diffuse; 
     }
 )"

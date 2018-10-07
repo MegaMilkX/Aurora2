@@ -27,7 +27,7 @@ public:
         c = Get<Camera>();
         c->Get<Transform>()->Translate(0.0f, 0.0f, 5.0f);
 
-        c->Perspective(1.0f, 16.0f/9.0f, 0.1f, 100.0f);
+        c->Perspective(1.0f, 16.0f/9.0f, 0.1f, 1000.0f);
 
         camPivot = CreateObject()->Get<Transform>();
         camPivot->Attach(c->Get<Transform>());

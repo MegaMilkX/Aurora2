@@ -30,8 +30,8 @@ void main()
     int bi2 = int ( BoneIndex4 . z ) ; 
     int bi3 = int ( BoneIndex4 . w ) ; 
 
-    vec3 Pos = (SkinBindPose * vec4(Position, 1.0)).xyz;
-    vec3 Norm = (SkinBindPose * vec4(Normal, 0.0)).xyz;
+    vec3 Pos = (vec4(Position, 1.0)).xyz;
+    vec3 Norm = (vec4(Normal, 0.0)).xyz;
 
     vec4 weights = BoneWeight4;
     if(weights.x + weights.y + weights.z + weights.w > 1.0) {
@@ -40,26 +40,27 @@ void main()
     float bindWeight = 1.0 - (weights.x + weights.y + weights.z + weights.w);
 
     PositionModel = (
-        vec4(Pos, 1.0) * bindWeight +
-        (BoneTransforms[bi0] * BoneInverseBindTransforms[bi0]) * vec4(Pos, 1.0) * weights.x +
-        (BoneTransforms[bi1] * BoneInverseBindTransforms[bi1]) * vec4(Pos, 1.0) * weights.y +
-        (BoneTransforms[bi2] * BoneInverseBindTransforms[bi2]) * vec4(Pos, 1.0) * weights.z +
-        (BoneTransforms[bi3] * BoneInverseBindTransforms[bi3]) * vec4(Pos, 1.0) * weights.w 
+        //vec4(Pos, 1.0) * bindWeight +
+        (BoneTransforms[bi0] * BoneInverseBindTransforms[bi0]) * vec4(Pos, 1.0) * BoneWeight4.x +
+        (BoneTransforms[bi1] * BoneInverseBindTransforms[bi1]) * vec4(Pos, 1.0) * BoneWeight4.y +
+        (BoneTransforms[bi2] * BoneInverseBindTransforms[bi2]) * vec4(Pos, 1.0) * BoneWeight4.z +
+        (BoneTransforms[bi3] * BoneInverseBindTransforms[bi3]) * vec4(Pos, 1.0) * BoneWeight4.w 
     );
     vec3 NormalSkinned = (
-        vec4(Norm , 0.0) * bindWeight +
+        //vec4(Norm , 0.0) * bindWeight +
         (BoneTransforms[bi0] * BoneInverseBindTransforms[bi0]) * vec4 ( Norm , 0.0 ) * BoneWeight4.x +
         (BoneTransforms[bi1] * BoneInverseBindTransforms[bi1]) * vec4 ( Norm , 0.0 ) * BoneWeight4.y +
         (BoneTransforms[bi2] * BoneInverseBindTransforms[bi2]) * vec4 ( Norm , 0.0 ) * BoneWeight4.z +
         (BoneTransforms[bi3] * BoneInverseBindTransforms[bi3]) * vec4 ( Norm , 0.0 ) * BoneWeight4.w 
     ).xyz;
 
-    PositionScreen = MatrixProjection * MatrixView * MatrixModel * inverse(SkinBindPose) * PositionModel ; 
+    PositionScreen = MatrixProjection * MatrixView * PositionModel ; 
 
-    FragPosWorld = (MatrixModel * inverse(SkinBindPose) * PositionModel).xyz; 
-    NormalModel = normalize(MatrixModel * inverse(SkinBindPose) * vec4(NormalSkinned, 0.0)).xyz ; 
+    FragPosWorld = (PositionModel).xyz; 
+    NormalModel = normalize(vec4(NormalSkinned, 0.0)).xyz ; 
     UVFrag = UV ; 
-    DiffuseColor = vec4(1.0, 1.0, 1.0, 1.0);
+    //DiffuseColor = vec4(weights.xyz, 1.0);
+    DiffuseColor = vec4(1.0);
 
     gl_Position = PositionScreen ; 
 }

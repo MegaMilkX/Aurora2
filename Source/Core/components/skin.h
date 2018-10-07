@@ -40,7 +40,7 @@ public:
         std::shared_ptr<SceneObject> armatureRoot_s = armatureRoot.lock();
 
         for(size_t i = 0; i < skeleton->bonePoses.size() && inverseBind.size(); ++i) {
-            inverseBind[i] = gfxm::inverse(skeleton->bonePoses[i].pose);
+            inverseBind[i] = (skeleton->bonePoses[i].pose);
         }
         return inverseBind;
     }
@@ -69,7 +69,8 @@ public:
 
         for(size_t i = 0; i < transformObjects.size(); ++i) {
             transforms[i] = /*gfxm::inverse(armatureRoot_s->Get<Transform>()->GetTransform()) * */
-                transformObjects[i]->GetTransformForRoot(armatureRoot_s.get()->Get<Transform>());
+                //transformObjects[i]->GetTransformForRoot(armatureRoot_s.get()->Get<Transform>());
+                transformObjects[i]->GetTransform();
         }
 
         return transforms;

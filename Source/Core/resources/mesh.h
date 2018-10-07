@@ -137,7 +137,7 @@ public:
 
         index = mz_zip_reader_locate_file(&zip, "BoneIndices4", "", 0);
         if(mz_zip_reader_file_stat(&zip, index, &file_stat) == MZ_TRUE) {
-            boneIndices4.resize((size_t)file_stat.m_uncomp_size / sizeof(int32_t));
+            boneIndices4.resize((size_t)file_stat.m_uncomp_size / sizeof(float));
             mz_zip_reader_extract_file_to_mem(&zip, "BoneIndices4", (void*)boneIndices4.data(), (size_t)file_stat.m_uncomp_size, 0);
         }
 

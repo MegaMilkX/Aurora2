@@ -23,7 +23,7 @@ public:
         bonePoses.emplace_back(
             BonePose{name, bindTransform}
         );
-        std::sort(bonePoses.begin(), bonePoses.end());
+        //std::sort(bonePoses.begin(), bonePoses.end());
     }
 
     virtual bool Build(DataSourceRef r) {
