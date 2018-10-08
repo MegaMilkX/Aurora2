@@ -44,7 +44,7 @@ public:
     template<typename T>
     std::vector<unsigned char>& GetAttribBytes();
     std::vector<unsigned char>& GetAttribBytesByName(const std::string& name);
-    std::vector<unsigned>& GetIndices();
+    std::vector<uint32_t>& GetIndices();
     GLuint GetVao();
     GLuint GetSkinVao();
     unsigned GetIndexCount();

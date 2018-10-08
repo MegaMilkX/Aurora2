@@ -113,12 +113,12 @@ public:
             }
         }*/
     }
-    void FillIndexBuffer(const std::vector<unsigned>& data)
+    void FillIndexBuffer(const std::vector<uint32_t>& data)
     {
-        size_t szData = data.size() * sizeof(unsigned);
+        size_t szData = data.size() * sizeof(uint32_t);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuf);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, szData, (void*)data.data(), GL_STATIC_DRAW);
-        indexCount = szData / sizeof(unsigned);
+        indexCount = szData / sizeof(uint32_t);
     }
     void Bind() const 
     {

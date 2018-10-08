@@ -315,7 +315,7 @@ private:
                 loc = skinProg.program->GetUniform("BoneInverseBindTransforms[0]");
                 glUniformMatrix4fv(
                     loc, 
-                    (std::min)((unsigned)64, (unsigned)inverse_bind_transforms.size()), 
+                    (std::min)((unsigned)100, (unsigned)inverse_bind_transforms.size()), 
                     GL_FALSE, 
                     (GLfloat*)inverse_bind_transforms.data()
                 );
@@ -323,7 +323,7 @@ private:
                 loc = skinProg.program->GetUniform("BoneTransforms[0]");
                 glUniformMatrix4fv(
                     loc, 
-                    (std::min)((unsigned)64, (unsigned)skin_transforms.size()), 
+                    (std::min)((unsigned)100, (unsigned)skin_transforms.size()), 
                     GL_FALSE, 
                     (GLfloat*)skin_transforms.data()
                 );

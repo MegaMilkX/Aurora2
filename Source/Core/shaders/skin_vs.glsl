@@ -1,5 +1,5 @@
 R"(#version 450
-#define MAX_BONE_COUNT 64
+#define MAX_BONE_COUNT 100
 in vec3 Position;
 in vec4 BoneIndex4;
 in vec4 BoneWeight4;

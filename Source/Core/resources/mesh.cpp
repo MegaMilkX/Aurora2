@@ -16,7 +16,7 @@ std::vector<unsigned char>& Mesh::GetAttribBytesByName(const std::string& name)
     return attribArrays[Au::Empty()];
 }
 
-std::vector<unsigned>& Mesh::GetIndices()
+std::vector<uint32_t>& Mesh::GetIndices()
 {
     return indices;
 }

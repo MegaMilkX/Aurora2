@@ -91,6 +91,8 @@ inline void ResourcesFromFbxScene(const aiScene* ai_scene, FbxImportData& import
             }
             uv_layers.emplace_back(uv_layer);
         }
+        
+        LOG("BONE_COUNT: " << ai_mesh->mNumBones);
 
         if(ai_mesh->mNumBones) {
             boneIndices.resize(vertexCount);
@@ -118,7 +120,12 @@ inline void ResourcesFromFbxScene(const aiScene* ai_scene, FbxImportData& import
         mesh_ref->Storage(Resource::LOCAL);
 
         LOG("VERTEX_COUNT: " << vertices.size() / 3);
+        LOG("INDEX_COUNT: " << indices.size());
         LOG("BONE_DATA_COUNT: " << boneWeights.size());
+        /*
+        for(size_t j = 0; j < indices.size(); j+=3) {
+            LOG("TRI: " << indices[j] << ", " << indices[j+1] << ", " << indices[j+2]);
+        }*/
 
         mesh_ref->SetAttribArray<Au::Position>(vertices);
         if(normal_layers.size() > 0) {
@@ -199,7 +206,7 @@ inline void SceneObjectFromFbxNode(const aiScene* ai_scene, aiNode* node, SceneO
 inline void SceneFromFbx(const aiScene* ai_scene, SceneObject* scene, FbxImportData& importData) {
     aiNode* ai_rootNode = ai_scene->mRootNode;
     if(!ai_rootNode) return;
-    //scene->Get<Transform>()->SetTransform(*(gfxm::mat4*)&ai_rootNode->mTransformation);
+    scene->Get<Transform>()->SetTransform(gfxm::transpose(*(gfxm::mat4*)&ai_rootNode->mTransformation));
     
     //double scaleFactor = 1.0;
     //ai_rootNode->mMetaData->Get("UnitScaleFactor", scaleFactor);
@@ -223,8 +230,8 @@ inline bool SceneFromFbx(const std::string& filename, SceneObject* scene)
         aiProcess_JoinIdenticalVertices |
         aiProcess_LimitBoneWeights |
         aiProcess_GlobalScale |
-        aiProcess_GenUVCoords |
-        aiProcess_OptimizeGraph
+        aiProcess_GenUVCoords
+        //| aiProcess_OptimizeGraph
     );
     if(!ai_scene) {
         LOG("Failed to read " << filename);
