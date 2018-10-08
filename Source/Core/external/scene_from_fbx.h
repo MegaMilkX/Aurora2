@@ -208,6 +208,13 @@ inline void SceneFromFbx(const aiScene* ai_scene, SceneObject* scene, FbxImportD
     if(!ai_rootNode) return;
     scene->Get<Transform>()->SetTransform(gfxm::transpose(*(gfxm::mat4*)&ai_rootNode->mTransformation));
     
+    if(ai_scene->mMetaData) {
+        double scaleFactor = 1.0;
+        ai_scene->mMetaData->Get("UnitScaleFactor", scaleFactor);
+        if(scaleFactor == 0.0) scaleFactor = 1.0;
+        scaleFactor *= 0.01;
+        scene->Get<Transform>()->Scale((float)scaleFactor);
+    }
     //double scaleFactor = 1.0;
     //ai_rootNode->mMetaData->Get("UnitScaleFactor", scaleFactor);
     //scaleFactor *= 0.01;
