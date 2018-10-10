@@ -129,7 +129,7 @@ public:
 
     std::shared_ptr<Texture2D> icon_texture;
     std::shared_ptr<SceneObject> editorScene;
-    SceneObject* editedScene;
+    SceneObject* editedScene = 0;
     EditorCamera* editorCamera = 0;
 
     void Init(Input* input)

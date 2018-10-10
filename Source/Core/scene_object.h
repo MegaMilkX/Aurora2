@@ -30,10 +30,10 @@ class SceneObject : public std::enable_shared_from_this<SceneObject>
 {
 public:    
     static std::shared_ptr<SceneObject> Create() {
-        return std::shared_ptr<SceneObject>(new SceneObject());
+        return std::make_shared<SceneObject>();
     }
 
-private:
+    // Don't use
     SceneObject() 
     : SceneObject(0) {}
 
@@ -44,6 +44,7 @@ private:
         static int64_t next_uid = 0;
         uid = ++next_uid;
     }
+    // ---
 
 public:
     ~SceneObject();
@@ -53,6 +54,7 @@ public:
     bool                    IsRoot();
     SceneObject*            CreateObject();
     void                    Erase(SceneObject* child);
+    void                    Destroy();
     template<typename T>
     T*                      RootGet();
     template<typename T>

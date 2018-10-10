@@ -33,13 +33,14 @@ bool SceneObject::IsRoot() {
 }
 
 SceneObject* SceneObject::CreateObject() {
-    std::shared_ptr<SceneObject> obj(new SceneObject(this));
+    std::shared_ptr<SceneObject> obj = std::make_shared<SceneObject>(this);
     obj->SetController(controller);
     objects.push_back(obj);
     return obj.get();
 }
 
 void SceneObject::Erase(SceneObject* child) {
+    if(child == 0) return;
     for(unsigned i = 0; i < objects.size(); ++i)
     {
         if(objects[i].get() == child)
@@ -47,6 +48,12 @@ void SceneObject::Erase(SceneObject* child) {
             objects.erase(objects.begin() + i);
             break;
         }
+    }
+}
+
+void SceneObject::Destroy() {
+    if(parentObject) {
+        parentObject->Erase(this);
     }
 }
 

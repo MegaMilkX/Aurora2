@@ -21,13 +21,17 @@ public:
     _position(0.0f, 0.0f, 0.0f),
     _rotation(0.0f, 0.0f, 0.0f, 1.0f),
     _scale(1.0f, 1.0f, 1.0f),
-    dirty(true)
-    {
+    dirty(true) {
         if(_parent)
             AttachTo(parent);
     }
-    ~Transform()
-    {
+    ~Transform() {
+        for(unsigned i = 0; i < _children.size(); ++i)
+        {
+            _children[i]->_parent = 0;
+        }
+        _children.clear();
+
         if(_parent)
             _parent->Detach(this);
     }
