@@ -91,8 +91,6 @@ inline void ResourcesFromFbxScene(const aiScene* ai_scene, FbxImportData& import
             }
             uv_layers.emplace_back(uv_layer);
         }
-        
-        LOG("BONE_COUNT: " << ai_mesh->mNumBones);
 
         if(ai_mesh->mNumBones) {
             boneIndices.resize(vertexCount);
@@ -118,10 +116,6 @@ inline void ResourcesFromFbxScene(const aiScene* ai_scene, FbxImportData& import
         std::shared_ptr<Mesh> mesh_ref(new Mesh());
         mesh_ref->Name(MKSTR(i << ".geo"));
         mesh_ref->Storage(Resource::LOCAL);
-
-        LOG("VERTEX_COUNT: " << vertices.size() / 3);
-        LOG("INDEX_COUNT: " << indices.size());
-        LOG("BONE_DATA_COUNT: " << boneWeights.size());
         /*
         for(size_t j = 0; j < indices.size(); j+=3) {
             LOG("TRI: " << indices[j] << ", " << indices[j+1] << ", " << indices[j+2]);
@@ -169,6 +163,59 @@ inline void ResourcesFromFbxScene(const aiScene* ai_scene, FbxImportData& import
 
             importData.skeletons[i] = skeleton;
             LOG("Built skeleton");
+        }
+    }
+
+    for(unsigned int i = 0; i < ai_scene->mNumAnimations; ++i) {
+        aiAnimation* ai_anim = ai_scene->mAnimations[i];
+        double fps = ai_anim->mTicksPerSecond;
+        double len = ai_anim->mDuration;
+        std::shared_ptr<Animation> anim = std::make_shared<Animation>();
+        anim->FrameRate(fps);
+        anim->Length(len);
+
+        for(unsigned int j = 0; j < ai_anim->mNumChannels; ++j) {
+            AnimationNode animNode;
+            aiNodeAnim* ai_node_anim = ai_anim->mChannels[j];
+            animNode.name = ai_node_anim.mNodeName.data;
+            
+            std::vector<keyframe<gfxm::vec3>> pos_frames;
+            std::vector<keyframe<gfxm::quat>> rot_frames;
+            std::vector<keyframe<gfxm::vec3>> scl_frames;
+            
+            for(unsigned k = 0; k < ai_node_anim->mNumPositionKeys; ++k) {
+                keyframe<gfxm::vec3> kf;
+                kf.time = (float)ai_node_anim->mPositionKeys[k].mTime;
+                kf.value = gfxm::vec3(
+                    ai_node_anim->mPositionKeys[k].mValue.x,
+                    ai_node_anim->mPositionKeys[k].mValue.y,
+                    ai_node_anim->mPositionKeys[k].mValue.z
+                );
+                pos_frames.emplace_back(kf);
+            }
+            for(unsigned k = 0; k < ai_node_anim->mNumRotationKeys; ++k) {
+                keyframe<gfxm::quat> kf;
+                kf.time = (float)ai_node_anim->mRotationKeys[k].mTime;
+                kf.value = gfxm::quat(
+                    ai_node_anim->mRotationKeys[k].mValue.x,
+                    ai_node_anim->mRotationKeys[k].mValue.y,
+                    ai_node_anim->mRotationKeys[k].mValue.z,
+                    ai_node_anim->mRotationKeys[k].mValue.w
+                );
+                rot_frames.emplace_back(kf);
+            }
+            for(unsigned k = 0; k < ai_node_anim->mNumScalingKeys; ++k) {
+                keyframe<gfxm::vec3> kf;
+                kf.time = (float)ai_node_anim->mScalingKeys[k].mTime;
+                kf.value = gfxm::vec3(
+                    ai_node_anim->mScalingKeys[k].mValues.x,
+                    ai_node_anim->mScalingKeys[k].mValues.y,
+                    ai_node_anim->mScalingKeys[k].mValues.z
+                );
+                scl_frames.emplace_back(kf);
+            }
+
+            anim->AddNode(animNode);
         }
     }
 }
@@ -225,6 +272,8 @@ inline void SceneFromFbx(const aiScene* ai_scene, SceneObject* scene, FbxImportD
         scene->Get<Transform>()->Attach(child->Get<Transform>());
         SceneObjectFromFbxNode(ai_scene, ai_rootNode->mChildren[i], child, importData);
     }
+
+    // TODO: Create AnimationDriver
 }
 
 inline bool SceneFromFbx(const std::string& filename, SceneObject* scene)

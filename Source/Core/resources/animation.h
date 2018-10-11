@@ -46,6 +46,21 @@ public:
 
 class Animation : public Resource {
 public:
+    Animation()
+    : frameRate(60), length(100) {
+
+    }
+
+    void FrameRate(float fps) {
+        frameRate = fps;
+    }
+    void Length(float len) {
+        length = len;
+    }
+    void AddNode(AnimationNode& n) {
+        nodes[n.name] = n;
+    }
+
     size_t TargetCount() { return nodes.size(); }
     AnimationNode* GetTarget(size_t i) {
         auto it = nodes.begin();
