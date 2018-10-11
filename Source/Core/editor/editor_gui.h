@@ -210,6 +210,7 @@ public:
                         const std::string& name = driver->GetAnimName(i);
                         ImGui::Text(name.c_str());
                     }
+
                     ImGui::TreePop();
                 }
             }
@@ -477,8 +478,17 @@ public:
         //animTimeline.Update();
 
         if(ImGui::Begin("Resource Inspector", &t)) {
-            for(size_t i = 0; i < GlobalDataRegistry().Count(); ++i) {
-                ImGui::Text(GlobalDataRegistry().GetNameById(i).c_str());
+            int e = 0;
+            ImGui::RadioButton("Global", &e, 0); ImGui::SameLine();
+            ImGui::RadioButton("Transient", &e, 1); ImGui::SameLine();
+            char buf[256];
+            ImGui::InputText("filter", buf, 256);
+
+            if(ImGui::BeginChild("wa")) {
+                for(size_t i = 0; i < GlobalDataRegistry().Count(); ++i) {
+                    ImGui::Text(GlobalDataRegistry().GetNameById(i).c_str());
+                }
+                ImGui::EndChild();
             }
 
             ImGui::End();
