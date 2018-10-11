@@ -162,7 +162,6 @@ inline void ResourcesFromFbxScene(const aiScene* ai_scene, FbxImportData& import
             }
 
             importData.skeletons[i] = skeleton;
-            LOG("Built skeleton");
         }
     }
 
@@ -177,7 +176,7 @@ inline void ResourcesFromFbxScene(const aiScene* ai_scene, FbxImportData& import
         for(unsigned int j = 0; j < ai_anim->mNumChannels; ++j) {
             AnimationNode animNode;
             aiNodeAnim* ai_node_anim = ai_anim->mChannels[j];
-            animNode.name = ai_node_anim.mNodeName.data;
+            animNode.name = ai_node_anim->mNodeName.data;
             
             std::vector<keyframe<gfxm::vec3>> pos_frames;
             std::vector<keyframe<gfxm::quat>> rot_frames;
@@ -208,15 +207,43 @@ inline void ResourcesFromFbxScene(const aiScene* ai_scene, FbxImportData& import
                 keyframe<gfxm::vec3> kf;
                 kf.time = (float)ai_node_anim->mScalingKeys[k].mTime;
                 kf.value = gfxm::vec3(
-                    ai_node_anim->mScalingKeys[k].mValues.x,
-                    ai_node_anim->mScalingKeys[k].mValues.y,
-                    ai_node_anim->mScalingKeys[k].mValues.z
+                    ai_node_anim->mScalingKeys[k].mValue.x,
+                    ai_node_anim->mScalingKeys[k].mValue.y,
+                    ai_node_anim->mScalingKeys[k].mValue.z
                 );
                 scl_frames.emplace_back(kf);
             }
 
+            if(!pos_frames.empty()) {
+                animNode.children["Transform"].name = "Transform";
+                animNode.children["Transform"].children["Translation"].name = "Translation";
+                animNode.children["Transform"].children["Translation"].InitCurve<gfxm::vec3>();
+                animNode.children["Transform"].children["Translation"].GetCurve<gfxm::vec3>()->set_keyframes(pos_frames);
+            }
+            if(!rot_frames.empty()) {
+                AnimationNode& comp_node =
+                    animNode.children["Transform"];
+                comp_node.name = "Transform";
+                AnimationNode& prop_node =
+                    comp_node.children["Quaternion"];
+                prop_node.name = "Quaternion";
+                prop_node.InitCurve<gfxm::quat>();
+                prop_node.GetCurve<gfxm::quat>()->set_keyframes(rot_frames);
+            }
+            if(!scl_frames.empty()) {
+                AnimationNode& comp_node =
+                    animNode.children["Transform"];
+                comp_node.name = "Transform";
+                AnimationNode& prop_node = 
+                    comp_node.children["Scale"];
+                prop_node.name = "Scale";
+                prop_node.InitCurve<gfxm::vec3>();
+                prop_node.GetCurve<gfxm::vec3>()->set_keyframes(scl_frames);
+            }
             anim->AddNode(animNode);
         }
+
+        importData.anims[i] = anim;
     }
 }
 
@@ -274,6 +301,11 @@ inline void SceneFromFbx(const aiScene* ai_scene, SceneObject* scene, FbxImportD
     }
 
     // TODO: Create AnimationDriver
+    for(unsigned int i = 0; i < ai_scene->mNumAnimations; ++i) {
+        auto animDriver = scene->Get<AnimationDriver>();
+        auto ai_anim = ai_scene->mAnimations[i];
+        animDriver->AddAnim(ai_anim->mName.data, importData.anims[i]);
+    }
 }
 
 inline bool SceneFromFbx(const std::string& filename, SceneObject* scene)
