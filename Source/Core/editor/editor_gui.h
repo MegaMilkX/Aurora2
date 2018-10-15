@@ -208,12 +208,11 @@ public:
                     for(size_t i = 0; i < driver->AnimCount(); ++i)
                     {
                         const std::string& name = driver->GetAnimName(i);
-                        char buf[256];
-                        strcpy_s(buf, 256, name.data());
-                        ImGui::InputText("", buf, 256); ImGui::SameLine();
-                        ImGui::Button("[source]");
+                        //char buf[256];
+                        //ImGui::InputText("", buf, 256); ImGui::SameLine();
+                        //ImGui::Button("[source]");
                         
-                        //ImGui::Text(name.c_str());
+                        ImGui::Text(name.c_str());
                     }
 
                     ImGui::TreePop();
