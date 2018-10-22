@@ -83,5 +83,10 @@ public:
 private:
     std::map<std::string, std::string> strstr;
 };
+STATIC_RUN(Material)
+{
+    rttr::registration::class_<Material>("Material")
+        .constructor<>()(rttr::policy::ctor::as_raw_ptr);
+}
 
 #endif

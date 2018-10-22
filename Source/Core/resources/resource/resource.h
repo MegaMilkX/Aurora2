@@ -3,6 +3,9 @@
 
 #include "data_source.h"
 #include <rttr/type>
+#include <rttr/registration>
+#include <rttr/registration_friend>
+#include <util/static_run.h>
 
 class Resource {
     RTTR_ENABLE()

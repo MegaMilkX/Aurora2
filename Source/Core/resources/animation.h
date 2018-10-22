@@ -45,6 +45,7 @@ public:
 };
 
 class Animation : public Resource {
+    RTTR_ENABLE(Resource)
 public:
     Animation()
     : frameRate(60), length(100) {
@@ -243,5 +244,10 @@ private:
     double length;
     std::map<std::string, AnimationNode> nodes;
 };
+STATIC_RUN(Animation)
+{
+    rttr::registration::class_<Animation>("Animation")
+        .constructor<>()(rttr::policy::ctor::as_raw_ptr);
+}
 
 #endif

@@ -76,6 +76,12 @@ int editor_main(int argc, char** argv)
     InitFilesystemResources(EditorConfig().projectRoot + "\\resources");
     GameState::InitEditor();
 
+    rttr::array_range<rttr::type> list = rttr::type::get<Resource>().get_derived_classes();
+    LOG("Resource types: ");
+    for(auto t : list) {
+        LOG(t.get_name().to_string());
+    }
+
     while(GameState::UpdateEditor())
     {
         glfwPostEmptyEvent();

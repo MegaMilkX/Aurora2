@@ -12,6 +12,7 @@ extern "C"{
 
 class Texture2D : public Resource
 {
+    RTTR_ENABLE(Resource)
 public:
     Texture2D()
     : glTexName(0), dirty(true)
@@ -97,5 +98,10 @@ private:
         dirty = false;
     }
 };
+STATIC_RUN(Texture2D)
+{
+    rttr::registration::class_<Texture2D>("Texture2D")
+        .constructor<>()(rttr::policy::ctor::as_raw_ptr);
+}
 
 #endif

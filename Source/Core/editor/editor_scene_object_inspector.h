@@ -77,9 +77,9 @@ public:
                                 }
                             }
                             else if(ptype.is_derived_from<i_resource_ref>()) {
-                                ImGui::Text(prop.get_name().to_string().c_str());
                                 rttr::variant var = prop.get_value(comp);
                                 i_resource_ref& ref = var.get_value<i_resource_ref>();
+                                ImGui::Text(prop.get_name().to_string().c_str());
                                 ImVec4 buttonColor = ImColor(0.2f, 0.2f, 0.7f, 1.0f);
                                 std::string res_name;
                                 if(ref.base_ptr()) {
@@ -88,7 +88,7 @@ public:
                                         buttonColor = ImColor(0.7f, 0.2f, 0.2f, 1.0f);
                                     }
                                 }
-                                if(res_name.empty()) res_name = "[empty]";
+                                if(res_name.empty()) res_name = "[NULL]";
 
                                 ImGui::PushStyleColor(ImGuiCol_Button, buttonColor);
                                 //ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(i/7.0f, 0.7f, 0.7f));
@@ -104,7 +104,7 @@ public:
                                 rttr::variant var = prop.get_value(comp);
                                 std::weak_ptr<SceneObject> weak_so = var.get_value<std::weak_ptr<SceneObject>>();
                                 auto so = weak_so.lock();
-                                std::string tgt_name = "[empty]";
+                                std::string tgt_name = "[NULL]";
                                 if(so) {
                                     tgt_name = so->Name();
                                 }

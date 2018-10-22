@@ -87,5 +87,10 @@ public:
     //std::vector<std::string> bones;
     //std::map<std::string, gfxm::mat4> bindPose;
 };
+STATIC_RUN(Skeleton)
+{
+    rttr::registration::class_<Skeleton>("Skeleton")
+        .constructor<>()(rttr::policy::ctor::as_raw_ptr);
+}
 
 #endif

@@ -186,6 +186,11 @@ public:
         return true;
     }
 };
+STATIC_RUN(Mesh)
+{
+    rttr::registration::class_<Mesh>("Mesh")
+        .constructor<>()(rttr::policy::ctor::as_raw_ptr);
+}
 
 template<typename ATTR, typename T>
 void Mesh::SetAttribArray(const std::vector<T>& data)
