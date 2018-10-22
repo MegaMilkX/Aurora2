@@ -11,9 +11,7 @@
   - Resource previews or icons in resource inspector
   - ? Local resource inspector
   
-## General
-  - BUG: Light data is still present in shaders when light sources get deleted from scene
-  
+## General  
   - SCENE IMPORT: Deferred component load
   - FBX: Only create animation curves for objects that are actually animated
   - Change on load object reference search so it will consider only loaded objects
@@ -31,3 +29,7 @@
   - Collision system and components
   - Animation state system
   - Fix editor transform gizmos
+  
+## BUGS
+  - glDrawElements crashes with some models loaded from fbx, buffers may be incomplete
+  - BUG: Light data is still present in shaders when light sources get deleted from scene
