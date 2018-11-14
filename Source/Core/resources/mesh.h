@@ -13,6 +13,7 @@
 #include "resource/resource.h"
 
 #include "../../general/util.h"
+#include <util/split.h>
 
 struct GLAttribDesc
 {

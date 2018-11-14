@@ -299,7 +299,8 @@ private:
             Renderable& unit = kv.second;
             GLuint vao;
             if(!unit.model->mesh) continue;
-            
+            if(unit.model->mesh->vertexCount <= 0) continue;
+
             if(unit.skin) {
                 prog = &skinProg;
                 vao = unit.model->mesh->GetSkinVao();
@@ -342,13 +343,63 @@ private:
                 prog->uModel, 1, GL_FALSE,
                 (float*)&unit.transform->GetTransform()
             );
-            
-            glActiveTexture(GL_TEXTURE0);
-            if(unit.model->material && unit.model->material->diffuseMap) {
-                glBindTexture(GL_TEXTURE_2D, unit.model->material->diffuseMap->GetGlName());
+
+            if(unit.model->material) {
+                glUniform3f(
+                    prog->program->GetUniform("Tint"), 
+                    unit.model->material->tint.x,
+                    unit.model->material->tint.y,
+                    unit.model->material->tint.z
+                );
+                glUniform1f(
+                    prog->program->GetUniform("Glossiness"),
+                    unit.model->material->glossiness
+                );
+                glUniform1f(
+                    prog->program->GetUniform("Emission"),
+                    unit.model->material->emission
+                );
+                
+                glActiveTexture(GL_TEXTURE0);
+                if(unit.model->material->diffuseMap) {
+                    glBindTexture(GL_TEXTURE_2D, unit.model->material->diffuseMap->GetGlName());
+                } else {
+                    glBindTexture(GL_TEXTURE_2D, texture_white_px->GetGlName());
+                }
+                glActiveTexture(GL_TEXTURE1);
+                if(unit.model->material->normalMap) {
+                    glBindTexture(GL_TEXTURE_2D, unit.model->material->normalMap->GetGlName());
+                } else {
+                    glBindTexture(GL_TEXTURE_2D, texture_black_px->GetGlName());
+                }
+                glActiveTexture(GL_TEXTURE2);
+                if(unit.model->material->specularMap) {
+                    glBindTexture(GL_TEXTURE_2D, unit.model->material->specularMap->GetGlName());
+                } else {
+                    glBindTexture(GL_TEXTURE_2D, texture_white_px->GetGlName());
+                }
             } else {
+                glUniform3f(
+                    prog->program->GetUniform("Tint"), 
+                    1, 1, 1
+                );
+                glUniform1f(
+                    prog->program->GetUniform("Glossiness"),
+                    0
+                );
+                glUniform1f(
+                    prog->program->GetUniform("Emission"),
+                    0
+                );
+
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, texture_white_px->GetGlName());
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, texture_black_px->GetGlName());
+                glActiveTexture(GL_TEXTURE2);
                 glBindTexture(GL_TEXTURE_2D, texture_white_px->GetGlName());
             }
+            
             glBindVertexArray(vao);
             glDrawElements(GL_TRIANGLES, unit.model->mesh->GetIndexCount(), GL_UNSIGNED_INT, (void*)0);
         }
@@ -366,10 +417,12 @@ private:
         glBindTexture(GL_TEXTURE_2D, gBuffer.normal);
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, gBuffer.specular);
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, gBuffer.emission);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        gfxm::vec3 ambientColor(0.5f, 0.5f, 0.5f);
+        gfxm::vec3 ambientColor(0.1f, 0.1f, 0.1f);
 
         if(environment) {
             ambientColor = environment->ambientColor;
@@ -386,7 +439,7 @@ private:
                 lightPassProg->GetUniform("LightDirect[" + std::to_string(lightId) + "]"), 
                 dir.x, dir.y, dir.z
             );
-            auto col = l->Color();
+            auto col = l->Color() * l->Intensity();
             glUniform3f(
                 lightPassProg->GetUniform("LightDirectRGB[" + std::to_string(lightId) + "]"), 
                 col.x, col.y, col.z
@@ -444,6 +497,7 @@ private:
         glUniform1i(lightPassProg->GetUniform("inPosition"), 1);
         glUniform1i(lightPassProg->GetUniform("inNormal"), 2);
         glUniform1i(lightPassProg->GetUniform("inSpecular"), 3);
+        glUniform1i(lightPassProg->GetUniform("inEmission"), 4);
     }
 
     void _drawDebugElements(const gfxm::mat4& p, const gfxm::mat4& v)

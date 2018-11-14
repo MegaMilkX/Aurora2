@@ -8,6 +8,7 @@ uniform sampler2D inAlbedo;
 uniform sampler2D inPosition;
 uniform sampler2D inNormal;
 uniform sampler2D inSpecular;
+uniform sampler2D inEmission;
 
 uniform vec3 AmbientColor;
 uniform vec3 ViewPos;
@@ -27,6 +28,8 @@ void main()
     vec3 FragPosWorld = texture(inPosition, UVFrag).xyz;
     vec3 ViewDir = normalize(ViewPos - FragPosWorld);
 
+    float glossiness = texture(inSpecular, UVFrag).x;
+
     LightDirectLambert = vec4 ( 0.0 , 0.0 , 0.0 , 1.0 ) ; 
     for (int i = 0; i < LIGHT_DIRECT_COUNT; ++i)
     { 
@@ -35,7 +38,7 @@ void main()
         if(dot(NormalModel, ViewDir) >= 0.0)
         {
             vec3 lightRef = normalize(reflect(LightDirect[i], NormalModel));
-            float s = pow(max(dot(lightRef, ViewDir), 0.0), 16.0);
+            float s = pow(max(dot(lightRef, ViewDir), 0.0), 32.0);
             SpecDirect += vec4(LightDirectRGB [ i ] * s, 1.0);
         }
     }
@@ -51,25 +54,28 @@ void main()
         if(dot(NormalModel, ViewDir) >= 0.0)
         {
             vec3 lightRef = normalize(reflect(-lightDirection, NormalModel));
-            float s = max(pow(dot(lightRef, ViewDir), 16.0), 0.0);
+            float s = max(pow(dot(lightRef, ViewDir), 32.0), 0.0);
             SpecOmni += vec4(LightOmniRGB [ i ] * s * ( 1.0 / ( 1.0 + 0.5 * dist + 3.0 * dist * dist ) ), 1.0);
         }
     } 
 
-    vec4 Light = vec4(AmbientColor, 1.0) 
+    vec4 specular = (SpecDirect + SpecOmni) * glossiness;
+
+    float emission = texture(inEmission, UVFrag).x;
+
+    vec4 Light = vec4(emission, emission, emission, 1.0)
+        + vec4(AmbientColor, 1.0) 
         + LightDirectLambert 
-        + LightOmniLambert
-        + SpecDirect
-        + SpecOmni;
+        + LightOmniLambert;
 
     Light = vec4(
-        Light.x / (Light.x + 1.0),
-        Light.y / (Light.y + 1.0),
-        Light.z / (Light.z + 1.0),
+        Light.x / (Light.x + 0.1),
+        Light.y / (Light.y + 0.1),
+        Light.z / (Light.z + 0.1),
         1.0
     );
 
-    fragOut = texture(inAlbedo, UVFrag) * Light;
+    fragOut = texture(inAlbedo, UVFrag) * Light + specular;
 }
 
 )"

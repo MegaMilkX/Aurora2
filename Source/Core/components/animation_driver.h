@@ -4,6 +4,8 @@
 #include <updatable.h>
 #include <animation.h>
 
+#include <util/dialog_write_data.h>
+
 /*
 class AnimMotorVec3 {
 public:
@@ -199,7 +201,7 @@ public:
             motor->Add(cursor, weight);
         }
     }
-private:
+
     float length = 0.0f;
     float frameRate = 60.0f;
     std::vector<std::shared_ptr<AnimPropMotorBase>> motors;
@@ -352,6 +354,93 @@ public:
             l.Tick(1.0f / 60.0f);
         }
     }
+
+    virtual bool _write(std::ostream& out, ExportData& exportData) {
+        
+        return true;
+    }
+    virtual bool _read(std::istream& in, size_t sz, ImportData& importData) {
+        
+        return true;
+    }
+    virtual bool _editor() {
+        AnimationDriver* driver = this;
+        bool preview = true;
+        if(ImGui::Checkbox("Preview", &preview)) {}
+        if(preview) glfwPostEmptyEvent();
+
+        for(size_t i = 0; i < driver->LayerCount(); ++i)
+        {
+            AnimLayer* layer = driver->GetLayer(i);
+            if (ImGui::TreeNode(MKSTR("Layer " << i).c_str()))
+            {
+                if (ImGui::BeginCombo("Current anim", layer->CurrentAnimName().c_str(), 0)) // The second parameter is the label previewed before opening the combo.
+                {
+                    for(size_t n = 0; n < driver->AnimCount(); ++n) {
+                        const std::string& anim_name = driver->GetAnimName(n);
+                        bool is_selected = (anim_name == layer->CurrentAnimName());
+                        if(ImGui::Selectable(anim_name.c_str(), is_selected)) {
+                            layer->Play(anim_name);
+                        }
+                        if(is_selected) ImGui::SetItemDefaultFocus();
+                    }
+                    ImGui::EndCombo();
+                }
+                rttr::type t = rttr::type::get<AnimLayer::MODE>();
+                rttr::enumeration en = t.get_enumeration();
+                if(ImGui::BeginCombo("Mode", en.value_to_name(layer->Mode()).to_string().c_str()))
+                {                            
+                    for(auto& n : en.get_names()) {
+                        auto& val = en.name_to_value(n);
+                        bool is_selected = (val.get_value<AnimLayer::MODE>() == layer->Mode());
+                        if(ImGui::Selectable(n.to_string().c_str(), is_selected)) {
+                            layer->SetMode(val.get_value<AnimLayer::MODE>());
+                        }
+                        if(is_selected) ImGui::SetItemDefaultFocus();
+                    }
+                    ImGui::EndCombo();
+                }
+                float weight = layer->Strength();
+                if(ImGui::DragFloat("Weight", &weight, 0.01f, 0.0f, 1.0f)) {
+                    layer->SetStrength(weight);
+                }
+                bool looping = layer->Looping();
+                if(ImGui::Checkbox("Looping", &looping)) {}
+                layer->Looping(looping);
+                if(ImGui::Button("Remove Layer")) {
+                    driver->RemoveLayer(i);
+                }
+                ImGui::TreePop();
+            }
+        }
+        if(ImGui::Button("Add Layer")) {
+            driver->AddLayer();
+        }
+        if (ImGui::TreeNode("Animations"))
+        {
+            int i = 0;
+            for(auto kv : motors) {
+                const std::string& name = kv.first;
+
+                char buf[128];
+                strcpy_s(buf, 128, name.c_str());
+                ImGui::InputText((std::string("##") + std::to_string(i)).c_str(), buf, 128);
+                ImGui::Button(name.c_str()); ImGui::SameLine();
+                if(ImGui::Button((std::string("Export##") + std::to_string(i)).c_str())) {
+                    DialogExportResource(kv.second.anim, ".anim");
+                }
+
+                ++i;
+            }
+            if(ImGui::Button("+")) {
+                // TODO
+            }
+
+            ImGui::TreePop();
+        }
+        return true;
+    }
+
 private:
     std::vector<AnimLayer> layers;
     std::map<std::string, AnimMotor> motors;

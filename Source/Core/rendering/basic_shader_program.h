@@ -4,6 +4,7 @@
 #include <memory>
 #include <util/gl_render_state.h>
 #include "../../general/util.h"
+#include <util/split.h>
 
 class BasicShaderProgram {
 public:
@@ -37,6 +38,8 @@ public:
 
         p.Use();
         glUniform1i(p.GetUniform("DiffuseTexture"), 0);
+        glUniform1i(p.GetUniform("NormalTexture"), 1);
+        glUniform1i(p.GetUniform("SpecularTexture"), 2);
 
         uAmbientColor = p.GetUniform("AmbientColor");
         uModel = p.GetUniform("MatrixModel");

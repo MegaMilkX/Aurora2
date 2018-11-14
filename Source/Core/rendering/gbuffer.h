@@ -29,6 +29,7 @@ public:
         _createBuffer(position, GL_RGB16F, GL_FLOAT, width, height, 1);
         _createBuffer(normal, GL_RGB16F, GL_FLOAT, width, height, 2);
         _createBuffer(specular, GL_RED, GL_UNSIGNED_BYTE, width, height, 3);
+        _createBuffer(emission, GL_RED, GL_UNSIGNED_BYTE, width, height, 4);
 
         if(depth) glDeleteTextures(1, &depth);
         glGenTextures(1, &depth);
@@ -42,13 +43,14 @@ public:
         
         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depth, 0);
 
-        GLenum a[4] = { 
+        GLenum a[5] = { 
             GL_COLOR_ATTACHMENT0,
-            GL_COLOR_ATTACHMENT1,
-            GL_COLOR_ATTACHMENT2,
-            GL_COLOR_ATTACHMENT3
+            GL_COLOR_ATTACHMENT0 + 1,
+            GL_COLOR_ATTACHMENT0 + 2,
+            GL_COLOR_ATTACHMENT0 + 3,
+            GL_COLOR_ATTACHMENT0 + 4
         };
-        glDrawBuffers(4, a);
+        glDrawBuffers(5, a);
 
         if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         {
@@ -84,6 +86,7 @@ public:
     GLuint position;
     GLuint normal;
     GLuint specular;
+    GLuint emission;
     GLuint depth;
 };
 

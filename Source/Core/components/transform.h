@@ -133,6 +133,40 @@ public:
             }
     }
     Transform* ParentTransform() { return _parent; }
+
+    // ====
+    virtual bool _write(std::ostream& out, ExportData& exportData) {
+        out.write((char*)&_position, sizeof(_position));
+        out.write((char*)&_rotation, sizeof(_rotation));
+        out.write((char*)&_scale, sizeof(_scale));
+        return true;
+    }
+    virtual bool _read(std::istream& in, size_t sz, ImportData& importData) {
+        if(sz != sizeof(_position) + sizeof(_rotation) + sizeof(_scale)) 
+            return false;
+        in.read((char*)&_position, sizeof(_position));
+        in.read((char*)&_rotation, sizeof(_rotation));
+        in.read((char*)&_scale, sizeof(_scale));
+        if(Object()->Parent()) {
+            Object()->Parent()->Get<Transform>()->Attach(this);
+        }
+        return true;
+    }
+    virtual bool _editor() {
+        if(ImGui::DragFloat3("Translation", (float*)&_position, 0.001f)) {
+            Dirty();
+        }
+        gfxm::vec3 euler = gfxm::to_euler(_rotation);
+        if(ImGui::DragFloat3("Rotation", (float*)&euler, 0.001f)) {
+            _rotation = gfxm::to_quat(euler);
+            Dirty();
+        }
+        if(ImGui::DragFloat3("Scale", (float*)&_scale, 0.001f)) {
+            Dirty();
+        }
+        
+        return true;
+    }
 private:
     bool dirty;
     gfxm::vec3 _position;

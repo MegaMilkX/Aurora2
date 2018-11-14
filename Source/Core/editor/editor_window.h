@@ -8,12 +8,12 @@ public:
     void Show() {
         visible = true;
     }
-    void Update() {
-        if(!visible) return;
-        Draw();
+    bool Update() {
+        if(!visible) return false;
+        return Draw();
     }
 
-    virtual void Draw() = 0;
+    virtual bool Draw() = 0;
 protected:
     bool visible = false;
 };

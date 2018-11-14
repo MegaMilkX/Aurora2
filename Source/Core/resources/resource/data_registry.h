@@ -3,10 +3,11 @@
 
 #include "data_source.h"
 #include <unordered_map>
+#include <map>
 
 class DataRegistry {
 public:
-    typedef std::unordered_map<std::string, DataSourceRef> DataSourceMap_t;
+    typedef std::map<std::string, DataSourceRef> DataSourceMap_t;
     
     void ScanArchives();
     void ScanFilesystem(const std::string& rootDir);

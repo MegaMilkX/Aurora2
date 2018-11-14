@@ -6,6 +6,7 @@
 #include <external/json.hpp>
 #include <fstream>
 #include "../../general/util.h"
+#include <util/split.h>
 
 class EditorConfigObject {
 public:

@@ -9,6 +9,7 @@
 #include <windows.h>
 
 #include "../general/util.h"
+#include <util/split.h>
 #include "../general/ext/json.hpp"
 
 typedef std::function<void(void)> on_press_callback_t;

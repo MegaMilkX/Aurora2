@@ -236,10 +236,52 @@ public:
     }
 
     virtual bool Serialize(std::vector<unsigned char>& data) {
-        throw std::exception("not implemented");
-        return false;
+        mz_zip_archive zip;
+        memset(&zip, 0, sizeof(zip));
+        mz_zip_writer_init_heap(&zip, 0, 0);
+        
+        mz_zip_writer_add_mem(&zip, "FrameRate", (void*)&frameRate, sizeof(frameRate), 0);
+        mz_zip_writer_add_mem(&zip, "Length", (void*)&length, sizeof(length), 0);
+
+        // TODO: Store curves
+        for(auto& kv_node : nodes) {
+            std::string filename = "Layers/0/";
+            ProcessAnimNode(zip, kv_node.second);
+        }
+
+        void* bufptr;
+        size_t sz;
+        mz_zip_writer_finalize_heap_archive(&zip, &bufptr, &sz);
+        data = std::vector<unsigned char>((unsigned char*)bufptr, (unsigned char*)bufptr + sz);
+        mz_zip_writer_end(&zip);
+        return true;
     }
 private:
+    void ProcessAnimNode(mz_zip_archive& zip, AnimationNode& node) {
+        for(auto& kv_child : node.children) {
+            auto& child_node = kv_child.second;
+            if(child_node.curv.first == rttr::type::get<float>()) {
+                ProcessCurve(zip, child_node.GetCurve<float>(), kv_child.first, "curve");
+            } else if(child_node.curv.first == rttr::type::get<gfxm::vec2>()) {
+                ProcessCurve(zip, child_node.GetCurve<gfxm::vec2>(), kv_child.first, "curve2");
+            } else if(child_node.curv.first == rttr::type::get<gfxm::vec3>()) {
+                ProcessCurve(zip, child_node.GetCurve<gfxm::vec3>(), kv_child.first, "curve3");
+            } else if(child_node.curv.first == rttr::type::get<gfxm::vec4>()) {
+                ProcessCurve(zip, child_node.GetCurve<gfxm::vec4>(), kv_child.first, "curve4");
+            } else if(child_node.curv.first == rttr::type::get<gfxm::quat>()) {
+                ProcessCurve(zip, child_node.GetCurve<gfxm::quat>(), kv_child.first, "curveq");
+            } else {
+                ProcessAnimNode(zip, child_node);
+            }
+        }
+    }
+
+    template<typename T>
+    void ProcessCurve(mz_zip_archive& zip, curve<T>* curv, const std::string& name, const std::string& ext) {
+        std::vector<keyframe<T>>& keys = curv->get_keyframes();
+        mz_zip_writer_add_mem(&zip, (name + "." + ext).c_str(), (void*)keys.data(), sizeof(keyframe<T>) * keys.size(), 0);
+    }
+
     double frameRate;
     double length;
     std::map<std::string, AnimationNode> nodes;

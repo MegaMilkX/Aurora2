@@ -90,6 +90,9 @@ public:
         this->keyframes = keyframes;
         std::sort(this->keyframes.begin(), this->keyframes.end());
     }
+    std::vector<keyframe<T>>& get_keyframes() {
+        return keyframes;
+    }
 private:
     std::vector<keyframe<T>> keyframes;
 };

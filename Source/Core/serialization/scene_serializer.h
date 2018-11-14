@@ -11,6 +11,10 @@
 #include <functional>
 #include <resources/resource/resource_factory.h>
 #include "../general/util.h"
+#include <util/split.h>
+
+#include "import_data.h"
+#include "export_data.h"
 
 template<typename T>
 void ToJsonArray(nlohmann::json& j, T* data, int count)
@@ -58,32 +62,6 @@ template<> inline bool ToJson<gfxm::mat4>(nlohmann::json& j, rttr::variant& valu
 
 class SceneSerializer {
 public:
-    class ImportData {
-    public:
-        void Clear() {
-            oldUidToObject.clear();
-        }
-
-        void AddObject(int64_t imported_uid, SceneObject* so) {
-            oldUidToObject[imported_uid] = so;
-        }
-        SceneObject* GetObjectByImportUid(int64_t uid) {
-            auto it = oldUidToObject.find(uid);
-            if(it == oldUidToObject.end()) return 0;
-            return it->second;
-        }
-
-        std::map<std::string, DataSourceRef> data_sources;
-        std::vector<std::function<void()>> deferred_tasks;
-    private:
-        std::map<int64_t, SceneObject*> oldUidToObject;
-    };
-
-    class ExportData {
-    public:
-    private:
-    };
-
     typedef std::function<bool(nlohmann::json&, rttr::variant&)> serialize_prop_f;
     typedef std::function<void(rttr::variant&, nlohmann::json&)> json_prop_parser_t;
     typedef std::function<void(Component*, nlohmann::json&)> custom_component_writer_f;

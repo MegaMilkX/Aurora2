@@ -71,6 +71,8 @@ bool SceneSerializer::Serialize(const SceneObject* scene, const std::string& fil
     mz_zip_writer_finalize_archive(&archive);
     mz_zip_writer_end(&archive);
 
+    exportData.Clear();
+
     return true;
 }
 
@@ -105,7 +107,7 @@ bool SceneSerializer::Deserialize(const std::string& filename, SceneObject& scen
 // PRIVATE
 
 bool SceneSerializer::SerializeEmbeddedResources(mz_zip_archive& archive) {
-    for(auto& r : embedded_resources) {
+    for(auto& r : exportData.GetResources()) {
         std::vector<unsigned char> data;
         r->Serialize(data);
         mz_zip_writer_add_mem(
@@ -163,19 +165,30 @@ bool SceneSerializer::SerializeScene_(
         if(type == rttr::type::get<void>())
             continue;
         if(!type.is_valid()) continue;
-        std::string data = 
-            SerializeComponentToJson(archive, type, comp);
+        //std::string data = 
+        //    SerializeComponentToJson(archive, type, comp);
 
-        if(!mz_zip_writer_add_mem(
-            &archive, 
-            MKSTR(type.get_name() << ".comp").c_str(), 
-            data.c_str(), 
-            data.size(), 
-            0
-        )){
-            LOG_ERR("Failed to mz_zip_writer_add_mem() ");
+        std::stringstream strm;
+        if(comp->_write(strm, exportData)) {
+            strm.seekg(0, std::ios::end);
+            size_t sz = strm.tellg();
+            strm.seekg(0, std::ios::beg);
+            std::vector<char> buf;
+            buf.resize(sz);
+            strm.read((char*)buf.data(), sz);
+
+            if(!mz_zip_writer_add_mem(
+                &archive, 
+                MKSTR(type.get_name() << ".comp").c_str(), 
+                buf.data(), 
+                buf.size(), 
+                0
+            )){
+                LOG_ERR("Failed to mz_zip_writer_add_mem() ");
+            }    
         }
     }
+
     return true;
 }
 
@@ -399,6 +412,14 @@ bool SceneSerializer::DeserializeScene(unsigned char* data, size_t size, SceneOb
                 continue;
             }
 
+            importData.deferred_tasks.emplace_back([this, buf, c]() mutable {
+                std::stringstream ss;
+                ss.write(buf.data(), buf.size());
+                size_t comp_data_sz = buf.size();
+                c->_read(ss, comp_data_sz, importData);
+            });
+
+            /*
             nlohmann::json json_root;
             try
             {
@@ -465,8 +486,11 @@ bool SceneSerializer::DeserializeScene(unsigned char* data, size_t size, SceneOb
                         prop.set_value(c, var);
                     }
                 }
-            });
+
+                c->Refresh();
+            });*/
         }
+        
         // TODO:
     }
 

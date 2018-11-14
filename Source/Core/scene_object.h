@@ -8,6 +8,7 @@
 #include "typeindex.h"
 
 #include "../general/util.h"
+#include <util/split.h>
 #include <rttr/registration>
 #include <rttr/registration_friend>
 #include <rttr/type>

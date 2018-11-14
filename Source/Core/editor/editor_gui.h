@@ -15,8 +15,14 @@
 #include <external/scene_from_fbx.h>
 
 #include <components/animation_driver.h>
+#include <components/component_prop_test.h>
 
 #include "editor_config.h"
+
+#include <serialization/serialize_scene.h>
+#include <serialization/deserialize_scene.h>
+
+#include "editor_window_pool.h"
 
 class EditorCamera : public Component
 {
@@ -132,6 +138,36 @@ public:
     SceneObject* editedScene = 0;
     EditorCamera* editorCamera = 0;
 
+    bool SaveScene(SceneObject* scene, bool forceDialog = false) {
+        if(currentSceneFile.empty() || forceDialog)
+        {
+            char* outPath;
+            auto r = NFD_SaveDialog("scn", NULL, &outPath);
+            if(r == NFD_OKAY) {
+                std::string filePath(outPath);
+                if(!has_suffix(filePath, ".scn")) {
+                    filePath = filePath + ".scn";
+                }
+                std::cout << filePath << std::endl;
+                
+                if(SerializeScene(editedScene, filePath))
+                {
+                    std::cout << "Scene saved" << std::endl;
+                    currentSceneFile = filePath;
+                }
+            }
+        }
+        else
+        {
+            if(SerializeScene(editedScene, currentSceneFile))
+            {
+                std::cout << "Scene saved" << std::endl;
+            }
+        }
+        
+        return true;
+    }
+
     void Init(Input* input)
     {
         char* outPath;
@@ -147,78 +183,6 @@ public:
             new DataSourceMemory((char*)blender_icons_png, sizeof(blender_icons_png))
         );
         icon_texture->Build(raw);
-
-        editorSceneObjectInspector.AddComponentGuiExtension(
-            rttr::type::get<AnimationDriver>(),
-            [](Component* c){
-                AnimationDriver* driver = (AnimationDriver*)c;
-                bool preview = true;
-                if(ImGui::Checkbox("Preview", &preview)) {}
-                if(preview) glfwPostEmptyEvent();
-
-                for(size_t i = 0; i < driver->LayerCount(); ++i)
-                {
-                    AnimLayer* layer = driver->GetLayer(i);
-                    if (ImGui::TreeNode(MKSTR("Layer " << i).c_str()))
-                    {
-                        if (ImGui::BeginCombo("Current anim", layer->CurrentAnimName().c_str(), 0)) // The second parameter is the label previewed before opening the combo.
-                        {
-                            for(size_t n = 0; n < driver->AnimCount(); ++n) {
-                                const std::string& anim_name = driver->GetAnimName(n);
-                                bool is_selected = (anim_name == layer->CurrentAnimName());
-                                if(ImGui::Selectable(anim_name.c_str(), is_selected)) {
-                                    layer->Play(anim_name);
-                                }
-                                if(is_selected) ImGui::SetItemDefaultFocus();
-                            }
-                            ImGui::EndCombo();
-                        }
-                        rttr::type t = rttr::type::get<AnimLayer::MODE>();
-                        rttr::enumeration en = t.get_enumeration();
-                        if(ImGui::BeginCombo("Mode", en.value_to_name(layer->Mode()).to_string().c_str()))
-                        {                            
-                            for(auto& n : en.get_names()) {
-                                auto& val = en.name_to_value(n);
-                                bool is_selected = (val.get_value<AnimLayer::MODE>() == layer->Mode());
-                                if(ImGui::Selectable(n.to_string().c_str(), is_selected)) {
-                                    layer->SetMode(val.get_value<AnimLayer::MODE>());
-                                }
-                                if(is_selected) ImGui::SetItemDefaultFocus();
-                            }
-                            ImGui::EndCombo();
-                        }
-                        float weight = layer->Strength();
-                        if(ImGui::DragFloat("Weight", &weight, 0.01f, 0.0f, 1.0f)) {
-                            layer->SetStrength(weight);
-                        }
-                        bool looping = layer->Looping();
-                        if(ImGui::Checkbox("Looping", &looping)) {}
-                        layer->Looping(looping);
-                        if(ImGui::Button("Remove Layer")) {
-                            driver->RemoveLayer(i);
-                        }
-                        ImGui::TreePop();
-                    }
-                }
-                if(ImGui::Button("Add Layer")) {
-                    driver->AddLayer();
-                }
-                if (ImGui::TreeNode("Animations"))
-                {
-                    for(size_t i = 0; i < driver->AnimCount(); ++i)
-                    {
-                        const std::string& name = driver->GetAnimName(i);
-                        //char buf[256];
-                        //ImGui::InputText("", buf, 256); ImGui::SameLine();
-                        //ImGui::Button("[source]");
-                        
-                        ImGui::Text(name.c_str());
-                    }
-
-                    ImGui::TreePop();
-                }
-            }
-        );
 
         input->BindActionPress(
             "GizmoTranslate", 
@@ -338,7 +302,7 @@ public:
 
                         std::cout << outPath << std::endl;
                         std::string filePath(outPath);
-                        GlobalSceneSerializer().Deserialize(filePath, *editedScene);
+                        DeserializeScene(editedScene, filePath);
                         editorCamera->Reset(gfxm::vec3(0.0f,0.0f,0.0f));
                         currentSceneFile = filePath;
                         selectedObject = 0;
@@ -376,7 +340,7 @@ public:
 
                         std::cout << outPath << std::endl;
                         std::string filePath(outPath);
-                        GlobalSceneSerializer().Deserialize(filePath, *so);
+                        DeserializeScene(so, filePath);
                     }
                 }
                 if(ImGui::MenuItem("Merge FBX..."))
@@ -391,43 +355,11 @@ public:
                         SceneFromFbx(filePath, so);
                     }
                 }
-                if(ImGui::MenuItem("Save"))
-                {
-                    if(currentSceneFile.empty())
-                    {
-                        char* outPath;
-                        auto r = NFD_SaveDialog("scn", NULL, &outPath);
-                        if(r == NFD_OKAY) {
-                            std::cout << outPath << std::endl;
-                            std::string filePath(outPath);
-                            if(GlobalSceneSerializer().Serialize(editedScene, filePath))
-                            {
-                                std::cout << "Scene saved" << std::endl;
-                                currentSceneFile = filePath;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if(GlobalSceneSerializer().Serialize(editedScene, currentSceneFile))
-                        {
-                            std::cout << "Scene saved" << std::endl;
-                        }
-                    }
+                if(ImGui::MenuItem("Save")) {
+                    SaveScene(editedScene);
                 }
-                if(ImGui::MenuItem("Save As..."))
-                {
-                    char* outPath;
-                    auto r = NFD_SaveDialog("scn", NULL, &outPath);
-                    if(r == NFD_OKAY) {
-                        std::cout << outPath << std::endl;
-                        std::string filePath(outPath);
-                        if(GlobalSceneSerializer().Serialize(editedScene, filePath))
-                        {
-                            std::cout << "Scene saved" << std::endl;
-                            currentSceneFile = filePath;
-                        }
-                    }
+                if(ImGui::MenuItem("Save As...")) {
+                    SaveScene(editedScene, true);
                 }
                 if(ImGui::MenuItem("Exit")) {}
                 ImGui::EndMenu();
@@ -477,6 +409,8 @@ public:
         editorSceneHierarchy.Draw(editedScene);
         editorSceneObjectInspector.Draw(selectedObject, componentCreator);
         componentCreator.Update(selectedObject);
+
+        Editor::GUI::WindowPool::Update();
 
         //animTimeline.Show();
         //animTimeline.Update();

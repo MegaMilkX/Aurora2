@@ -2,6 +2,10 @@
 #define COMPONENT_H
 
 #include "scene_object.h"
+#include <util/imgui_wrapper.h>
+#include <util/imgui_console.h>
+#include <serialization/import_data.h>
+#include <serialization/export_data.h>
 
 class Component
 {
@@ -29,7 +33,18 @@ public:
     
     rttr::type GetType() const { return type; }
 
+    // Called after the component has been created
     virtual void OnInit() {}
+    
+    virtual bool _write(std::ostream& out, ExportData& exportData) {
+        return false;
+    }
+    virtual bool _read(std::istream& in, size_t sz, ImportData& importData) {
+        return false;
+    }
+    virtual bool _editor() {
+        return false;
+    }
 protected:
     rttr::type type;
 private:

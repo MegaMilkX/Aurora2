@@ -8,42 +8,50 @@
 
 #include "editor_window.h"
 
+#include <util/has_suffix.h>
+
+template<typename T>
 class EditorDataPick : public EditorWindow {
 public:
     EditorDataPick()
-    : prop(rttr::type::get<void>().get_property("")) {
+    : res_target(0) {
 
     }
-    void SetTarget(rttr::property prop, Component* comp) { 
-        this->prop = prop;
-        this->comp = comp;
-    }
-    virtual void Draw() {
-        if(!comp) return;
 
+    void SetSuffix(const std::string& suff) {
+        suffix = suff;
+    }
+    void SetTarget(std::shared_ptr<T>* res) {
+        res_target = res;
+    }
+
+    virtual bool Draw() {
         if(ImGui::Begin("Global data selector", &visible)) {
             for(size_t i = 0; i < GlobalDataRegistry().Count(); ++i) {
                 std::string name = GlobalDataRegistry().GetNameById(i);
+                if(!has_suffix(name, suffix)) {
+                    continue;
+                }
                 bool selected = selected_name == name;
                 if(ImGui::Selectable(name.c_str(), &selected)) {
+                    if(name == selected_name) {
+                        if(res_target) {
+                            *res_target = GlobalResourceFactory().Get<T>(name);
+                        }     
+                    }
                     selected_name = name;
                 }
             }
-
-            if(ImGui::Button("Select")) {
-                rttr::variant var = prop.get_value(comp);
-                i_resource_ref& ref = var.get_value<i_resource_ref>();
-                ref.set_from_factory(GlobalResourceFactory(), selected_name);
-                prop.set_value(comp, var);
-            }
-            
+                  
             ImGui::End();
+            return true;
+        } else {
+            return false;
         }
     }
 private:
-    //i_resource_ref* tgt_resource_ref;
-    rttr::property prop;
-    Component* comp = 0;
+    std::string suffix;
+    std::shared_ptr<T>* res_target;
     std::string selected_name;
 };
 

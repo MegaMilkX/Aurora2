@@ -44,6 +44,18 @@ public:
             specularMap = GlobalResourceFactory().Get<Texture2D>(value);
         }
     }
+    void Set(const std::string& key, const gfxm::vec3& value) {
+        if(key == "Tint") {
+            tint = value;
+        }
+    }
+    void Set(const std::string& key, float value) {
+        if(key == "Glossiness") {
+            glossiness = value;
+        } else if(key == "Emission") {
+            emission = value;
+        }
+    }
 
     std::string GetString(const std::string& key) { return strstr[key]; }
     
@@ -68,17 +80,46 @@ public:
 
         for(json::iterator it = j.begin(); it != j.end(); ++it)
         {
-            if(it.value().is_string())
-            {
+            if(it.value().is_string()) {
                 Set(it.key(), it.value().get<std::string>());
+            } else if(it.value().is_number()) {
+                Set(it.key(), it.value().get<float>());
+            } else if(it.value().is_array()) {
+                if(it.value().size() == 3) {
+                    if(it.value()[0].is_number()
+                    && it.value()[1].is_number()
+                    && it.value()[2].is_number()) {
+                        Set(it.key(), gfxm::vec3(
+                            it.value()[0].get<float>(),
+                            it.value()[1].get<float>(),
+                            it.value()[2].get<float>()
+                        ));
+                    }
+                }
             }
         }
 
         return true;
     }
     virtual bool Serialize(std::vector<unsigned char>& data) {
-        LOG("Material::Serialize - NOT IMPLEMENTED");
-        return false;
+        nlohmann::json j;
+        if(diffuseMap) {
+            j["DiffuseMap"] = diffuseMap->Name();
+        }
+        if(normalMap) {
+            j["NormalMap"] = normalMap->Name();
+        }
+        if(specularMap) {
+            j["SpecularMap"] = specularMap->Name();
+        }
+        j["Tint"] = { tint.x, tint.y, tint.z };
+        j["Glossiness"] = glossiness;
+        j["Emission"] = emission;
+
+        std::string jstring = j.dump();
+        data = std::vector<unsigned char>((unsigned char*)jstring.data(), (unsigned char*)jstring.data() + jstring.size());
+        
+        return true;
     }
 private:
     std::map<std::string, std::string> strstr;

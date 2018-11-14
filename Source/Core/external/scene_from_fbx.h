@@ -114,35 +114,31 @@ inline void ResourcesFromFbxScene(const aiScene* ai_scene, FbxImportData& import
         }
 
         std::shared_ptr<Mesh> mesh_ref(new Mesh());
+        mesh_ref->vertexCount = vertexCount;
         mesh_ref->Name(MKSTR(i << ".geo"));
         mesh_ref->Storage(Resource::LOCAL);
+        
         /*
         for(size_t j = 0; j < indices.size(); j+=3) {
             LOG("TRI: " << indices[j] << ", " << indices[j+1] << ", " << indices[j+2]);
         }*/
 
         mesh_ref->SetAttribArray<Au::Position>(vertices);
+        LOG("Vertex elem count: " << vertices.size());
         if(normal_layers.size() > 0) {
             mesh_ref->SetAttribArray<Au::Normal>(normal_layers[0]);
+            LOG("Normal elem count: " << normal_layers[0].size());
+        }
+        if(uv_layers.empty()) {
+            uv_layers.emplace_back(std::vector<float>(vertexCount * 2));
         }
         if(uv_layers.size() > 0) {
             mesh_ref->SetAttribArray<Au::UV>(uv_layers[0]);
+            LOG("UV elem count: " << uv_layers[0].size());
         }
         if(!boneIndices.empty() && !boneWeights.empty()) {
             mesh_ref->SetAttribArray<Au::BoneIndex4>(boneIndices);
             mesh_ref->SetAttribArray<Au::BoneWeight4>(boneWeights);
-            /*
-            for(unsigned j = 0; j < boneWeights.size(); ++j) {
-                gfxm::vec4& v = boneWeights[j];
-                gfxm::vec4& bi = boneIndices[j];
-                LOG(
-                    "[" << bi.x << ", " << bi.y << ", " << bi.z << ", " << bi.w << "]: " <<
-                    v.x << ", " << v.y << ", " << v.z << ", " << v.w
-                );
-                if(v.x == 0.0f && v.y == 0.0f && v.z == 0.0f && v.w == 0.0f) {
-                    LOG("EMPTY BONE WEIGHTS FOR VERTEX " << j)
-                }
-            }*/
         }
         mesh_ref->SetIndices(indices);
 
@@ -284,10 +280,12 @@ inline void SceneFromFbx(const aiScene* ai_scene, SceneObject* scene, FbxImportD
     
     if(ai_scene->mMetaData) {
         double scaleFactor = 1.0;
-        ai_scene->mMetaData->Get("UnitScaleFactor", scaleFactor);
-        if(scaleFactor == 0.0) scaleFactor = 1.0;
-        scaleFactor *= 0.01;
-        scene->Get<Transform>()->Scale((float)scaleFactor);
+        if(ai_scene->mMetaData->Get("UnitScaleFactor", scaleFactor)) {
+            if(scaleFactor == 0.0) scaleFactor = 1.0;
+            scaleFactor *= 0.01;
+            scene->Get<Transform>()->Scale((float)scaleFactor);
+        } else {
+        }
     }
     //double scaleFactor = 1.0;
     //ai_rootNode->mMetaData->Get("UnitScaleFactor", scaleFactor);
@@ -331,6 +329,15 @@ inline bool SceneFromFbx(const std::string& filename, SceneObject* scene)
 
     ResourcesFromFbxScene(ai_scene, importData);
     SceneFromFbx(ai_scene, scene, importData);
+
+    std::vector<std::string> tokens = split(filename, '\\');
+    if(!tokens.empty()) {
+        std::string name = tokens[tokens.size() - 1];
+        tokens = split(name, '.');
+        name = name.substr(0, name.find_last_of("."));
+        scene->Name(name);
+    } else {
+    }
 
     return true;
 }

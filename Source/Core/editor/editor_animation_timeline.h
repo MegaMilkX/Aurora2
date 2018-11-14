@@ -10,7 +10,7 @@
 
 class EditorAnimationTimeline : public EditorWindow {
 public:
-    virtual void Draw() {
+    virtual bool Draw() {
       if(ImGui::Begin("Timeline", &visible)) {
         if (ImGui::BeginCombo("Current anim", "Run2.anim", 0)) {
           
@@ -26,6 +26,9 @@ public:
         static float arr[] = { 0.6f, 0.1f, 1.0f, 0.5f, 0.92f, 0.1f, 0.2f };
         int new_count = 7;
         ImGui::End();
+        return true;
+      } else {
+        return false;
       }
     }
 };

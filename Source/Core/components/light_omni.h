@@ -11,7 +11,7 @@ class LightDirect : public Component
     RTTR_ENABLE(Component)
 public:
     LightDirect()
-    : color(1.0f, 1.0f, 1.0f) {}
+    : color(1.0f, 1.0f, 1.0f), intensity(1.0f) {}
     ~LightDirect()
     {
     }
@@ -22,12 +22,42 @@ public:
     { color = col; }
     gfxm::vec3 Color()
     { return color; }
+    void Intensity(float i) {
+        intensity = i;
+    }
+    float Intensity() {
+        return intensity;
+    }
     
     void OnInit()
     {
     }
+
+    virtual bool _write(std::ostream& out, ExportData& exportData) {
+        out.write((char*)&color, sizeof(color));
+        out.write((char*)&intensity, sizeof(intensity));
+        return true;
+    }
+    virtual bool _read(std::istream& in, size_t sz, ImportData& importData) {
+        if(sz != sizeof(color) + sizeof(intensity)) 
+            return false;
+        in.read((char*)&color, sizeof(color));
+        in.read((char*)&intensity, sizeof(intensity));
+        return true;
+    }
+    virtual bool _editor() {
+        static bool alpha_preview = true;
+        static bool alpha_half_preview = false;
+        static bool options_menu = true;
+        static bool hdr = false;
+        int misc_flags = (hdr ? ImGuiColorEditFlags_HDR : 0) | (alpha_half_preview ? ImGuiColorEditFlags_AlphaPreviewHalf : (alpha_preview ? ImGuiColorEditFlags_AlphaPreview : 0)) | (options_menu ? 0 : ImGuiColorEditFlags_NoOptions);
+        ImGui::ColorEdit3("Color", (float*)&color, misc_flags);
+        if(ImGui::DragFloat("Intensity", &intensity, intensity * 0.001f)) {}
+        return true;
+    }
 private:
     gfxm::vec3 color;
+    float intensity;
 };
 STATIC_RUN(LightDirect)
 {
@@ -73,6 +103,29 @@ public:
 
     void OnInit()
     {
+    }
+
+    virtual bool _write(std::ostream& out, ExportData& exportData) {
+        out.write((char*)&color, sizeof(color));
+        out.write((char*)&intensity, sizeof(intensity));
+        return true;
+    }
+    virtual bool _read(std::istream& in, size_t sz, ImportData& importData) {
+        if(sz != sizeof(color) + sizeof(intensity)) 
+            return false;
+        in.read((char*)&color, sizeof(color));
+        in.read((char*)&intensity, sizeof(intensity));
+        return true;
+    }
+    virtual bool _editor() {
+        static bool alpha_preview = true;
+        static bool alpha_half_preview = false;
+        static bool options_menu = true;
+        static bool hdr = false;
+        int misc_flags = (hdr ? ImGuiColorEditFlags_HDR : 0) | (alpha_half_preview ? ImGuiColorEditFlags_AlphaPreviewHalf : (alpha_preview ? ImGuiColorEditFlags_AlphaPreview : 0)) | (options_menu ? 0 : ImGuiColorEditFlags_NoOptions);
+        ImGui::ColorEdit3("Color", (float*)&color, misc_flags);
+        if(ImGui::DragFloat("Intensity", &intensity, intensity * 0.001f)) {}
+        return true;
     }
 private:
     gfxm::vec3 color;
