@@ -13,8 +13,13 @@
 template<typename T>
 class EditorDataPick : public EditorWindow {
 public:
+    typedef std::function<void(std::shared_ptr<T>)> on_pick_fn_t;
     EditorDataPick()
     : res_target(0) {
+
+    }
+    EditorDataPick(on_pick_fn_t on_pick) 
+    : res_target(0), on_pick_fn(on_pick) {
 
     }
 
@@ -37,7 +42,10 @@ public:
                     if(name == selected_name) {
                         if(res_target) {
                             *res_target = GlobalResourceFactory().Get<T>(name);
-                        }     
+                        }
+                        if(on_pick_fn) {
+                            on_pick_fn(GlobalResourceFactory().Get<T>(name));
+                        } 
                     }
                     selected_name = name;
                 }
@@ -52,6 +60,7 @@ public:
 private:
     std::string suffix;
     std::shared_ptr<T>* res_target;
+    on_pick_fn_t on_pick_fn;
     std::string selected_name;
 };
 

@@ -47,6 +47,10 @@ void SceneObject::Erase(SceneObject* child) {
     {
         if(objects[i].get() == child)
         {
+            if(child->WeakPtr().use_count() > 1) {
+                std::cout << "Can't delete object '" << Name() << "', as it is referenced elsewhere" << std::endl;
+                break;
+            }
             objects.erase(objects.begin() + i);
             break;
         }

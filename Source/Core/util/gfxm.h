@@ -1007,14 +1007,23 @@ inline tquat<T> slerp(const tquat<T>& a, const tquat<T>& b, float x)
         r = b;
     }
 
-    if (d < 0.95f)
+    if (d < 0.9995f)
     {
-        float angle = acosf(d);
-        return (a * sinf(angle * (1.0f - x)) + r * sinf(angle * x)) / sinf(angle);
+        //float angle = acosf(d);
+        //return (a * sinf(angle * (1.0f - x)) + r * sinf(angle * x)) / sinf(angle);
+        float theta_0 = acosf(d);        // theta_0 = angle between input vectors
+        float theta = theta_0 * x;          // theta = angle between v0 and result
+        float sin_theta = sinf(theta);     // compute this value only once
+        float sin_theta_0 = sinf(theta_0); // compute this value only once
+
+        float s0 = cosf(theta) - d * sin_theta / sin_theta_0;  // == sin(theta_0 - theta) / sin(theta_0)
+        float s1 = sin_theta / sin_theta_0;
+
+        return normalize((a * s0) + (r * s1));
     }
     else
     {
-        return lerp(a, b, x);
+        return lerp(a, r, x);
     }
 }
 

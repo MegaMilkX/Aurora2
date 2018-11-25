@@ -18,6 +18,13 @@ public:
         return ptr;
     }
 
+    template<typename T>
+    static std::shared_ptr<T> Add(std::shared_ptr<T> window_ptr) {
+        window_ptr->Show();
+        windows.emplace_back(std::dynamic_pointer_cast<EditorWindow>(window_ptr));
+        return window_ptr;
+    }
+
     static void Update() {
         for(size_t i = 0; i < windows.size();) {
             if(!windows[i]->Update()) {

@@ -6,6 +6,7 @@
 #include "component.h"
 
 #include "scene_renderer.h"
+#include "scene_physics.h"
 
 #include <set>
 #include "components/updatable.h"
@@ -30,6 +31,7 @@ private:
     void _firstTimeSceneProcess(SceneObject* s);
     SceneObject* scene;
     SceneRenderer renderer;
+    ScenePhysics physics;
     std::set<Updatable*> updatables;
 };
 

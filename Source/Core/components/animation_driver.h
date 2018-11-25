@@ -225,16 +225,34 @@ public:
     bool Looping() const { return looping; }
     void SetStrength(float s) { strength = s; }
     float Strength() const { return strength; }
-    const std::string& CurrentAnimName() const { return currentAnimName; }
-
-    void Tick(float dt) {
-        if(!current) return;
-        cursor += dt * current->FrameRate();
+    void SetSpeed(float s) { speed = s; }
+    float Speed() const { return speed; }
+    void SetCursor(float c) { 
+        cursor = c; 
         if(cursor > current->Length()) {
             if(looping) {
                 cursor = cursor - current->Length();
             } else {
                 cursor = current->Length();
+            }
+        }
+    }
+    float Cursor() const { return cursor; }
+    void SetAutoplay(bool a) { autoplay = a; }
+    bool Autoplay() const { return autoplay; }
+
+    const std::string& CurrentAnimName() const { return currentAnimName; }
+
+    void Tick(float dt) {
+        if(!current) return;
+        if(autoplay) {
+            cursor += dt * speed * current->FrameRate();
+            if(cursor > current->Length()) {
+                if(looping) {
+                    cursor = cursor - current->Length();
+                } else {
+                    cursor = current->Length();
+                }
             }
         }
 
@@ -252,9 +270,11 @@ private:
     AnimationDriver* driver;
     MODE mode = OVERWRITE;
     bool looping = true;
+    bool autoplay = true;
     float blend = 0.0f;
     float blendTick = 0.0f;
     float strength = 1.0f;
+    float speed = 1.0f;
     AnimMotor* current = 0;
     AnimMotor* blendTarget = 0;
     std::string currentAnimName;
@@ -401,12 +421,25 @@ public:
                     ImGui::EndCombo();
                 }
                 float weight = layer->Strength();
+                float speed = layer->Speed();
+                float cursor = layer->Cursor();
+                if(ImGui::DragFloat("Cursor", &cursor, 0.01f)) {
+                    layer->SetCursor(cursor);
+                }
+                if(ImGui::DragFloat("Speed", &speed, 0.01f, 0.0f, 10.0f)) {
+                    layer->SetSpeed(speed);
+                }
                 if(ImGui::DragFloat("Weight", &weight, 0.01f, 0.0f, 1.0f)) {
                     layer->SetStrength(weight);
                 }
                 bool looping = layer->Looping();
-                if(ImGui::Checkbox("Looping", &looping)) {}
-                layer->Looping(looping);
+                if(ImGui::Checkbox("Looping", &looping)) {
+                    layer->Looping(looping);
+                } ImGui::SameLine();
+                bool autoplay = layer->Autoplay();
+                if(ImGui::Checkbox("Autoplay", &autoplay)) {
+                    layer->SetAutoplay(autoplay);
+                }
                 if(ImGui::Button("Remove Layer")) {
                     driver->RemoveLayer(i);
                 }
@@ -433,7 +466,16 @@ public:
                 ++i;
             }
             if(ImGui::Button("+")) {
-                // TODO
+                auto window = Editor::GUI::WindowPool::Add(std::shared_ptr<EditorDataPick<Animation>>(
+                    new EditorDataPick<Animation>(
+                        [this](std::shared_ptr<Animation> anim){
+                            if(anim){
+                                AddAnim(anim->Name(), anim);
+                            }
+                        }
+                    )
+                ));
+                window->SetSuffix("anim");
             }
 
             ImGui::TreePop();

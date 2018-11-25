@@ -5,10 +5,6 @@
 #include <camera.h>
 #include <model.h>
 #include <light_omni.h>
-#include <luascript.h>
-//#include <animator.h>
-#include <dynamics/rigid_body.h>
-#include <collision/collider.h>
 #include <sound_emitter.h>
 #include <text_mesh.h>
 

@@ -7,6 +7,7 @@ SceneController::SceneController()
 bool SceneController::Init()
 {
     renderer.Init();
+    physics.Init();
     return true;
 }
 
@@ -23,6 +24,7 @@ void SceneController::Update(){
         u->OnUpdate();
     }
 
+    physics.Update();
     renderer.Render();
 }
 
@@ -35,6 +37,7 @@ void SceneController::_onAddComponent(
         updatables.insert((Updatable*)c);
     }
 
+    physics._onAddComponent(type, c, so);
     renderer._onAddComponent(type, c, so);
 }
 
@@ -47,6 +50,7 @@ void SceneController::_onRemoveComponent(
         updatables.erase((Updatable*)c);
     }
 
+    physics._onRemoveComponent(type, c, so);
     renderer._onRemoveComponent(type, c, so);
 }
 

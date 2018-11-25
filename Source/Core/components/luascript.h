@@ -12,8 +12,8 @@
 //#include "animator.h"
 //#include "skeleton.h"
 
-#include "dynamics/rigid_body.h"
-#include "collision/collider.h"
+//#include "dynamics/rigid_body.h"
+//#include "collision/collider.h"
 
 #include <aurora/lua.h>
 
@@ -113,10 +113,10 @@ public:
         _state.Bind(&SceneObject::GetComponent<Model>, "Model");
         //_state.Bind(&SceneObject::GetComponent<Animator>, "Animation");
         //_state.Bind(&SceneObject::GetComponent<Skeleton>, "Skeleton");
-		_state.Bind(&SceneObject::GetComponent<PlaneCollider>, "PlaneCollider");
-		_state.Bind(&SceneObject::GetComponent<SphereCollider>, "SphereCollider");
-        _state.Bind(&SceneObject::GetComponent<MeshCollider>, "MeshCollider");
-        _state.Bind(&SceneObject::GetComponent<RigidBody>, "RigidBody");
+		//_state.Bind(&SceneObject::GetComponent<PlaneCollider>, "PlaneCollider");
+		//_state.Bind(&SceneObject::GetComponent<SphereCollider>, "SphereCollider");
+        //_state.Bind(&SceneObject::GetComponent<MeshCollider>, "MeshCollider");
+        //_state.Bind(&SceneObject::GetComponent<RigidBody>, "RigidBody");
         
         //_state.Bind(&LuaScript::SetScript, "SetScript");
         _state.Bind<LuaScript, SceneObject*>(&LuaScript::GetObject, "GetObject");
@@ -162,10 +162,10 @@ public:
 		
 		//_state.Bind<MeshCollider, void, const std::string&>(&MeshCollider::SetMesh, "SetMesh");
         
-        _state.Bind<RigidBody, void, const gfxm::vec3&>(&RigidBody::SetLinearVelocity, "SetLinearVelocity");
-        _state.Bind(&RigidBody::SetLinearFactor, "SetLinearFactor");
-        _state.Bind(&RigidBody::SetAngularFactor, "SetAngularFactor");
-        _state.Bind(&RigidBody::LookAt, "LookAt");
+        //_state.Bind<RigidBody, void, const gfxm::vec3&>(&RigidBody::SetLinearVelocity, "SetLinearVelocity");
+        //_state.Bind(&RigidBody::SetLinearFactor, "SetLinearFactor");
+        //_state.Bind(&RigidBody::SetAngularFactor, "SetAngularFactor");
+        //_state.Bind(&RigidBody::LookAt, "LookAt");
     }
     
     template<typename... Args>
