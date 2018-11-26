@@ -193,8 +193,6 @@ public:
     {
         renderables[so].transform = so->Get<Transform>();
         renderables[so].model = m;
-
-        LOG("Renderable added " << so);
     }
 
     void _onAddComponent(rttr::type type, Component* c, SceneObject* so)
@@ -244,7 +242,6 @@ public:
         }
         else if(type == rttr::type::get<Model>()) {
             renderables.erase(so);
-            LOG("Renderable removed " << so);
         }
         else if(type == rttr::type::get<Skin>()) {
             if(renderables.count(so)) {

@@ -2,11 +2,9 @@
 #define SCENE_PHYSICS_H
 
 #include <util/gfxm.h>
-#include <btBulletDynamicsCommon.h>
-#include <BulletCollision/CollisionDispatch/btGhostObject.h>
 #include <LinearMath/btIDebugDraw.h>
 #include "external/imguizmo/imguizmo.h"
-#include <component.h>
+#include <collider.h>
 #include "debug_draw.h"
 
 class BulletDebugDrawer_OpenGL : public btIDebugDraw {
@@ -15,12 +13,16 @@ public:
 	{
         const ddVec3 f  = { from.getX(), from.getY(), from.getZ() };
         const ddVec3 t = { to.getX(), to.getY(), to.getZ() };
-        const ddVec3 col = { 1.0f, 1.0f, 1.0f };
+        const ddVec3 col = { color.getX(), color.getY(), color.getZ() };
         dd::line(f, t, col, 0, false);
 	}
 	virtual void drawContactPoint(const btVector3 &, const btVector3 &, btScalar, int, const btVector3 &) {}
 	virtual void reportErrorWarning(const char *) {}
-	virtual void draw3dText(const btVector3 &, const char *) {}
+	virtual void draw3dText(const btVector3 & pos, const char * text) {
+        const ddVec3 p = {pos.getX(), pos.getY(), pos.getZ()};
+        const ddVec3 c = { 1.0f, 1.0f, 1.0f };
+        dd::screenText(text, p, c);
+    }
 	virtual void setDebugMode(int p) {
 		m = p;
 	}
@@ -41,37 +43,49 @@ public:
         );
 
         world->setDebugDrawer(&debugDrawer);
-
-        //
-        collisionObject = new btCollisionObject();
-        shape = new btSphereShape(0.5f);
-		collisionObject->setCollisionShape(shape);
-        world->addCollisionObject(collisionObject);
     }
     void Update() {
-
+        for(auto kv : objects) {
+            Transform* t = kv.first->GetComponent<Transform>();
+            //gfxm::mat4 m = gfxm::translate(gfxm::mat4(1.0f), t->WorldPosition()) * 
+            //    gfxm::to_mat4(t->WorldRotation()) *
+            //    gfxm::translate(gfxm::mat4(1.0f), ((Collider*)kv.first)->GetShape()->GetPivotOffset());
+            gfxm::mat4 m = t->GetTransform() * 
+                gfxm::translate(gfxm::mat4(1.0f), ((Collider*)kv.first)->GetShape()->GetPivotOffset());
+            btTransform trans;
+            trans.setFromOpenGLMatrix((btScalar*)&m);
+            kv.second->setWorldTransform(trans);
+        }
     }
     void DebugDraw() {
         world->debugDrawWorld();
     }
 
     void _onAddComponent(rttr::type type, Component* c, SceneObject* so) {
-    
+        if(type == rttr::type::get<Collider>()) {
+            objects[c] = new btCollisionObject();
+            objects[c]->setCollisionShape(((Collider*)c)->GetShape()->GetBtShapePtr());
+            world->addCollisionObject(objects[c]);
+        }
     }
     void _onRemoveComponent(rttr::type type, Component* c, SceneObject* so) {
-    
+        if(type == rttr::type::get<Collider>()) {
+            if(objects.count(c) != 0) {
+                world->removeCollisionObject(objects[c]);
+                delete objects[c];
+                objects.erase(c);
+            }
+        }
     }
 private:
+    std::map<Component*, btCollisionObject*> objects;
+
     btDefaultCollisionConfiguration* collisionConf;
     btCollisionDispatcher* dispatcher;
     btDbvtBroadphase* broadphase;
 	btCollisionWorld* world;
 
     BulletDebugDrawer_OpenGL debugDrawer;
-
-    //
-    btCollisionObject* collisionObject;
-	btCollisionShape* shape;
 };
 
 #endif
