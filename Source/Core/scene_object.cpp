@@ -191,6 +191,13 @@ void SceneObject::SetController(SceneController* con) {
     }
 }
 
+void SceneObject::RefreshComponent(Component* com) {
+    if(controller) {
+        controller->_onRemoveComponent(com->GetType(), com, this);
+        controller->_onAddComponent(com->GetType(), com, this);
+    }
+}
+
 std::weak_ptr<SceneObject> SceneObject::WeakPtr() {
     return shared_from_this();
 }

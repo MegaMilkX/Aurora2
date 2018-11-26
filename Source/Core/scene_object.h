@@ -29,6 +29,7 @@ class SceneController;
 class Component;
 class SceneObject : public std::enable_shared_from_this<SceneObject>
 {
+    friend Component;
 public:    
     static std::shared_ptr<SceneObject> Create() {
         return std::make_shared<SceneObject>();
@@ -85,6 +86,7 @@ public:
     std::weak_ptr<SceneObject> WeakPtr();
 private:
     void AddComponent(Component* c, rttr::type t);
+    void RefreshComponent(Component* com);
 
     template<typename T>
     Component* GetComponentBase() { return GetComponent<T>(); }

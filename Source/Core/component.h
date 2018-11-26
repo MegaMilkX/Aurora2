@@ -33,6 +33,12 @@ public:
     
     rttr::type GetType() const { return type; }
 
+    void Refresh() {
+        if(object) {
+            object->RefreshComponent(this);
+        }
+    }
+
     // Called after the component has been created
     virtual void OnInit() {}
     
