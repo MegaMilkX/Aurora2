@@ -25,6 +25,7 @@ void SceneController::Update(){
     }
 
     physics.Update();
+    physics.DebugDraw();
     renderer.Render();
 }
 
