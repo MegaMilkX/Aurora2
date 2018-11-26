@@ -33,6 +33,7 @@ public:
     
     rttr::type GetType() const { return type; }
 
+    // Use to signal the SceneController (if attached) that this component has changed
     void Refresh() {
         if(object) {
             object->RefreshComponent(this);
