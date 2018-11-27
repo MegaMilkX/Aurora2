@@ -5,6 +5,7 @@
 #include <LinearMath/btIDebugDraw.h>
 #include "external/imguizmo/imguizmo.h"
 #include <collider.h>
+#include <rigid_body.h>
 #include "debug_draw.h"
 
 class BulletDebugDrawer_OpenGL : public btIDebugDraw {
@@ -36,11 +37,21 @@ public:
         collisionConf = new btDefaultCollisionConfiguration();
         dispatcher = new btCollisionDispatcher(collisionConf);
         broadphase = new btDbvtBroadphase();
-		world = new btCollisionWorld(
+		/*
+        world = new btCollisionWorld(
             dispatcher, 
             broadphase,
             collisionConf
         );
+        */
+        constraintSolver = new btSequentialImpulseConstraintSolver();
+        world = new btDiscreteDynamicsWorld(
+            dispatcher, 
+            broadphase, 
+            constraintSolver,
+            collisionConf
+        );
+        world->setGravity(btVector3(0.0f, -10.0f, 0.0f));
 
         world->setDebugDrawer(&debugDrawer);
     }
@@ -66,6 +77,8 @@ public:
             objects[c] = new btCollisionObject();
             objects[c]->setCollisionShape(((Collider*)c)->GetShape()->GetBtShapePtr());
             world->addCollisionObject(objects[c]);
+        } else if(type == rttr::type::get<RigidBody>()) {
+
         }
     }
     void _onRemoveComponent(rttr::type type, Component* c, SceneObject* so) {
@@ -75,6 +88,8 @@ public:
                 delete objects[c];
                 objects.erase(c);
             }
+        } else if(type == rttr::type::get<RigidBody>()) {
+            
         }
     }
 private:
@@ -83,7 +98,9 @@ private:
     btDefaultCollisionConfiguration* collisionConf;
     btCollisionDispatcher* dispatcher;
     btDbvtBroadphase* broadphase;
-	btCollisionWorld* world;
+	//btCollisionWorld* world;
+    btSequentialImpulseConstraintSolver* constraintSolver;
+    btDiscreteDynamicsWorld* world;
 
     BulletDebugDrawer_OpenGL debugDrawer;
 };
