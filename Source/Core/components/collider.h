@@ -83,7 +83,7 @@ public:
     };
 
     Collider() 
-    : shape(std::make_shared<SphereCollisionShape>()) {
+    : shape(new SphereCollisionShape()) {
 
     }
 
