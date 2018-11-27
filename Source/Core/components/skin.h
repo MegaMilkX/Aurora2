@@ -6,7 +6,7 @@
 #include <component.h>
 
 class Skin : public Component {
-    CLONEABLE(Skin)
+    CLONEABLE
     RTTR_ENABLE(Component)
 public:
     Skin() {

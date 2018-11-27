@@ -78,7 +78,7 @@ inline void fg_GuiDraw(const FrameCommon& frame, const GuiDrawData& in)
 
 class OverlayRoot : public Component
 {
-    CLONEABLE(OverlayRoot)
+    CLONEABLE
     RTTR_ENABLE(Component)
 public:
     void OnInit()

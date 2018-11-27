@@ -14,7 +14,7 @@ inline void PrintTest(const std::string& v)
 
 class MotionScript : public Component
 {
-    CLONEABLE(MotionScript)
+    CLONEABLE
     RTTR_ENABLE(Component)
 public:
     MotionScript()

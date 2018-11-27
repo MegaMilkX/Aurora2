@@ -152,13 +152,10 @@ SceneObject* SceneObject::CreateFrom(SceneObject* from) {
     {
         Component* c = kv.second->clone();
         if(!c) continue;
-        components.insert(
-            std::make_pair(
-                kv.first, 
-                c
-            )
-        );
+        new_object->AddComponent(c, kv.first);
     }
+
+    return new_object;
 }
 
 unsigned int SceneObject::ChildCount() const { 

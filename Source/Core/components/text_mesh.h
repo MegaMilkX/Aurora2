@@ -17,7 +17,7 @@ struct TextVertex
 
 class TextMesh : public Component
 {
-    CLONEABLE(TextMesh)
+    CLONEABLE
     RTTR_ENABLE(Component)
 public:
     TextMesh()

@@ -9,7 +9,7 @@
 
 class SoundEmitter : public Component
 {
-    CLONEABLE(SoundEmitter)
+    CLONEABLE
     RTTR_ENABLE(Component)
 public:
     SoundEmitter()
@@ -37,7 +37,7 @@ protected:
 
 class SoundListener : public Component
 {
-    CLONEABLE(SoundListener)
+    CLONEABLE
     RTTR_ENABLE(Component)
 public:
     void OnInit()

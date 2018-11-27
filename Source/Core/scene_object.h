@@ -20,9 +20,10 @@
 
 class UnserializableComponentToken {};
 
-#define CLONEABLE(TYPE) \
+#define CLONEABLE \
+public: \
     Component* clone() { \
-        return new TYPE(*this); \
+        return new std::remove_reference<decltype(*this)>::type(*this); \
     }
 
 class SceneController;

@@ -10,7 +10,7 @@
 
 class Camera : public Component
 {
-    CLONEABLE(Camera)
+    CLONEABLE
     RTTR_ENABLE(Component)
 public:
     Camera()

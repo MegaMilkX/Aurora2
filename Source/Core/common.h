@@ -6,6 +6,7 @@
 struct Common_t
 {
     gfxm::ivec2 frameSize;
+    float frameDelta;
 };
 
 extern Common_t Common;

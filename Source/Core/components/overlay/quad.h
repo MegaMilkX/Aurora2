@@ -9,7 +9,7 @@
 class OverlayRoot;
 class Quad : public Component
 {
-    CLONEABLE(Quad)
+    CLONEABLE
     RTTR_ENABLE(Component)
 public:
     GfxQuad quad;

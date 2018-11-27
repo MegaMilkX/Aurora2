@@ -7,7 +7,7 @@ class SoundEmitter;
 class SoundListener;
 class SoundRoot : public Component
 {
-    CLONEABLE(SoundRoot)
+    CLONEABLE
     RTTR_ENABLE(Component)
 public:
     void Update();

@@ -5,7 +5,7 @@
 #include <transform.h>
 
 class Bone : public Component {
-  CLONEABLE(Bone)
+  CLONEABLE
   RTTR_ENABLE(Component)
 public:
   

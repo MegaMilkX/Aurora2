@@ -84,7 +84,8 @@ void read_resource(std::istream& in, std::shared_ptr<T>& res) {
 
 class Model : public Component
 {
-    CLONEABLE(Model)
+public:
+    CLONEABLE
     RTTR_ENABLE(Component)
 public:
     Model();    

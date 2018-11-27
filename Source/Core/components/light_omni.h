@@ -7,7 +7,7 @@
 
 class LightDirect : public Component
 {
-    CLONEABLE(LightDirect)
+    CLONEABLE
     RTTR_ENABLE(Component)
 public:
     LightDirect()
@@ -72,7 +72,7 @@ STATIC_RUN(LightDirect)
 
 class LightOmni : public Component
 {
-    CLONEABLE(LightOmni)
+    CLONEABLE
     RTTR_ENABLE(Component)
 public:
     LightOmni()

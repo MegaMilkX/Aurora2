@@ -15,7 +15,7 @@
 class OverlayRoot;
 class Text2d : public Component
 {
-    CLONEABLE(Text2d)
+    CLONEABLE
     RTTR_ENABLE(Component)
 public:
     Text2d()

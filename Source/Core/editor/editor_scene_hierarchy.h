@@ -50,6 +50,11 @@ private:
             }
             if (ImGui::BeginPopupContextItem()) // When used after an item that has an ID (here the Button), we can skip providing an ID to BeginPopupContextItem().
             {
+                if(ImGui::Selectable("Duplicate")) {
+                    if(scene->Parent()) {
+                        scene->Parent()->CreateFrom(scene);
+                    }
+                }
                 ImGui::Selectable("Export...");
                 if(ImGui::Selectable("Delete")) {
                     if(scene->Parent()) {
@@ -65,6 +70,11 @@ private:
                 (void*)scene, selectedObject == scene ? ImGuiTreeNodeFlags_Selected : 0, MKSTR(scene->Name()).c_str());
             if (ImGui::BeginPopupContextItem()) // When used after an item that has an ID (here the Button), we can skip providing an ID to BeginPopupContextItem().
             {
+                if(ImGui::Selectable("Duplicate")) {
+                    if(scene->Parent()) {
+                        scene->Parent()->CreateFrom(scene);
+                    }
+                }
                 ImGui::Selectable("Export...");
                 ImGui::Selectable("Delete");
                 ImGui::EndPopup();

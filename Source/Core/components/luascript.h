@@ -52,7 +52,7 @@ inline gfxm::vec3 Vec3MultScalar(const gfxm::vec3& v, float s) { return v * s; }
 
 class LuaScript : public Component
 {
-    CLONEABLE(LuaScript)
+    CLONEABLE
     RTTR_ENABLE(Component)
 public:
     LuaScript()

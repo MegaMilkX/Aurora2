@@ -160,6 +160,7 @@ public:
         glfwSwapBuffers(window);
 
         deltaTime = timer.End() / 1000000.0f;
+        Common.frameDelta = deltaTime;
         frameCount++;
 
         return result;
@@ -226,6 +227,7 @@ public:
         }
         */
         deltaTime = timer.End() / 1000000.0f;
+        Common.frameDelta = deltaTime;
         frameCount++;
 
         return result;

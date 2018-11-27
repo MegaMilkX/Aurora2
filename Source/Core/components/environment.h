@@ -6,7 +6,7 @@
 
 class Environment : public Component
 {
-    CLONEABLE(Environment)
+    CLONEABLE
     RTTR_ENABLE(Component)
 public:
     gfxm::vec3 ambientColor = gfxm::vec3(0.5f, 0.5f, 0.5f);
