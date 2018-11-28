@@ -191,6 +191,7 @@ void SceneObject::SetController(SceneController* con) {
 void SceneObject::RefreshComponent(Component* com) {
     if(controller) {
         controller->_onRemoveComponent(com->GetType(), com, this);
+        // TODO: Call OnInit to reset the component?
         controller->_onAddComponent(com->GetType(), com, this);
     }
 }
