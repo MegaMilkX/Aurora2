@@ -11,10 +11,11 @@
 
 class Transform : public Component
 {
-public:
     CLONEABLE
     RTTR_ENABLE(Component)
 public:
+    typedef std::function<void(void)> transform_change_callback_t;
+
     Transform()
     : Transform(0) {}
     Transform(Transform* parent)
@@ -135,6 +136,15 @@ public:
     }
     Transform* ParentTransform() { return _parent; }
 
+    int AddTransformCallback(transform_change_callback_t cb) {
+        static int callback_id = 0;
+        transform_callbacks[callback_id] = cb;
+        return callback_id++;
+    }
+    void RemoveTransformCallback(int id) {
+        transform_callbacks.erase(id);
+    }
+
     // ====
     virtual bool _write(std::ostream& out, ExportData& exportData) {
         out.write((char*)&_position, sizeof(_position));
@@ -177,6 +187,8 @@ private:
     
     Transform* _parent;
     std::vector<Transform*> _children;
+
+    std::map<int, transform_change_callback_t> transform_callbacks;
 };
 STATIC_RUN(Transform)
 {

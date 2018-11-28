@@ -16,6 +16,9 @@ void Transform::Dirty()
     {
         c->Dirty();
     }
+    for(auto& kv : transform_callbacks) {
+        kv.second();
+    }
 }
 
 void Transform::Translate(float x, float y, float z)
