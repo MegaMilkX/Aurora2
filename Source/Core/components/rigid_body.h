@@ -27,7 +27,10 @@ public:
         //in.read((char*)&intensity, sizeof(intensity));
         return true;
     }
-    virtual bool _editor() {        
+    virtual bool _editor() {
+        if(ImGui::DragFloat("Mass", &mass, 0.001f)) {
+            
+        }     
         if(ImGui::BeginCombo("Type", shape_type.get_name().to_string().c_str(), 0)) {
             if(ImGui::Selectable("Box", shape_type == rttr::type::get<BoxCollisionShape>())) { SetShape<BoxCollisionShape>(); }
             if(ImGui::Selectable("Sphere", shape_type == rttr::type::get<SphereCollisionShape>())) { SetShape<SphereCollisionShape>(); }
