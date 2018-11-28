@@ -64,6 +64,7 @@ public:
         world->addCollisionObject(co);
     }
     void Update() {
+        /*
         for(auto kv : objects) {
             Transform* t = kv.first->GetComponent<Transform>();
             //gfxm::mat4 m = gfxm::translate(gfxm::mat4(1.0f), t->WorldPosition()) * 
@@ -75,9 +76,14 @@ public:
             trans.setFromOpenGLMatrix((btScalar*)&m);
             kv.second->setWorldTransform(trans);
         }
+        */
 
         world->stepSimulation(Common.frameDelta);
 
+        for(auto rb : rigid_bodies) {
+            rb->UpdateTransform();
+        }
+        /*
         for(auto kv : rigid_bodies) {
             Transform* t = kv.first->GetComponent<Transform>();
             btTransform trans;
@@ -87,6 +93,7 @@ public:
             trans.getOpenGLMatrix((btScalar*)&mat4f);
             t->SetTransform(mat4f);
         }
+        */
     }
     void DebugDraw() {
         world->debugDrawWorld();
@@ -94,10 +101,14 @@ public:
 
     void _onAddComponent(rttr::type type, Component* c, SceneObject* so) {
         if(type == rttr::type::get<Collider>()) {
+            /*
             objects[c] = new btCollisionObject();
             objects[c]->setCollisionShape(((Collider*)c)->GetShape()->GetBtShapePtr());
             world->addCollisionObject(objects[c]);
+            */
+            world->addCollisionObject(((Collider*)c)->GetBtCollisionObject());
         } else if(type == rttr::type::get<RigidBody>()) {
+            /*
             Transform* t = c->Get<Transform>();
             gfxm::mat4 mat4f = t->GetTransform();
             btTransform trans;
@@ -105,31 +116,33 @@ public:
 
             btDefaultMotionState* motionState = new btDefaultMotionState(trans);
             btVector3 inertia(0, 0, 0);
-            (((RigidBody*)c)->GetShape()->GetBtShapePtr())->calculateLocalInertia(1, inertia);
-            btRigidBody::btRigidBodyConstructionInfo rigidBodyCI(1, motionState, ((RigidBody*)c)->GetShape()->GetBtShapePtr(), inertia);
+            (((RigidBody*)c)->GetShape()->GetBtShapePtr())->calculateLocalInertia(((RigidBody*)c)->mass, inertia);
+            btRigidBody::btRigidBodyConstructionInfo rigidBodyCI(((RigidBody*)c)->mass, motionState, ((RigidBody*)c)->GetShape()->GetBtShapePtr(), inertia);
 
             rigid_bodies[c] = new btRigidBody(rigidBodyCI);
             world->addRigidBody(rigid_bodies[c]);
+            */
+            world->addRigidBody(((RigidBody*)c)->GetBtRigidBody());
+            rigid_bodies.insert((RigidBody*)c);
         }
     }
     void _onRemoveComponent(rttr::type type, Component* c, SceneObject* so) {
         if(type == rttr::type::get<Collider>()) {
+            /*
             if(objects.count(c) != 0) {
                 world->removeCollisionObject(objects[c]);
                 delete objects[c];
                 objects.erase(c);
             }
+            */
+           world->removeCollisionObject(((Collider*)c)->GetBtCollisionObject());
         } else if(type == rttr::type::get<RigidBody>()) {
-            if(rigid_bodies.count(c) != 0) {
-                world->removeRigidBody(rigid_bodies[c]);
-                delete rigid_bodies[c];
-                rigid_bodies.erase(c);
-            }
+            world->removeRigidBody(((RigidBody*)c)->GetBtRigidBody());
+            rigid_bodies.erase((RigidBody*)c);
         }
     }
 private:
-    std::map<Component*, btCollisionObject*> objects;
-    std::map<Component*, btRigidBody*> rigid_bodies;
+    std::set<RigidBody*> rigid_bodies;
 
     btDefaultCollisionConfiguration* collisionConf;
     btCollisionDispatcher* dispatcher;

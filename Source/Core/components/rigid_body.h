@@ -2,18 +2,63 @@
 #define RIGID_BODY_H
 
 #include <component.h>
+#include <transform.h>
 #include <util/gfxm.h>
 
 #include "physical_object.h"
 
 class RigidBody : public PhysicalObject {
-public:
-    CLONEABLE
+    //CLONEABLE
     RTTR_ENABLE(PhysicalObject)
 public:
     float mass = 1.0f;
 
+    virtual void OnInit() {
+        gfxm::mat4 m = Get<Transform>()->GetTransform();
+        btTransform btMat4;
+        btMat4.setFromOpenGLMatrix((btScalar*)&m);
+
+        motionState.reset(new btDefaultMotionState(btMat4));
+        btVector3 inertia(0, 0, 0);
+        shape->GetBtShapePtr()->calculateLocalInertia(mass, inertia);
+        rigidBody.reset(
+            new btRigidBody(btRigidBody::btRigidBodyConstructionInfo(
+                mass,
+                motionState.get(),
+                shape->GetBtShapePtr(),
+                inertia
+            ))
+        );
+
+        Get<Transform>()->AddTransformCallback([this](){
+            gfxm::mat4 m = Get<Transform>()->GetTransform();
+            btTransform btMat4;
+            btMat4.setFromOpenGLMatrix((btScalar*)&m);
+            rigidBody->setWorldTransform(btMat4);
+        });
+        OnShapeChange();
+    }
+
     btRigidBody* GetBtRigidBody() { return rigidBody.get(); }
+
+    virtual void OnShapeChange() {
+        rigidBody->setCollisionShape(shape->GetBtShapePtr());
+        btVector3 inertia(0, 0, 0);
+        shape->GetBtShapePtr()->calculateLocalInertia(mass, inertia);
+        rigidBody->setMassProps(mass, inertia);
+        
+        rigidBody->activate();
+    }
+
+    void UpdateTransform() {
+        if(rigidBody->isActive()) {
+            btTransform trans;
+            rigidBody->getMotionState()->getWorldTransform(trans);
+            gfxm::mat4 mat4f(1.0f);
+            trans.getOpenGLMatrix((btScalar*)&mat4f);
+            Get<Transform>()->SetTransform(mat4f);
+        }
+    }
 
     virtual bool _write(std::ostream& out, ExportData& exportData) {
         //out.write((char*)&color, sizeof(color));
@@ -28,8 +73,13 @@ public:
         return true;
     }
     virtual bool _editor() {
+        if(ImGui::Button("Activate")) {
+            rigidBody->activate();
+        }
         if(ImGui::DragFloat("Mass", &mass, 0.001f)) {
-            
+            btVector3 inertia(0, 0, 0);
+            shape->GetBtShapePtr()->calculateLocalInertia(mass, inertia);
+            rigidBody->setMassProps(mass, inertia);
         }     
         if(ImGui::BeginCombo("Type", shape_type.get_name().to_string().c_str(), 0)) {
             if(ImGui::Selectable("Box", shape_type == rttr::type::get<BoxCollisionShape>())) { SetShape<BoxCollisionShape>(); }
@@ -53,6 +103,7 @@ public:
         return true;
     }
 private:
+    std::shared_ptr<btDefaultMotionState> motionState;
     std::shared_ptr<btRigidBody> rigidBody;
 };
 STATIC_RUN(RigidBody)

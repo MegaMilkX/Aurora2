@@ -2,14 +2,34 @@
 #define COLLIDER_H
 
 #include <component.h>
+#include <transform.h>
 #include <util/gfxm.h>
 
 #include "physical_object.h"
 
 class Collider : public PhysicalObject {
-    CLONEABLE
+    //CLONEABLE
     RTTR_ENABLE(PhysicalObject)
 public:
+
+    virtual void OnInit() {
+        collisionObject.reset(new btCollisionObject());
+
+        Get<Transform>()->AddTransformCallback([this](){
+            gfxm::mat4 m = Get<Transform>()->GetTransform();
+            btTransform btMat4;
+            btMat4.setFromOpenGLMatrix((btScalar*)&m);
+            collisionObject->setWorldTransform(btMat4);
+        });
+        OnShapeChange();
+    }
+
+    virtual void OnShapeChange() {
+        collisionObject->setCollisionShape(shape->GetBtShapePtr());
+    }
+
+    btCollisionObject* GetBtCollisionObject() { return collisionObject.get(); }
+
     virtual bool _write(std::ostream& out, ExportData& exportData) {
         //out.write((char*)&color, sizeof(color));
         //out.write((char*)&intensity, sizeof(intensity));
@@ -45,6 +65,7 @@ public:
         return true;
     }
 private:
+    std::shared_ptr<btCollisionObject> collisionObject;
 };
 STATIC_RUN(Collider)
 {
