@@ -5,6 +5,14 @@
 
 struct Common_t
 {
+    enum FRAME_STATE {
+        BEGIN,
+        PHYSICS,
+        GENERAL,
+        RENDERING,
+        END
+    };
+
     gfxm::ivec2 frameSize;
     float frameDelta;
 };
