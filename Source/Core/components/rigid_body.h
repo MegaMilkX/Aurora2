@@ -31,12 +31,20 @@ public:
         );
 
         Get<Transform>()->AddTransformCallback([this](){
+            if(transformLocked) return;
             gfxm::mat4 m = Get<Transform>()->GetTransform();
             btTransform btMat4;
             btMat4.setFromOpenGLMatrix((btScalar*)&m);
             rigidBody->setWorldTransform(btMat4);
         });
         OnShapeChange();
+    }
+
+    void LockTransform() {
+        transformLocked = true;
+    }
+    void UnlockTransform() {
+        transformLocked = false;
     }
 
     btRigidBody* GetBtRigidBody() { return rigidBody.get(); }
@@ -52,11 +60,13 @@ public:
 
     void UpdateTransform() {
         if(rigidBody->isActive()) {
+            LockTransform();
             btTransform trans;
             rigidBody->getMotionState()->getWorldTransform(trans);
             gfxm::mat4 mat4f(1.0f);
             trans.getOpenGLMatrix((btScalar*)&mat4f);
             Get<Transform>()->SetTransform(mat4f);
+            UnlockTransform();
         }
     }
 
@@ -103,6 +113,7 @@ public:
         return true;
     }
 private:
+    bool transformLocked;
     std::shared_ptr<btDefaultMotionState> motionState;
     std::shared_ptr<btRigidBody> rigidBody;
 };

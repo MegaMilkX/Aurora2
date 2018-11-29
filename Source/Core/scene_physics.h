@@ -56,44 +56,13 @@ public:
         world->setGravity(btVector3(0.0f, -10.0f, 0.0f));
 
         world->setDebugDrawer(&debugDrawer);
-
-        //
-        btStaticPlaneShape* staticPlane = new btStaticPlaneShape(btVector3(0.0f, 1.0f, 0.0f), 0.0f);
-        btCollisionObject* co = new btCollisionObject();
-        co->setCollisionShape(staticPlane);
-        world->addCollisionObject(co);
     }
     void Update() {
-        /*
-        for(auto kv : objects) {
-            Transform* t = kv.first->GetComponent<Transform>();
-            //gfxm::mat4 m = gfxm::translate(gfxm::mat4(1.0f), t->WorldPosition()) * 
-            //    gfxm::to_mat4(t->WorldRotation()) *
-            //    gfxm::translate(gfxm::mat4(1.0f), ((Collider*)kv.first)->GetShape()->GetPivotOffset());
-            gfxm::mat4 m = t->GetTransform() * 
-                gfxm::translate(gfxm::mat4(1.0f), ((Collider*)kv.first)->GetShape()->GetPivotOffset());
-            btTransform trans;
-            trans.setFromOpenGLMatrix((btScalar*)&m);
-            kv.second->setWorldTransform(trans);
-        }
-        */
-
         world->stepSimulation(Common.frameDelta);
 
         for(auto rb : rigid_bodies) {
             rb->UpdateTransform();
         }
-        /*
-        for(auto kv : rigid_bodies) {
-            Transform* t = kv.first->GetComponent<Transform>();
-            btTransform trans;
-            kv.second->getMotionState()->getWorldTransform(trans);
-
-            gfxm::mat4 mat4f(1.0f);
-            trans.getOpenGLMatrix((btScalar*)&mat4f);
-            t->SetTransform(mat4f);
-        }
-        */
     }
     void DebugDraw() {
         world->debugDrawWorld();
@@ -101,40 +70,14 @@ public:
 
     void _onAddComponent(rttr::type type, Component* c, SceneObject* so) {
         if(type == rttr::type::get<Collider>()) {
-            /*
-            objects[c] = new btCollisionObject();
-            objects[c]->setCollisionShape(((Collider*)c)->GetShape()->GetBtShapePtr());
-            world->addCollisionObject(objects[c]);
-            */
             world->addCollisionObject(((Collider*)c)->GetBtCollisionObject());
         } else if(type == rttr::type::get<RigidBody>()) {
-            /*
-            Transform* t = c->Get<Transform>();
-            gfxm::mat4 mat4f = t->GetTransform();
-            btTransform trans;
-            trans.setFromOpenGLMatrix((btScalar*)&mat4f);
-
-            btDefaultMotionState* motionState = new btDefaultMotionState(trans);
-            btVector3 inertia(0, 0, 0);
-            (((RigidBody*)c)->GetShape()->GetBtShapePtr())->calculateLocalInertia(((RigidBody*)c)->mass, inertia);
-            btRigidBody::btRigidBodyConstructionInfo rigidBodyCI(((RigidBody*)c)->mass, motionState, ((RigidBody*)c)->GetShape()->GetBtShapePtr(), inertia);
-
-            rigid_bodies[c] = new btRigidBody(rigidBodyCI);
-            world->addRigidBody(rigid_bodies[c]);
-            */
             world->addRigidBody(((RigidBody*)c)->GetBtRigidBody());
             rigid_bodies.insert((RigidBody*)c);
         }
     }
     void _onRemoveComponent(rttr::type type, Component* c, SceneObject* so) {
         if(type == rttr::type::get<Collider>()) {
-            /*
-            if(objects.count(c) != 0) {
-                world->removeCollisionObject(objects[c]);
-                delete objects[c];
-                objects.erase(c);
-            }
-            */
            world->removeCollisionObject(((Collider*)c)->GetBtCollisionObject());
         } else if(type == rttr::type::get<RigidBody>()) {
             world->removeRigidBody(((RigidBody*)c)->GetBtRigidBody());

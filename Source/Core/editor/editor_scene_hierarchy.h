@@ -2,6 +2,7 @@
 #define EDITOR_SCENE_HIERARCHY_H
 
 #include <component.h>
+#include <collider.h>
 #include <util/imgui_wrapper.h>
 #include <util/imgui_console.h>
 #include <functional>
@@ -97,7 +98,15 @@ private:
 
     void SetSelected(SceneObject* o)
     {
+        if(selectedObject) {
+            if(selectedObject->FindComponent<Collider>()) {
+                selectedObject->Get<Collider>()->_disableDebugWireframe();
+            }
+        }
         selectedObject = o;
+        if(selectedObject->FindComponent<Collider>()) {
+            selectedObject->Get<Collider>()->_enableDebugWireframe();
+        }
         if(objectSelectCb) objectSelectCb(o);
     }
     SceneObject* selectedObject = 0;

@@ -30,6 +30,18 @@ public:
 
     btCollisionObject* GetBtCollisionObject() { return collisionObject.get(); }
 
+    void _enableDebugWireframe() {
+        collisionObject->setCollisionFlags(
+            collisionObject->getCollisionFlags() ^ btCollisionObject::CF_DISABLE_VISUALIZE_OBJECT
+        );
+    }
+    void _disableDebugWireframe() {
+        collisionObject->setCollisionFlags(
+            collisionObject->getCollisionFlags() | btCollisionObject::CF_DISABLE_VISUALIZE_OBJECT
+        );
+        
+    }
+
     virtual bool _write(std::ostream& out, ExportData& exportData) {
         //out.write((char*)&color, sizeof(color));
         //out.write((char*)&intensity, sizeof(intensity));
@@ -52,7 +64,10 @@ public:
             if(ImGui::Selectable("Cone", type == CONE)) { type = CONE; Refresh(); }
             if(ImGui::Selectable("Plane", type == PLANE)) { type = PLANE; Refresh(); }
             if(ImGui::Selectable("Static plane", type == STATIC_PLANE)) { type = STATIC_PLANE; Refresh(); }
-            if(ImGui::Selectable("Concave mesh", type == CONCAVE_MESH)) { type = CONCAVE_MESH; Refresh(); }
+            */
+            if(ImGui::Selectable("Triangle mesh", shape_type == rttr::type::get<TriangleMeshCollisionShape>())) 
+            { SetShape<TriangleMeshCollisionShape>(); }
+            /*
             if(ImGui::Selectable("Convex mesh", type == CONVEX_MESH)) { type = CONVEX_MESH; Refresh(); }
             */
             ImGui::EndCombo();

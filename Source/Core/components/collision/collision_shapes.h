@@ -4,6 +4,11 @@
 #include <btBulletDynamicsCommon.h>
 #include <BulletCollision/CollisionDispatch/btGhostObject.h>
 
+#include <mesh.h>
+#include <model.h>
+#include <transform.h>
+#include <util/editor_gui_helpers.h>
+
 class PhysicalObject;
 
 class CollisionShape {
@@ -44,6 +49,24 @@ public:
 
     virtual btCollisionShape* GetBtShapePtr() {
         return &shape;
+    }
+    virtual void _editor(Component* c);
+};
+
+class TriangleMeshCollisionShape : public CollisionShape {
+public:
+    TriangleMeshCollisionShape() {
+        shape.reset(new btEmptyShape());
+    }
+    std::shared_ptr<btCollisionShape> shape;
+    std::shared_ptr<Mesh> mesh;
+    std::vector<unsigned char> vertices;
+    std::vector<uint32_t> indices;
+
+    void SetMesh(std::shared_ptr<Mesh> mesh);
+
+    virtual btCollisionShape* GetBtShapePtr() {
+        return shape.get();
     }
     virtual void _editor(Component* c);
 };
