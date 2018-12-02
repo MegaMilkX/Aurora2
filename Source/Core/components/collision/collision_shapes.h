@@ -53,6 +53,22 @@ public:
     virtual void _editor(Component* c);
 };
 
+class CapsuleCollisionShape : public CollisionShape {
+public:
+    CapsuleCollisionShape()
+    : shape(0.3f, 1.4f) {
+
+    }
+    btCapsuleShape shape;
+    float radius = 0.3f;
+    float height = 1.4f;
+
+    virtual btCollisionShape* GetBtShapePtr() {
+        return &shape;
+    }
+    virtual void _editor(Component* c);
+};
+
 class TriangleMeshCollisionShape : public CollisionShape {
 public:
     TriangleMeshCollisionShape() {

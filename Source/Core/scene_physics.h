@@ -6,6 +6,7 @@
 #include "external/imguizmo/imguizmo.h"
 #include <collider.h>
 #include <rigid_body.h>
+#include <ghost_collider.h>
 #include "debug_draw.h"
 
 #include <common.h>
@@ -68,12 +69,19 @@ public:
         world->debugDrawWorld();
     }
 
+    btDiscreteDynamicsWorld* GetBtWorld() {
+        return world;
+    }
+
     void _onAddComponent(rttr::type type, Component* c, SceneObject* so) {
         if(type == rttr::type::get<Collider>()) {
             world->addCollisionObject(((Collider*)c)->GetBtCollisionObject());
         } else if(type == rttr::type::get<RigidBody>()) {
             world->addRigidBody(((RigidBody*)c)->GetBtRigidBody());
             rigid_bodies.insert((RigidBody*)c);
+        } else if(type == rttr::type::get<GhostCollider>()) {
+            world->addCollisionObject(((GhostCollider*)c)->GetBtGhostObject());
+            ((GhostCollider*)c)->SetBtWorld(world);
         }
     }
     void _onRemoveComponent(rttr::type type, Component* c, SceneObject* so) {
@@ -82,6 +90,9 @@ public:
         } else if(type == rttr::type::get<RigidBody>()) {
             world->removeRigidBody(((RigidBody*)c)->GetBtRigidBody());
             rigid_bodies.erase((RigidBody*)c);
+        } else if(type == rttr::type::get<GhostCollider>()) {
+            world->removeCollisionObject(((GhostCollider*)c)->GetBtGhostObject());
+            ((GhostCollider*)c)->SetBtWorld(0);
         }
     }
 private:

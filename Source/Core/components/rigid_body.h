@@ -94,9 +94,10 @@ public:
         if(ImGui::BeginCombo("Type", shape_type.get_name().to_string().c_str(), 0)) {
             if(ImGui::Selectable("Box", shape_type == rttr::type::get<BoxCollisionShape>())) { SetShape<BoxCollisionShape>(); }
             if(ImGui::Selectable("Sphere", shape_type == rttr::type::get<SphereCollisionShape>())) { SetShape<SphereCollisionShape>(); }
+            if(ImGui::Selectable("Capsule", shape_type == rttr::type::get<CapsuleCollisionShape>())) { SetShape<CapsuleCollisionShape>(); }
 /*
             if(ImGui::Selectable("Cylinder", type == CYLINDER)) { type = CYLINDER; Refresh(); }
-            if(ImGui::Selectable("Capsule", type == CAPSULE)) { type = CAPSULE; Refresh(); }
+            
             if(ImGui::Selectable("Cone", type == CONE)) { type = CONE; Refresh(); }
             if(ImGui::Selectable("Plane", type == PLANE)) { type = PLANE; Refresh(); }
             if(ImGui::Selectable("Static plane", type == STATIC_PLANE)) { type = STATIC_PLANE; Refresh(); }

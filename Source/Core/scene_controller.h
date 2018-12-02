@@ -20,6 +20,7 @@ public:
     bool Init();
 
     SceneRenderer& GetRenderer() { return renderer; }
+    ScenePhysics& GetPhysics() { return physics; }
 
     void SetScene(SceneObject* sceneObject);
 

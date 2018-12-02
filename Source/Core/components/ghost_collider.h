@@ -1,5 +1,5 @@
-#ifndef COLLIDER_H
-#define COLLIDER_H
+#ifndef GHOST_COLLIDER_H
+#define GHOST_COLLIDER_H
 
 #include <component.h>
 #include <transform.h>
@@ -7,54 +7,35 @@
 
 #include "physical_object.h"
 
-class Collider : public PhysicalObject {
-    //CLONEABLE
+class GhostCollider : public PhysicalObject {
     RTTR_ENABLE(PhysicalObject)
 public:
-
     virtual void OnInit() {
-        collisionObject.reset(new btCollisionObject());
+        ghostObject.reset(new btGhostObject());
 
         Get<Transform>()->AddTransformCallback([this](){
             gfxm::mat4 m = Get<Transform>()->GetTransform();
             btTransform btMat4;
             btMat4.setFromOpenGLMatrix((btScalar*)&m);
-            collisionObject->setWorldTransform(btMat4);
+            ghostObject->setWorldTransform(btMat4);
         });
         OnShapeChange();
+
+        ghostObject->setCollisionFlags(
+            ghostObject->getCollisionFlags() ^ btCollisionObject::CF_DISABLE_VISUALIZE_OBJECT
+        );
     }
 
     virtual void OnShapeChange() {
-        collisionObject->setCollisionShape(shape->GetBtShapePtr());
+        ghostObject->setCollisionShape(shape->GetBtShapePtr());
     }
 
-    btCollisionObject* GetBtCollisionObject() { return collisionObject.get(); }
+    btGhostObject* GetBtGhostObject() { return ghostObject.get(); }
+    btDiscreteDynamicsWorld* GetBtWorld() { return world; }
 
-    void _enableDebugWireframe() {
-        collisionObject->setCollisionFlags(
-            collisionObject->getCollisionFlags() ^ btCollisionObject::CF_DISABLE_VISUALIZE_OBJECT
-        );
-    }
-    void _disableDebugWireframe() {
-        collisionObject->setCollisionFlags(
-            collisionObject->getCollisionFlags() | btCollisionObject::CF_DISABLE_VISUALIZE_OBJECT
-        );
-        
-    }
+    void SetBtWorld(btDiscreteDynamicsWorld* w) { world = w; }
 
-    virtual bool _write(std::ostream& out, ExportData& exportData) {
-        //out.write((char*)&color, sizeof(color));
-        //out.write((char*)&intensity, sizeof(intensity));
-        return true;
-    }
-    virtual bool _read(std::istream& in, size_t sz, ImportData& importData) {
-        //if(sz != sizeof(color) + sizeof(intensity)) 
-        //    return false;
-        //in.read((char*)&color, sizeof(color));
-        //in.read((char*)&intensity, sizeof(intensity));
-        return true;
-    }
-    virtual bool _editor() {        
+    virtual bool _editor() {
         if(ImGui::BeginCombo("Type", shape_type.get_name().to_string().c_str(), 0)) {
             if(ImGui::Selectable("Box", shape_type == rttr::type::get<BoxCollisionShape>())) { SetShape<BoxCollisionShape>(); }
             if(ImGui::Selectable("Sphere", shape_type == rttr::type::get<SphereCollisionShape>())) { SetShape<SphereCollisionShape>(); }
@@ -66,8 +47,6 @@ public:
             if(ImGui::Selectable("Plane", type == PLANE)) { type = PLANE; Refresh(); }
             if(ImGui::Selectable("Static plane", type == STATIC_PLANE)) { type = STATIC_PLANE; Refresh(); }
             */
-            if(ImGui::Selectable("Triangle mesh", shape_type == rttr::type::get<TriangleMeshCollisionShape>())) 
-            { SetShape<TriangleMeshCollisionShape>(); }
             /*
             if(ImGui::Selectable("Convex mesh", type == CONVEX_MESH)) { type = CONVEX_MESH; Refresh(); }
             */
@@ -81,11 +60,12 @@ public:
         return true;
     }
 private:
-    std::shared_ptr<btCollisionObject> collisionObject;
+    std::shared_ptr<btGhostObject> ghostObject;
+    btDiscreteDynamicsWorld* world = 0;
 };
-STATIC_RUN(Collider)
+STATIC_RUN(GhostCollider)
 {
-    rttr::registration::class_<Collider>("Collider")
+    rttr::registration::class_<GhostCollider>("GhostCollider")
         .constructor<>()(rttr::policy::ctor::as_raw_ptr);
 }
 

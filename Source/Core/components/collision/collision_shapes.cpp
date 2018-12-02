@@ -20,6 +20,17 @@ void SphereCollisionShape::_editor(Component* c) {
     }
 }
 
+void CapsuleCollisionShape::_editor(Component* c) {
+    if(ImGui::DragFloat("Radius", &radius, 0.001f)) {
+        shape = btCapsuleShape(radius, height);
+        physical_object->OnShapeChange();
+    }
+    if(ImGui::DragFloat("Height", &height, 0.001f)) {
+        shape = btCapsuleShape(radius, height);
+        physical_object->OnShapeChange();
+    }
+}
+
 void TriangleMeshCollisionShape::SetMesh(std::shared_ptr<Mesh> mesh) {
     vertices = mesh->GetAttribBytes<Au::Position>();
     indices = mesh->GetIndices();

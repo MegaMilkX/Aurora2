@@ -15,6 +15,7 @@ struct Common_t
 
     gfxm::ivec2 frameSize;
     float frameDelta;
+    void* camera;
 };
 
 extern Common_t Common;

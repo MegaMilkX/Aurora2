@@ -20,6 +20,7 @@ void SceneController::SetScene(SceneObject* sceneObject){
 }
 
 void SceneController::Update(){
+    Common.camera = (void*)renderer.GetCamera();
     for(auto u : updatables) {
         u->OnUpdate();
     }
