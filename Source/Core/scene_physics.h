@@ -34,6 +34,19 @@ public:
 	int m;
 };
 
+class ConvexResultCallback_ : public btCollisionWorld::ConvexResultCallback {
+public:
+    virtual btScalar addSingleResult(btCollisionWorld::LocalConvexResult& convexResult, bool normalInWorldSpace) {
+        btVector3 pt = convexResult.m_hitPointLocal;
+        const ddVec3 f  = { pt.getX(), pt.getY(), pt.getZ() };
+        const ddVec3 t = { pt.getX(), pt.getY() + 0.5f, pt.getZ() };
+        const ddVec3 col = { 1, 0, 0 };
+        dd::line(f, t, col, 0, false);
+
+        return 1.0f;
+    } 
+};
+
 class ScenePhysics {
 public:
     void Init() {
@@ -57,6 +70,13 @@ public:
         world->setGravity(btVector3(0.0f, -10.0f, 0.0f));
 
         world->setDebugDrawer(&debugDrawer);
+
+        btCollisionObject* co = new btCollisionObject();
+        btBoxShape* box = new btBoxShape(btVector3(10.0f, 0.5f, 5.0f));
+        co->setCollisionShape(box);
+        world->addCollisionObject(co);
+
+        world->updateAabbs();
     }
     void Update() {
         world->stepSimulation(Common.frameDelta);
@@ -64,6 +84,26 @@ public:
         for(auto rb : rigid_bodies) {
             rb->UpdateTransform();
         }
+
+        ConvexResultCallback_ callback;
+        btSphereShape sphere(0.5f);
+        btTransform tfrom;
+        tfrom.setRotation(btQuaternion(0,0,0,1));
+        tfrom.setOrigin(btVector3(0.0f, 3.0f, 0.0f));
+        btTransform tto;
+        tto.setRotation(btQuaternion(0,0,0,1));
+        tto.setOrigin(btVector3(2.0f, -2.0f, 0.0f));
+
+        const ddVec3 center_a  = { 0.0f, 3.0f, 0.0f };
+        const ddVec3 center_b  = { 2.0f, -2.0f, 0.0f };
+        const ddVec3 col_a = { 0, 0.6f, 0.6f };
+        const ddVec3 col_b = { 0.6f, 0.6f, 0 };
+        dd::sphere(center_a, col_a, 0.5f, 0, false);
+        dd::sphere(center_b, col_b, 0.5f, 0, false);
+
+        dd::line(center_a, center_b, col_a, 0, false);
+
+        world->convexSweepTest(&sphere, tfrom, tto, callback);
     }
     void DebugDraw() {
         world->debugDrawWorld();
