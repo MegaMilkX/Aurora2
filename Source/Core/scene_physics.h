@@ -38,8 +38,9 @@ class ConvexResultCallback_ : public btCollisionWorld::ConvexResultCallback {
 public:
     virtual btScalar addSingleResult(btCollisionWorld::LocalConvexResult& convexResult, bool normalInWorldSpace) {
         btVector3 pt = convexResult.m_hitPointLocal;
+        btVector3 n = convexResult.m_hitNormalLocal;
         const ddVec3 f  = { pt.getX(), pt.getY(), pt.getZ() };
-        const ddVec3 t = { pt.getX(), pt.getY() + 0.5f, pt.getZ() };
+        const ddVec3 t = { pt.getX() + n.getX(), pt.getY() + n.getY(), pt.getZ() + n.getZ() };
         const ddVec3 col = { 1, 0, 0 };
         dd::line(f, t, col, 0, false);
 
