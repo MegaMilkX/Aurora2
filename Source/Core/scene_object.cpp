@@ -187,6 +187,9 @@ void SceneObject::SetController(SceneController* con) {
         o->SetController(con);
     }
 }
+SceneController* SceneObject::GetController() {
+    return controller;
+}
 
 void SceneObject::RefreshComponent(Component* com) {
     if(controller) {

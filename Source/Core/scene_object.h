@@ -83,6 +83,7 @@ public:
     Component*              GetComponent(unsigned int id) const ;
 
     void                    SetController(SceneController* con);
+    SceneController*        GetController();
 
     std::weak_ptr<SceneObject> WeakPtr();
 private:
