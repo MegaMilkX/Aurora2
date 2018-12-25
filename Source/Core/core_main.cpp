@@ -10,6 +10,8 @@
 
 #include "editor/editor_config.h"
 
+#include "scene.h"
+
 #define MINIZ_HEADER_FILE_ONLY
 #include "../lib/miniz.c"
 void InitArchiveResources()
@@ -68,6 +70,10 @@ void Aurora2Init();
 
 int editor_main(int argc, char** argv)
 {
+    TEST::Scene scn;
+    h_object ho = scn.CreateObject();
+    scn.GetComponent<TEST::Transform>(ho);
+
     EditorConfig().Init();
     InitFilesystemResources(EditorConfig().projectRoot + "\\resources");
     GameState::InitEditor();
